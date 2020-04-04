@@ -24,7 +24,7 @@ config : List Rule
 config =
     [ NoDebug.rule
     , NoExposingEverything.rule
-    , NoImportingEverything.rule
+    , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
     , NoUnused.Variables.rule
     , NoUnused.CustomTypeConstructors.rule

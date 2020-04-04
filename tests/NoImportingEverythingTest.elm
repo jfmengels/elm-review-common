@@ -17,31 +17,31 @@ all =
         [ test "should not report imports without exposing clause" <|
             \_ ->
                 """module A exposing (thing)
-import A
-import A as B
+import Html
+import Html as B
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.run (rule [])
                     |> Review.Test.expectNoErrors
         , test "should not report imports that expose some elements" <|
             \_ ->
                 """module A exposing (thing)
-import A exposing (B, c)
+import Html exposing (B, c)
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.run (rule [])
                     |> Review.Test.expectNoErrors
         , test "should not report imports that expose all constructors of a type" <|
             \_ ->
                 """module A exposing (thing)
-import A exposing (B(..))
+import Html exposing (B(..))
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.run (rule [])
                     |> Review.Test.expectNoErrors
         , test "should report imports that expose everything" <|
             \_ ->
                 """module A exposing (thing)
-import A exposing (..)
+import Html exposing (..)
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.run (rule [])
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "TODO"
@@ -49,4 +49,12 @@ import A exposing (..)
                             , under = "(..)"
                             }
                         ]
+        , test "should not report imports that are in the exceptions list" <|
+            \_ ->
+                """module A exposing (thing)
+import Html exposing (..)
+import Thing.Foo as Foo exposing (..)
+"""
+                    |> Review.Test.run (rule [ "Html", "Thing.Foo" ])
+                    |> Review.Test.expectNoErrors
         ]
