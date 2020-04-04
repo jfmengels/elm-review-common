@@ -1,12 +1,13 @@
-# review-simplification
+# review-module
 
-Provides [`elm-review`](https://package.elm-lang.org/packages/jfmengels/elm-review/latest/) rules to detect ways to simplify Elm code.
+Provides [`elm-review`](https://package.elm-lang.org/packages/jfmengels/elm-review/latest/) rules to enforce best practices.
 
 
 ## Provided rules
 
-- [`NoBooleanCaseOf`](./NoBooleanCaseOf) - Reports when pattern matching is used for a boolean value.
-- [`NoListLiteralsConcat`](./NoListLiteralsConcat) - Reports when an operation on lists could be simplified to a single literal list.
+- [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/review-module/1.0.0/NoExposingEverything) - Forbids exporting everything from a module.
+- [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/review-module/1.0.0/NoImportingEverything) - Forbids importing everything from a module.
+- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/review-module/1.0.0/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
 
 
 ## Configuration
@@ -14,13 +15,15 @@ Provides [`elm-review`](https://package.elm-lang.org/packages/jfmengels/elm-revi
 ```elm
 module ReviewConfig exposing (config)
 
+import NoExposingEverything
+import NoImportingEverything
+import NoMissingTypeAnnotation
 import Review.Rule exposing (Rule)
-import NoBooleanCaseOf
-import NoListLiteralsConcat
 
 config : List Rule
 config =
-    [ NoBooleanCaseOf.rule
-    , NoListLiteralsConcat.rule
+    [ NoExposingEverything.rule
+    , NoImportingEverything.rule []
+    , NoMissingTypeAnnotation.rule
     ]
 ```
