@@ -33,6 +33,6 @@ config =
     , NoMissingTypeAnnotation.rule
     , NoPrefixOperator.rule
 
-    -- , NoUnused.CustomTypeConstructors.rule
+    -- , NoUnused.CustomTypeConstructors.rule []
     -- , NoUnused.Variables.rule
     ]

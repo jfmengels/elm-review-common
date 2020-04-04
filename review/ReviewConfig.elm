@@ -11,7 +11,7 @@ when inside the directory containing this file.
 
 -}
 
-import NoBooleanCaseOf
+import NoDebug
 import NoImportingEverything
 import NoUnused.CustomTypeConstructors
 import NoUnused.Variables
@@ -20,8 +20,8 @@ import Review.Rule exposing (Rule)
 
 config : List Rule
 config =
-    [ NoBooleanCaseOf.rule
+    [ NoDebug.rule
     , NoUnused.Variables.rule
-    , NoUnused.CustomTypeConstructors.rule
+    , NoUnused.CustomTypeConstructors.rule []
     , NoImportingEverything.rule
     ]
