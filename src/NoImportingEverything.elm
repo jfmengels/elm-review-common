@@ -72,8 +72,8 @@ importVisitor exceptions node =
         of
             Just (Exposing.All range) ->
                 [ Rule.error
-                    { message = "TODO"
-                    , details = [ "TODO" ]
+                    { message = "Prefer listing what you wish to import and/or using qualified imports"
+                    , details = [ "When you import everything from a module, it becomes harder to know where a function or a type comes from" ]
                     }
                     { start = { row = range.start.row, column = range.start.column - 1 }
                     , end = { row = range.end.row, column = range.end.column + 1 }
