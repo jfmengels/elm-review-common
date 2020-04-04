@@ -1,10 +1,48 @@
 module NoMissingTypeAnnotation exposing (rule)
 
+{-|
+
+@docs rule
+
+-}
+
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Node as Node exposing (Node)
 import Review.Rule as Rule exposing (Error, Rule)
 
 
+{-| Reports top-level declarations that do not have a type annotation.
+
+Type annotations help you understand what happens in the code, and it will help the compiler give better error messages.
+
+    config =
+        [ NoMissingTypeAnnotation.rule
+        ]
+
+This rule does not report declarations without a type annotation inside a `let in`.
+
+
+## Fail
+
+    a =
+        1
+
+
+## Success
+
+    a : number
+    a =
+        1
+
+    b : number
+    b =
+        let
+            c =
+                2
+        in
+        c
+
+-}
 rule : Rule
 rule =
     Rule.newSchema "NoMissingTypeAnnotation"
