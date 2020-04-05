@@ -1,13 +1,13 @@
-# review-module
+# review-common
 
-Provides [`elm-review`](https://package.elm-lang.org/packages/jfmengels/elm-review/latest/) rules to enforce best practices.
+Provides common linting rules for [`elm-review`](https://package.elm-lang.org/packages/jfmengels/elm-review/latest/).
 
 
 ## Provided rules
 
-- [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/review-module/1.0.0/NoExposingEverything) - Forbids exporting everything from a module.
-- [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/review-module/1.0.0/NoImportingEverything) - Forbids importing everything from a module.
-- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/review-module/1.0.0/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
+- [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/review-common/1.0.0/NoExposingEverything) - Forbids exporting everything from a module.
+- [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/review-common/1.0.0/NoImportingEverything) - Forbids importing everything from a module.
+- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/review-common/1.0.0/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
 
 
 ## Configuration
