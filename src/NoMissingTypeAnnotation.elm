@@ -45,12 +45,12 @@ This rule does not report declarations without a type annotation inside a `let i
 -}
 rule : Rule
 rule =
-    Rule.newSchema "NoMissingTypeAnnotation"
+    Rule.newModuleRuleSchema "NoMissingTypeAnnotation" ()
         |> Rule.withSimpleDeclarationVisitor declarationVisitor
-        |> Rule.fromSchema
+        |> Rule.fromModuleRuleSchema
 
 
-declarationVisitor : Node Declaration -> List Error
+declarationVisitor : Node Declaration -> List (Error {})
 declarationVisitor declaration =
     case Node.value declaration of
         Declaration.FunctionDeclaration function ->

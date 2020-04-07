@@ -43,12 +43,12 @@ in the following manner:
 -}
 rule : Rule
 rule =
-    Rule.newSchema "NoExposingEverything"
+    Rule.newModuleRuleSchema "NoExposingEverything" ()
         |> Rule.withSimpleModuleDefinitionVisitor moduleDefinitionVisitor
-        |> Rule.fromSchema
+        |> Rule.fromModuleRuleSchema
 
 
-moduleDefinitionVisitor : Node Module -> List Error
+moduleDefinitionVisitor : Node Module -> List (Error {})
 moduleDefinitionVisitor moduleNode =
     case Module.exposingList <| Node.value moduleNode of
         Exposing.All range ->
