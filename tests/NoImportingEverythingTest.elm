@@ -5,12 +5,6 @@ import Review.Test
 import Test exposing (..)
 
 
-details : List String
-details =
-    [ "Type annotations help you understand what happens in the code, and it will help the compiler give better error messages."
-    ]
-
-
 all : Test
 all =
     describe "NoImportingEverything"
