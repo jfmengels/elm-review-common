@@ -11,21 +11,23 @@ when inside the directory containing this file.
 
 -}
 
-import NoDebug
+-- import NoDebug
+-- import NoUnused.CustomTypeConstructors
+-- import NoUnused.Variables
+
 import NoExposingEverything
 import NoImportingEverything
 import NoMissingTypeAnnotation
-import NoUnused.CustomTypeConstructors
-import NoUnused.Variables
 import Review.Rule exposing (Rule)
 
 
 config : List Rule
 config =
-    [ NoDebug.rule
-    , NoExposingEverything.rule
+    [ -- NoDebug.rule
+      NoExposingEverything.rule
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
-    , NoUnused.Variables.rule
-    , NoUnused.CustomTypeConstructors.rule
+
+    -- , NoUnused.Variables.rule
+    -- , NoUnused.CustomTypeConstructors.rule
     ]
