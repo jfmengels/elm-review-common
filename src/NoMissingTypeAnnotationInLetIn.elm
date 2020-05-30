@@ -36,6 +36,7 @@ For that, enable [`NoMissingTypeAnnotation`](./NoMissingTypeAnnotation).
 
 ## Success
 
+    a : number
     a =
         let
             b : number
