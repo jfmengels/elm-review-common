@@ -5,6 +5,7 @@ import Elm.Syntax.Exposing as Exposing exposing (Exposing)
 import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Signature exposing (Signature)
+import Elm.Syntax.Type as Type
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
@@ -39,14 +40,55 @@ declarationListVisitor nodes context =
 rememberDeclaration : Node Declaration -> Context -> Context
 rememberDeclaration (Node _ declaration) context =
     case declaration of
-        Declaration.CustomTypeDeclaration { name } ->
-            { context | declaredTypes = name :: context.declaredTypes }
+        Declaration.CustomTypeDeclaration { name, constructors } ->
+            context
+                |> rememberDeclaredType name
+                |> rememberValueConstructorList name constructors
 
         Declaration.FunctionDeclaration { signature } ->
             rememberFunctionSignature signature context
 
         _ ->
             context
+
+
+rememberDeclaredType : Node String -> Context -> Context
+rememberDeclaredType name context =
+    { context | declaredTypes = name :: context.declaredTypes }
+
+
+rememberValueConstructorList : Node String -> List (Node Type.ValueConstructor) -> Context -> Context
+rememberValueConstructorList (Node _ name) list context =
+    if isTypeExposedOpen name context.exposes then
+        List.foldl rememberValueConstructor context list
+
+    else
+        context
+
+
+isTypeExposedOpen : String -> Exposing -> Bool
+isTypeExposedOpen name exposes =
+    case exposes of
+        Exposing.All _ ->
+            True
+
+        Exposing.Explicit list ->
+            List.any (isExposingAnOpenTypeNamed name) list
+
+
+isExposingAnOpenTypeNamed : String -> Node Exposing.TopLevelExpose -> Bool
+isExposingAnOpenTypeNamed needle (Node _ expose) =
+    case expose of
+        Exposing.TypeExpose { name, open } ->
+            name == needle && open /= Nothing
+
+        _ ->
+            False
+
+
+rememberValueConstructor : Node Type.ValueConstructor -> Context -> Context
+rememberValueConstructor (Node _ { arguments }) context =
+    rememberTypeAnnotationList arguments context
 
 
 rememberFunctionSignature : Maybe (Node Signature) -> Context -> Context

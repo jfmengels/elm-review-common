@@ -8,13 +8,32 @@ import Test exposing (Test, describe, test)
 all : Test
 all =
     describe "NoMissingTypeExpose"
-        [ describe "exposed functions" functionTests
+        [ describe "in exposed functions" functionTests
+        , describe "in exposed types" typeTests
         ]
 
 
 functionTests : List Test
 functionTests =
-    [ test "passes when an exposed function uses an exposed type" <|
+    [ test "passes when everything is exposed" <|
+        \() ->
+            """
+module Happiness exposing (..)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+
+
+toString : Happiness -> String
+toString howHappy =
+    "Very"
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectNoErrors
+    , test "passes when an exposed function uses an exposed type" <|
         \() ->
             """
 module Happiness exposing (Happiness, toString)
@@ -220,5 +239,70 @@ rank { happiness } =
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                    ]
+    ]
+
+
+typeTests : List Test
+typeTests =
+    [ test "passes when an exposed type uses another exposed type" <|
+        \() ->
+            """
+module Happiness exposing (Happiness, Mood(..))
+
+
+type Mood
+    = Happy Happiness
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectNoErrors
+    , test "passes when an exposed opaque type uses a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood)
+
+
+type Mood
+    = Happy Happiness
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectNoErrors
+    , test "reports when an exposed open type uses a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood(..))
+
+
+type Mood
+    = Happy Happiness
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 9, column = 6 }, end = { row = 9, column = 15 } }
                     ]
     ]
