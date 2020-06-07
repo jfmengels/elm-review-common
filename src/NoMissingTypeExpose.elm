@@ -100,7 +100,14 @@ rememberTypeAnnotation (Node _ typeAnnotation) context =
             context
                 |> rememberRecordFieldList fields
 
-        _ ->
+        TypeAnnotation.GenericRecord _ (Node _ fields) ->
+            context
+                |> rememberRecordFieldList fields
+
+        TypeAnnotation.Unit ->
+            context
+
+        TypeAnnotation.GenericType _ ->
             context
 
 
