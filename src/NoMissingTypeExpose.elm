@@ -63,6 +63,17 @@ rememberFunctionSignature maybeSignature context =
             context
 
 
+rememberRecordFieldList : List (Node TypeAnnotation.RecordField) -> Context -> Context
+rememberRecordFieldList fields context =
+    List.foldl rememberRecordField context fields
+
+
+rememberRecordField : Node TypeAnnotation.RecordField -> Context -> Context
+rememberRecordField (Node _ ( _, typeAnnotation )) context =
+    context
+        |> rememberTypeAnnotation typeAnnotation
+
+
 rememberTypeAnnotationList : List (Node TypeAnnotation) -> Context -> Context
 rememberTypeAnnotationList list context =
     List.foldl rememberTypeAnnotation context list
@@ -84,6 +95,10 @@ rememberTypeAnnotation (Node _ typeAnnotation) context =
         TypeAnnotation.Tupled list ->
             context
                 |> rememberTypeAnnotationList list
+
+        TypeAnnotation.Record fields ->
+            context
+                |> rememberRecordFieldList fields
 
         _ ->
             context

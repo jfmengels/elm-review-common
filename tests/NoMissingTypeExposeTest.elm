@@ -167,4 +167,31 @@ equal ( a, b ) =
                         }
                         |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
                     ]
+    , test "reports when an exposed function uses a private type in a record" <|
+        \() ->
+            """
+module Happiness exposing (rank)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+
+
+rank : { happiness : Happiness } -> Int
+rank { happiness } =
+    0
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                    ]
     ]
