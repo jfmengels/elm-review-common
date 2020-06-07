@@ -66,15 +66,26 @@ rememberFunctionSignature maybeSignature context =
 rememberTypeAnnotation : Node TypeAnnotation -> Context -> Context
 rememberTypeAnnotation (Node _ typeAnnotation) context =
     case typeAnnotation of
-        TypeAnnotation.Typed (Node _ ( [], name )) _ ->
-            { context
-                | exposedSignatureTypes = name :: context.exposedSignatureTypes
-            }
+        TypeAnnotation.Typed (Node _ name) list ->
+            List.foldl rememberTypeAnnotation context list
+                |> rememberExposedSignatureType name
 
         TypeAnnotation.FunctionTypeAnnotation left right ->
             context
                 |> rememberTypeAnnotation left
                 |> rememberTypeAnnotation right
+
+        _ ->
+            context
+
+
+rememberExposedSignatureType : ( List String, String ) -> Context -> Context
+rememberExposedSignatureType qualifiedName context =
+    case qualifiedName of
+        ( [], name ) ->
+            { context
+                | exposedSignatureTypes = name :: context.exposedSignatureTypes
+            }
 
         _ ->
             context

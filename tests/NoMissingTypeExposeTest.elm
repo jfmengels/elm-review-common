@@ -59,4 +59,85 @@ toString howHappy =
                         }
                         |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
                     ]
+    , test "reports when an exposed function returns a private type" <|
+        \() ->
+            """
+module Happiness exposing (ecstatic)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+
+
+ecstatic : Happiness
+ecstatic =
+    Ecstatic
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                    ]
+    , test "reports when an exposed function uses a typed private type" <|
+        \() ->
+            """
+module Happiness exposing (toString)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+
+
+toString : Maybe Happiness -> String
+toString maybeHappy =
+    "Very"
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                    ]
+    , test "reports when an exposed function uses an external typed private type" <|
+        \() ->
+            """
+module Happiness exposing (toString)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+
+
+toString : Maybe.Maybe Happiness -> String
+toString maybeHappy =
+    "Very"
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                    ]
     ]
