@@ -3,10 +3,12 @@ module NoMissingTypeExpose exposing (rule)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Exposing as Exposing exposing (Exposing)
 import Elm.Syntax.Module as Module exposing (Module)
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Signature exposing (Signature)
 import Elm.Syntax.Type as Type
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
+import Review.Project.Dependency exposing (name)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
@@ -53,8 +55,8 @@ rememberDeclaration (Node _ declaration) context =
 
 
 rememberDeclaredType : Node String -> Context -> Context
-rememberDeclaredType name context =
-    { context | declaredTypes = name :: context.declaredTypes }
+rememberDeclaredType (Node _ name) context =
+    { context | declaredTypes = Set.insert name context.declaredTypes }
 
 
 rememberValueConstructorList : Node String -> List (Node Type.ValueConstructor) -> Context -> Context
@@ -124,7 +126,7 @@ rememberTypeAnnotationList list context =
 rememberTypeAnnotation : Node TypeAnnotation -> Context -> Context
 rememberTypeAnnotation (Node _ typeAnnotation) context =
     case typeAnnotation of
-        TypeAnnotation.Typed (Node _ name) list ->
+        TypeAnnotation.Typed name list ->
             context
                 |> rememberExposedSignatureType name
                 |> rememberTypeAnnotationList list
@@ -153,39 +155,42 @@ rememberTypeAnnotation (Node _ typeAnnotation) context =
             context
 
 
-rememberExposedSignatureType : ( List String, String ) -> Context -> Context
+rememberExposedSignatureType : Node ( ModuleName, String ) -> Context -> Context
 rememberExposedSignatureType qualifiedName context =
-    case qualifiedName of
-        ( [], name ) ->
-            { context
-                | exposedSignatureTypes = name :: context.exposedSignatureTypes
-            }
-
-        _ ->
-            context
+    { context
+        | exposedSignatureTypes = qualifiedName :: context.exposedSignatureTypes
+    }
 
 
 finalEvaluation : Context -> List (Rule.Error {})
 finalEvaluation context =
-    let
-        exposedSignatureTypes : Set String
-        exposedSignatureTypes =
-            Set.fromList context.exposedSignatureTypes
-    in
-    context.declaredTypes
-        |> List.filter (isTypePrivate context.exposes)
-        |> List.filter (\(Node _ name) -> Set.member name exposedSignatureTypes)
+    context.exposedSignatureTypes
+        |> List.filter (isTypePrivate context)
         |> List.map makeError
 
 
-isTypePrivate : Exposing -> Node String -> Bool
-isTypePrivate exposes (Node _ name) =
-    case exposes of
-        Exposing.All _ ->
-            False
 
-        Exposing.Explicit list ->
-            not (List.any (isExposingATypeNamed name) list)
+-- |> List.filter (isTypePrivate context.exposes)
+-- |> List.filter (\name -> Set.member name exposedSignatureTypes)
+
+
+isTypePrivate : Context -> Node ( ModuleName, String ) -> Bool
+isTypePrivate context (Node _ ( moduleName, name )) =
+    case moduleName of
+        [] ->
+            case context.exposes of
+                Exposing.All _ ->
+                    False
+
+                Exposing.Explicit list ->
+                    if Set.member name context.declaredTypes then
+                        not (List.any (isExposingATypeNamed name) list)
+
+                    else
+                        False
+
+        _ ->
+            False
 
 
 isExposingATypeNamed : String -> Node Exposing.TopLevelExpose -> Bool
@@ -204,12 +209,12 @@ isExposingATypeNamed needle (Node _ topLevelExpose) =
             name == needle
 
 
-makeError : Node String -> Rule.Error {}
-makeError (Node range name) =
+makeError : Node ( ModuleName, String ) -> Rule.Error {}
+makeError (Node range ( _, name )) =
     Rule.error
         { message = "Private type `" ++ name ++ "` used by exposed function"
         , details =
-            [ "Type `" ++ name ++ "` is used by an exposed function but is not exposed itself."
+            [ "Type `" ++ name ++ "` is not exposed but is used by an exposed function."
             ]
         }
         range
@@ -219,12 +224,12 @@ initialContext : Context
 initialContext =
     { exposes = Exposing.Explicit []
     , exposedSignatureTypes = []
-    , declaredTypes = []
+    , declaredTypes = Set.empty
     }
 
 
 type alias Context =
     { exposes : Exposing
-    , exposedSignatureTypes : List String
-    , declaredTypes : List (Node String)
+    , exposedSignatureTypes : List (Node ( ModuleName, String ))
+    , declaredTypes : Set String
     }

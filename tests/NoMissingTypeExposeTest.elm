@@ -72,11 +72,11 @@ toString howHappy =
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 11, column = 12 }, end = { row = 11, column = 21 } }
                     ]
     , test "reports when an exposed function returns a private type" <|
         \() ->
@@ -99,11 +99,11 @@ ecstatic =
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 11, column = 12 }, end = { row = 11, column = 21 } }
                     ]
     , test "reports when an exposed function uses a typed private type" <|
         \() ->
@@ -126,11 +126,11 @@ toString maybeHappy =
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 11, column = 18 }, end = { row = 11, column = 27 } }
                     ]
     , test "reports when an exposed function uses an external typed private type" <|
         \() ->
@@ -153,11 +153,11 @@ toString maybeHappy =
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 11, column = 24 }, end = { row = 11, column = 33 } }
                     ]
     , test "reports when an exposed function uses a private type in a tuple" <|
         \() ->
@@ -180,11 +180,19 @@ equal ( a, b ) =
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 11, column = 11 }, end = { row = 11, column = 20 } }
+                    , Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 11, column = 22 }, end = { row = 11, column = 31 } }
                     ]
     , test "reports when an exposed function uses a private type in a record" <|
         \() ->
@@ -207,11 +215,11 @@ rank { happiness } =
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 11, column = 22 }, end = { row = 11, column = 31 } }
                     ]
     , test "reports when an exposed function uses a private type in a generic record" <|
         \() ->
@@ -234,11 +242,11 @@ rank { happiness } =
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 5, column = 6 }, end = { row = 5, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 11, column = 26 }, end = { row = 11, column = 35 } }
                     ]
     ]
 
@@ -299,10 +307,10 @@ type Happiness
                     [ Review.Test.error
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
-                            [ "Type `Happiness` is used by an exposed function but is not exposed itself."
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
                             ]
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 9, column = 6 }, end = { row = 9, column = 15 } }
+                        |> Review.Test.atExactly { start = { row = 6, column = 13 }, end = { row = 6, column = 22 } }
                     ]
     ]
