@@ -400,6 +400,34 @@ type Happiness
                         ]
                       )
                     ]
+    , test "reports an exposed function using an exposed type from an aliased module" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import ExposedMood as M
+
+
+toString : M.Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module ExposedMood exposing (Happiness)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectNoErrors
     , test "reports an exposed function using an internal type imported from a module" <|
         \() ->
             let
