@@ -4,6 +4,7 @@ import Elm.Module
 import Elm.Project exposing (Project)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Exposing as Exposing exposing (Exposing)
+import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
@@ -20,6 +21,7 @@ rule =
     Rule.newModuleRuleSchema "NoMissingTypeExpose" initialContext
         |> Rule.withElmJsonModuleVisitor elmJsonVisitor
         |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
+        |> Rule.withImportVisitor importVisitor
         |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withFinalModuleEvaluation finalEvaluation
         |> Rule.fromModuleRuleSchema
@@ -59,6 +61,24 @@ elmJsonVisitor maybeProject context =
 moduleDefinitionVisitor : Node Module -> Context -> ( List nothing, Context )
 moduleDefinitionVisitor (Node _ mod) context =
     ( [], { context | exposes = Module.exposingList mod } )
+
+
+importVisitor : Node Import -> Context -> ( List nothing, Context )
+importVisitor (Node _ { moduleName, moduleAlias }) context =
+    ( []
+    , case moduleAlias of
+        Just (Node _ name) ->
+            { context
+                | exposedModules =
+                    addExposedModuleAlias
+                        (Node.value moduleName)
+                        (String.join "." name)
+                        context.exposedModules
+            }
+
+        Nothing ->
+            context
+    )
 
 
 declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
@@ -236,6 +256,20 @@ isExposingATypeNamed needle (Node _ topLevelExpose) =
 
         Exposing.TypeExpose { name } ->
             name == needle
+
+
+addExposedModuleAlias : ModuleName -> String -> ExposedModules -> ExposedModules
+addExposedModuleAlias moduleName moduleAlias exposedModules =
+    case exposedModules of
+        Application ->
+            exposedModules
+
+        Package list ->
+            if List.member (String.join "." moduleName) list then
+                Package (moduleAlias :: list)
+
+            else
+                exposedModules
 
 
 isModuleExposed : ExposedModules -> ModuleName -> Bool
