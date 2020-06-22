@@ -1,5 +1,7 @@
 module NoMissingTypeExpose exposing (rule)
 
+import Elm.Module
+import Elm.Project exposing (Project)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Exposing as Exposing exposing (Exposing)
 import Elm.Syntax.Module as Module exposing (Module)
@@ -16,10 +18,42 @@ import Set exposing (Set)
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoMissingTypeExpose" initialContext
+        |> Rule.withElmJsonModuleVisitor elmJsonVisitor
         |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
         |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withFinalModuleEvaluation finalEvaluation
         |> Rule.fromModuleRuleSchema
+
+
+elmJsonVisitor : Maybe Project -> Context -> Context
+elmJsonVisitor maybeProject context =
+    case maybeProject of
+        Just (Elm.Project.Package { exposed }) ->
+            case exposed of
+                Elm.Project.ExposedList list ->
+                    { context
+                        | exposedModules =
+                            list
+                                |> List.map Elm.Module.toString
+                                |> Package
+                    }
+
+                Elm.Project.ExposedDict list ->
+                    { context
+                        | exposedModules =
+                            list
+                                |> List.concatMap
+                                    (Tuple.second
+                                        >> List.map Elm.Module.toString
+                                    )
+                                |> Package
+                    }
+
+        Just (Elm.Project.Application _) ->
+            { context | exposedModules = Application }
+
+        Nothing ->
+            context
 
 
 moduleDefinitionVisitor : Node Module -> Context -> ( List nothing, Context )
@@ -61,15 +95,15 @@ rememberDeclaredType (Node _ name) context =
 
 rememberValueConstructorList : Node String -> List (Node Type.ValueConstructor) -> Context -> Context
 rememberValueConstructorList (Node _ name) list context =
-    if isTypeExposedOpen name context.exposes then
+    if isTypeExposedOpen context.exposes name then
         List.foldl rememberValueConstructor context list
 
     else
         context
 
 
-isTypeExposedOpen : String -> Exposing -> Bool
-isTypeExposedOpen name exposes =
+isTypeExposedOpen : Exposing -> String -> Bool
+isTypeExposedOpen exposes name =
     case exposes of
         Exposing.All _ ->
             True
@@ -169,11 +203,6 @@ finalEvaluation context =
         |> List.map makeError
 
 
-
--- |> List.filter (isTypePrivate context.exposes)
--- |> List.filter (\name -> Set.member name exposedSignatureTypes)
-
-
 isTypePrivate : Context -> Node ( ModuleName, String ) -> Bool
 isTypePrivate context (Node _ ( moduleName, name )) =
     case moduleName of
@@ -190,7 +219,7 @@ isTypePrivate context (Node _ ( moduleName, name )) =
                         False
 
         _ ->
-            False
+            not (isModuleExposed context.exposedModules moduleName)
 
 
 isExposingATypeNamed : String -> Node Exposing.TopLevelExpose -> Bool
@@ -209,20 +238,40 @@ isExposingATypeNamed needle (Node _ topLevelExpose) =
             name == needle
 
 
+isModuleExposed : ExposedModules -> ModuleName -> Bool
+isModuleExposed exposedModules moduleName =
+    case exposedModules of
+        Application ->
+            True
+
+        Package list ->
+            List.member (String.join "." moduleName) list
+
+
 makeError : Node ( ModuleName, String ) -> Rule.Error {}
-makeError (Node range ( _, name )) =
+makeError (Node range typeName) =
+    let
+        formattedName =
+            formatTypeName typeName
+    in
     Rule.error
-        { message = "Private type `" ++ name ++ "` used by exposed function"
+        { message = "Private type `" ++ formattedName ++ "` used by exposed function"
         , details =
-            [ "Type `" ++ name ++ "` is not exposed but is used by an exposed function."
+            [ "Type `" ++ formattedName ++ "` is not exposed but is used by an exposed function."
             ]
         }
         range
 
 
+formatTypeName : ( ModuleName, String ) -> String
+formatTypeName ( moduleName, name ) =
+    String.join "." (moduleName ++ [ name ])
+
+
 initialContext : Context
 initialContext =
     { exposes = Exposing.Explicit []
+    , exposedModules = Application
     , exposedSignatureTypes = []
     , declaredTypes = Set.empty
     }
@@ -230,6 +279,12 @@ initialContext =
 
 type alias Context =
     { exposes : Exposing
+    , exposedModules : ExposedModules
     , exposedSignatureTypes : List (Node ( ModuleName, String ))
     , declaredTypes : Set String
     }
+
+
+type ExposedModules
+    = Application
+    | Package (List String)

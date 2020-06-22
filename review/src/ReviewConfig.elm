@@ -23,13 +23,16 @@ import NoUnused.Modules
 import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
-import Review.Rule exposing (Rule)
+import Review.Rule as Rule exposing (Rule)
 
 
 config : List Rule
 config =
     [ NoDebug.Log.rule
     , NoDebug.TodoOrToString.rule
+        |> Rule.ignoreErrorsForDirectories
+            [ "tests/"
+            ]
     , NoExposingEverything.rule
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule

@@ -1,6 +1,9 @@
 module NoMissingTypeExposeTest exposing (all)
 
+import Elm.Project
+import Json.Decode as Decode
 import NoMissingTypeExpose exposing (rule)
+import Review.Project as Project exposing (Project)
 import Review.Test
 import Test exposing (Test, describe, test)
 
@@ -10,6 +13,7 @@ all =
     describe "NoMissingTypeExpose"
         [ describe "in exposed functions" functionTests
         , describe "in exposed types" typeTests
+        , describe "in package projects" packageTests
         ]
 
 
@@ -314,3 +318,79 @@ type Happiness
                         |> Review.Test.atExactly { start = { row = 6, column = 13 }, end = { row = 6, column = 22 } }
                     ]
     ]
+
+
+packageTests : List Test
+packageTests =
+    [ test "reports a function exposed by a package module using a type from an internal module" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import Mood
+
+
+toString : Mood.Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module Mood exposing (Happiness)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectErrorsForModules
+                    [ ( "Exposed"
+                      , [ Review.Test.error
+                            { message = "Private type `Mood.Happiness` used by exposed function"
+                            , details =
+                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
+                                ]
+                            , under = "Mood.Happiness"
+                            }
+                        ]
+                      )
+                    ]
+    ]
+
+
+createElmJson : String -> { path : String, raw : String, project : Elm.Project.Project }
+createElmJson rawElmJson =
+    case Decode.decodeString Elm.Project.decoder rawElmJson of
+        Ok project ->
+            { path = "elm.json"
+            , raw = rawElmJson
+            , project = project
+            }
+
+        Err error ->
+            Debug.todo ("[elm.json]: " ++ Debug.toString error)
+
+
+packageElmJson : String
+packageElmJson =
+    """{
+    "type": "package",
+    "name": "jfmengels/review-common-tests",
+    "summary": "A test package",
+    "license": "MIT",
+    "version": "1.0.0",
+    "exposed-modules": [
+        "Exposed"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "elm/core": "1.0.2 <= v < 2.0.0"
+    },
+    "test-dependencies": {}
+}"""
