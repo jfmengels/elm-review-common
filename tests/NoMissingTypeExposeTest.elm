@@ -440,6 +440,34 @@ type Happiness
                         ]
                       )
                     ]
+    , test "does not report an exposed function using an exposed imported type" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import ExposedMood exposing (Happiness)
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module ExposedMood exposing (Happiness)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectNoErrors
     ]
 
 
@@ -465,7 +493,8 @@ packageElmJson =
     "license": "MIT",
     "version": "1.0.0",
     "exposed-modules": [
-        "Exposed"
+        "Exposed",
+        "ExposedMood"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
