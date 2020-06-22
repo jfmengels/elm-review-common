@@ -1,6 +1,7 @@
 module NoMissingTypeExpose exposing (rule)
 
 import Dict exposing (Dict)
+import Elm.Docs exposing (Module)
 import Elm.Module
 import Elm.Project exposing (Project)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
@@ -12,7 +13,7 @@ import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Signature exposing (Signature)
 import Elm.Syntax.Type as Type
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
-import Review.Project.Dependency exposing (name)
+import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
@@ -21,6 +22,7 @@ rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoMissingTypeExpose" initialContext
         |> Rule.withElmJsonModuleVisitor elmJsonVisitor
+        |> Rule.withDependenciesModuleVisitor dependencyDictVisitor
         |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
         |> Rule.withImportVisitor importVisitor
         |> Rule.withDeclarationListVisitor declarationListVisitor
@@ -57,6 +59,23 @@ elmJsonVisitor maybeProject context =
 
         Nothing ->
             context
+
+
+dependencyDictVisitor : Dict String Dependency -> Context -> Context
+dependencyDictVisitor dependencies context =
+    dependencies |> Dict.values |> List.foldl rememberDependency context
+
+
+rememberDependency : Dependency -> Context -> Context
+rememberDependency dependency context =
+    dependency |> Dependency.modules |> List.foldl rememberDependencyModule context
+
+
+rememberDependencyModule : Elm.Docs.Module -> Context -> Context
+rememberDependencyModule { name } context =
+    { context
+        | exposedModules = addExposedModule name context.exposedModules
+    }
 
 
 moduleDefinitionVisitor : Node Module -> Context -> ( List nothing, Context )
@@ -309,6 +328,16 @@ isExposingATypeNamed needle (Node _ topLevelExpose) =
 
         Exposing.TypeExpose { name } ->
             name == needle
+
+
+addExposedModule : String -> ExposedModules -> ExposedModules
+addExposedModule moduleName exposedModules =
+    case exposedModules of
+        Application ->
+            exposedModules
+
+        Package list ->
+            Package (moduleName :: list)
 
 
 addExposedModuleAlias : ModuleName -> String -> ExposedModules -> ExposedModules

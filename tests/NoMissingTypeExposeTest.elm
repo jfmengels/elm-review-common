@@ -1,9 +1,11 @@
 module NoMissingTypeExposeTest exposing (all)
 
+import Elm.Docs
 import Elm.Project
 import Json.Decode as Decode
 import NoMissingTypeExpose exposing (rule)
 import Review.Project as Project exposing (Project)
+import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Test
 import Test exposing (Test, describe, test)
 
@@ -524,17 +526,85 @@ type Happiness
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
+    , test "does not report an exposed function using a dependency's type" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+                        |> Project.addDependency dependency
+            in
+            """
+module Exposed exposing (toString)
+
+import ExternalMood exposing (Happiness)
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+"""
+                |> Review.Test.runWithProjectData project rule
+                |> Review.Test.expectNoErrors
+    , test "does not report an exposed function importing a dependency's type" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+                        |> Project.addDependency dependency
+            in
+            """
+module Exposed exposing (toString)
+
+import ExternalMood
+
+
+toString : ExternalMood.Happiness -> String
+toString happiness =
+    "Happy"
+"""
+                |> Review.Test.runWithProjectData project rule
+                |> Review.Test.expectNoErrors
+    , test "does not report an exposed function importing a dependency's type with alias" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+                        |> Project.addDependency dependency
+            in
+            """
+module Exposed exposing (toString)
+
+import ExternalMood as M
+
+
+toString : M.Happiness -> String
+toString happiness =
+    "Happy"
+"""
+                |> Review.Test.runWithProjectData project rule
+                |> Review.Test.expectNoErrors
     ]
 
 
 createElmJson : String -> { path : String, raw : String, project : Elm.Project.Project }
 createElmJson rawElmJson =
+    { path = "elm.json"
+    , raw = rawElmJson
+    , project = createElmJsonProject rawElmJson
+    }
+
+
+createElmJsonProject : String -> Elm.Project.Project
+createElmJsonProject rawElmJson =
     case Decode.decodeString Elm.Project.decoder rawElmJson of
         Ok project ->
-            { path = "elm.json"
-            , raw = rawElmJson
-            , project = project
-            }
+            project
 
         Err error ->
             Debug.todo ("[elm.json]: " ++ Debug.toString error)
@@ -556,5 +626,52 @@ packageElmJson =
     "dependencies": {
         "elm/core": "1.0.2 <= v < 2.0.0"
     },
+    "test-dependencies": {}
+}"""
+
+
+dependency : Dependency
+dependency =
+    Dependency.create
+        "sparksp/external-mood"
+        (createElmJsonProject dependencyElmJson)
+        dependencyModules
+
+
+dependencyModules : List Elm.Docs.Module
+dependencyModules =
+    [ { name = "ExternalMood"
+      , comment = ""
+      , unions =
+            [ { name = "Happiness"
+              , comment = ""
+              , args = []
+              , tags =
+                    [ ( "Ecstatic", [] )
+                    , ( "FineIGuess", [] )
+                    , ( "Unhappy", [] )
+                    ]
+              }
+            ]
+      , aliases = []
+      , values = []
+      , binops = []
+      }
+    ]
+
+
+dependencyElmJson : String
+dependencyElmJson =
+    """{
+    "type": "package",
+    "name": "sparksp/external-mood",
+    "summary": "Moods for tests",
+    "license": "MIT",
+    "version": "1.0.0",
+    "exposed-modules": [
+        "ExternalMood"
+    ],
+    "elm-version": "0.19.0 <= v <= 0.20.0",
+    "dependencies": {},
     "test-dependencies": {}
 }"""
