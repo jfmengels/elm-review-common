@@ -1,5 +1,6 @@
 module NoMissingTypeExpose exposing (rule)
 
+import Dict exposing (Dict)
 import Elm.Module
 import Elm.Project exposing (Project)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
@@ -64,21 +65,63 @@ moduleDefinitionVisitor (Node _ mod) context =
 
 
 importVisitor : Node Import -> Context -> ( List nothing, Context )
-importVisitor (Node _ { moduleName, moduleAlias }) context =
+importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
     ( []
-    , case moduleAlias of
-        Just (Node _ name) ->
+    , context
+        |> rememberImportedModuleAlias (Node.value moduleName) moduleAlias
+        |> rememberImportedExposingList (Node.value moduleName) exposingList
+    )
+
+
+rememberImportedModuleAlias : ModuleName -> Maybe (Node ModuleName) -> Context -> Context
+rememberImportedModuleAlias moduleName maybeModuleAlias context =
+    case maybeModuleAlias of
+        Just (Node _ moduleAlias) ->
             { context
                 | exposedModules =
-                    addExposedModuleAlias
-                        (Node.value moduleName)
-                        (String.join "." name)
+                    addExposedModuleAlias moduleName
+                        (String.join "." moduleAlias)
                         context.exposedModules
             }
 
         Nothing ->
             context
-    )
+
+
+rememberImportedExposingList : ModuleName -> Maybe (Node Exposing) -> Context -> Context
+rememberImportedExposingList moduleName maybeExposing context =
+    case maybeExposing of
+        Just (Node _ (Exposing.Explicit list)) ->
+            List.foldl (rememberImportedExpose moduleName) context list
+
+        Just (Node _ (Exposing.All _)) ->
+            context
+
+        Nothing ->
+            context
+
+
+rememberImportedExpose : ModuleName -> Node Exposing.TopLevelExpose -> Context -> Context
+rememberImportedExpose moduleName (Node _ expose) context =
+    case expose of
+        Exposing.TypeExpose { name } ->
+            context |> rememberImportedType moduleName name
+
+        Exposing.TypeOrAliasExpose name ->
+            context |> rememberImportedType moduleName name
+
+        Exposing.FunctionExpose _ ->
+            context
+
+        Exposing.InfixExpose _ ->
+            context
+
+
+rememberImportedType : ModuleName -> String -> Context -> Context
+rememberImportedType moduleName typeName context =
+    { context
+        | importedTypes = Dict.insert typeName moduleName context.importedTypes
+    }
 
 
 declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
@@ -224,9 +267,9 @@ finalEvaluation context =
 
 
 isTypePrivate : Context -> Node ( ModuleName, String ) -> Bool
-isTypePrivate context (Node _ ( moduleName, name )) =
-    case moduleName of
-        [] ->
+isTypePrivate context (Node _ typeCall) =
+    case moduleNameForType context typeCall of
+        ( [], name ) ->
             case context.exposes of
                 Exposing.All _ ->
                     False
@@ -238,8 +281,18 @@ isTypePrivate context (Node _ ( moduleName, name )) =
                     else
                         False
 
-        _ ->
+        ( moduleName, _ ) ->
             not (isModuleExposed context.exposedModules moduleName)
+
+
+moduleNameForType : Context -> ( ModuleName, String ) -> ( ModuleName, String )
+moduleNameForType context ( moduleName, typeName ) =
+    case Dict.get typeName context.importedTypes of
+        Just typeModuleName ->
+            ( typeModuleName, typeName )
+
+        _ ->
+            ( moduleName, typeName )
 
 
 isExposingATypeNamed : String -> Node Exposing.TopLevelExpose -> Bool
@@ -308,6 +361,7 @@ initialContext =
     , exposedModules = Application
     , exposedSignatureTypes = []
     , declaredTypes = Set.empty
+    , importedTypes = Dict.empty
     }
 
 
@@ -316,6 +370,7 @@ type alias Context =
     , exposedModules : ExposedModules
     , exposedSignatureTypes : List (Node ( ModuleName, String ))
     , declaredTypes : Set String
+    , importedTypes : Dict String ModuleName
     }
 
 
