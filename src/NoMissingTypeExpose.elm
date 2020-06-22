@@ -20,12 +20,12 @@ rule =
         |> Rule.fromModuleRuleSchema
 
 
-moduleDefinitionVisitor : Node Module -> Context -> ( List (Rule.Error {}), Context )
+moduleDefinitionVisitor : Node Module -> Context -> ( List nothing, Context )
 moduleDefinitionVisitor (Node _ mod) context =
     ( [], { context | exposes = Module.exposingList mod } )
 
 
-declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
+declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
 declarationListVisitor nodes context =
     case context.exposes of
         Exposing.All _ ->
