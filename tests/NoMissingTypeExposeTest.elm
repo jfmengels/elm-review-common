@@ -557,6 +557,43 @@ five =
                         ]
                       )
                     ]
+    , test "does not report an internal function using a type from another internal module" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Mood exposing (Happiness, toRating)
+
+import Rating exposing (Rating)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+
+
+toRating : Happiness -> Rating
+toRating happiness =
+    Rating.five
+""", """
+module Rating exposing (Rating, five)
+
+
+type Rating =
+    Rating Int
+
+
+five : Rating
+five =
+    Rating 5
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectNoErrors
     , test "does not report an exposed function using an exposed imported type" <|
         \() ->
             let
