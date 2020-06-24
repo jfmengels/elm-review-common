@@ -1,5 +1,11 @@
 module NoMissingTypeExpose exposing (rule)
 
+{-|
+
+@docs rule
+
+-}
+
 import Dict exposing (Dict)
 import Elm.Docs exposing (Module)
 import Elm.Module
@@ -18,6 +24,53 @@ import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
 
+{-| Forbids exposed functions that use or return a private type.
+
+If a used type is not exposed then it is impossible to annotate functions or values that use them outside of the module.
+
+    import NoMissingTypeExpose
+
+    config : List Rule
+    config =
+        [ NoMissingTypeExpose.rule
+        ]
+
+
+## Fail
+
+    module Happiness exposing (happy, toString)
+
+    -- Type `Happiness` is private because it's not been exposed
+
+    type Happiness
+        = Happy
+
+    -- Private type `Happiness` used by exposed function `toString`
+    toString : Happiness -> String
+    toString happiness =
+        "Happy"
+
+    -- Private type `Happiness` used by exposed function `happy`
+    happy : Happiness
+    happy =
+        Happy
+
+## Success
+
+    module Happiness exposing (Happy, happy, toString)
+
+    type Happiness
+        = Happy
+
+    toString : Happiness -> String
+    toString happiness =
+        "Happy"
+
+    happy : Happiness
+    happy =
+        Happy
+
+-}
 rule : Rule
 rule =
     Rule.newProjectRuleSchema "NoMissingTypeExpose" initialProjectContext
@@ -453,6 +506,7 @@ makeError (Node range typeName) =
         { message = "Private type `" ++ formattedName ++ "` used by exposed function"
         , details =
             [ "Type `" ++ formattedName ++ "` is not exposed but is used by an exposed function."
+            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
             ]
         }
         range

@@ -79,6 +79,7 @@ toString howHappy =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -106,6 +107,7 @@ ecstatic =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -133,6 +135,7 @@ toString maybeHappy =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -160,6 +163,7 @@ toString maybeHappy =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -187,6 +191,7 @@ equal ( a, b ) =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -195,6 +200,7 @@ equal ( a, b ) =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -222,6 +228,7 @@ rank { happiness } =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -249,6 +256,7 @@ rank { happiness } =
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -314,6 +322,7 @@ type Happiness
                         { message = "Private type `Happiness` used by exposed function"
                         , details =
                             [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                             ]
                         , under = "Happiness"
                         }
@@ -357,6 +366,7 @@ type Happiness
                             { message = "Private type `Mood.Happiness` used by exposed function"
                             , details =
                                 [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                                 ]
                             , under = "Mood.Happiness"
                             }
@@ -424,6 +434,7 @@ type Happiness
                             { message = "Private type `M.Happiness` used by exposed function"
                             , details =
                                 [ "Type `M.Happiness` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                                 ]
                             , under = "M.Happiness"
                             }
@@ -491,6 +502,7 @@ type Happiness
                             { message = "Private type `Happiness` used by exposed function"
                             , details =
                                 [ "Type `Happiness` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                                 ]
                             , under = "Happiness"
                             }
@@ -543,6 +555,7 @@ five =
                             { message = "Private type `Happiness` used by exposed function"
                             , details =
                                 [ "Type `Happiness` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                                 ]
                             , under = "Happiness"
                             }
@@ -550,6 +563,7 @@ five =
                             { message = "Private type `Rating` used by exposed function"
                             , details =
                                 [ "Type `Rating` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
                                 ]
                             , under = "Rating"
                             }
