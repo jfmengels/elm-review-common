@@ -156,11 +156,11 @@ moduleVisitor schema =
 moduleDefinitionVisitor : Node Module -> ModuleContext -> ( List nothing, ModuleContext )
 moduleDefinitionVisitor (Node _ mod) context =
     case context of
-        InternalModule allData ->
-            ( [], InternalModule { allData | exposes = Module.exposingList mod } )
+        InternalModule data ->
+            ( [], InternalModule { data | exposes = Module.exposingList mod } )
 
-        ExposedModule allData data ->
-            ( [], ExposedModule { allData | exposes = Module.exposingList mod } data )
+        ExposedModule data ->
+            ( [], ExposedModule { data | exposes = Module.exposingList mod } )
 
 
 importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
@@ -169,9 +169,9 @@ importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
         InternalModule _ ->
             ( [], context )
 
-        ExposedModule allData data ->
+        ExposedModule data ->
             ( []
-            , ExposedModule allData
+            , ExposedModule
                 (data
                     |> rememberImportedModuleAlias (Node.value moduleName) moduleAlias
                     |> rememberImportedExposingList (Node.value moduleName) exposingList
@@ -252,29 +252,37 @@ rememberDeclaration (Node _ declaration) context =
     case declaration of
         Declaration.CustomTypeDeclaration { name, constructors } ->
             case context of
-                InternalModule allData ->
-                    InternalModule (rememberExposedType name allData)
+                InternalModule data ->
+                    InternalModule (rememberExposedType name data)
 
-                ExposedModule ({ exposes } as allData) data ->
-                    ExposedModule (rememberExposedType name allData)
+                ExposedModule data ->
+                    ExposedModule
                         (data
                             |> rememberDeclaredType name
-                            |> rememberValueConstructorList exposes name constructors
+                            |> rememberValueConstructorList name constructors
                         )
+
+        Declaration.AliasDeclaration { name } ->
+            case context of
+                InternalModule data ->
+                    InternalModule (rememberExposedType name data)
+
+                ExposedModule data ->
+                    ExposedModule (rememberDeclaredType name data)
 
         Declaration.FunctionDeclaration { signature } ->
             case context of
                 InternalModule _ ->
                     context
 
-                ExposedModule ({ exposes } as allData) data ->
-                    ExposedModule allData (rememberFunctionSignature exposes signature data)
+                ExposedModule data ->
+                    ExposedModule (rememberFunctionSignature signature data)
 
         _ ->
             context
 
 
-rememberExposedType : Node String -> AnyModuleData -> AnyModuleData
+rememberExposedType : Node String -> InternalModuleData -> InternalModuleData
 rememberExposedType (Node _ name) data =
     if isTypeExposed data.exposes name then
         { data | exposedTypes = Set.insert name data.exposedTypes }
@@ -288,26 +296,26 @@ rememberDeclaredType (Node _ name) data =
     { data | declaredTypes = Set.insert name data.declaredTypes }
 
 
-rememberValueConstructorList : Exposing -> Node String -> List (Node Type.ValueConstructor) -> ExposedModuleData -> ExposedModuleData
-rememberValueConstructorList exposes (Node _ name) list data =
-    if isTypeExposedOpen exposes name then
-        List.foldl (rememberValueConstructor exposes) data list
+rememberValueConstructorList : Node String -> List (Node Type.ValueConstructor) -> ExposedModuleData -> ExposedModuleData
+rememberValueConstructorList (Node _ name) list data =
+    if isTypeExposedOpen data.exposes name then
+        List.foldl rememberValueConstructor data list
 
     else
         data
 
 
-rememberValueConstructor : Exposing -> Node Type.ValueConstructor -> ExposedModuleData -> ExposedModuleData
-rememberValueConstructor exposes (Node _ { arguments }) data =
-    rememberTypeAnnotationList exposes arguments data
+rememberValueConstructor : Node Type.ValueConstructor -> ExposedModuleData -> ExposedModuleData
+rememberValueConstructor (Node _ { arguments }) data =
+    rememberTypeAnnotationList arguments data
 
 
-rememberFunctionSignature : Exposing -> Maybe (Node Signature) -> ExposedModuleData -> ExposedModuleData
-rememberFunctionSignature exposes maybeSignature data =
+rememberFunctionSignature : Maybe (Node Signature) -> ExposedModuleData -> ExposedModuleData
+rememberFunctionSignature maybeSignature data =
     case maybeSignature of
         Just (Node _ { name, typeAnnotation }) ->
-            if Exposing.exposesFunction (Node.value name) exposes then
-                rememberTypeAnnotation exposes typeAnnotation data
+            if Exposing.exposesFunction (Node.value name) data.exposes then
+                rememberTypeAnnotation typeAnnotation data
 
             else
                 data
@@ -316,45 +324,45 @@ rememberFunctionSignature exposes maybeSignature data =
             data
 
 
-rememberRecordFieldList : Exposing -> List (Node TypeAnnotation.RecordField) -> ExposedModuleData -> ExposedModuleData
-rememberRecordFieldList exposes fields data =
-    List.foldl (rememberRecordField exposes) data fields
+rememberRecordFieldList : List (Node TypeAnnotation.RecordField) -> ExposedModuleData -> ExposedModuleData
+rememberRecordFieldList fields data =
+    List.foldl rememberRecordField data fields
 
 
-rememberRecordField : Exposing -> Node TypeAnnotation.RecordField -> ExposedModuleData -> ExposedModuleData
-rememberRecordField exposes (Node _ ( _, typeAnnotation )) data =
-    rememberTypeAnnotation exposes typeAnnotation data
+rememberRecordField : Node TypeAnnotation.RecordField -> ExposedModuleData -> ExposedModuleData
+rememberRecordField (Node _ ( _, typeAnnotation )) data =
+    rememberTypeAnnotation typeAnnotation data
 
 
-rememberTypeAnnotationList : Exposing -> List (Node TypeAnnotation) -> ExposedModuleData -> ExposedModuleData
-rememberTypeAnnotationList exposes list data =
-    List.foldl (rememberTypeAnnotation exposes) data list
+rememberTypeAnnotationList : List (Node TypeAnnotation) -> ExposedModuleData -> ExposedModuleData
+rememberTypeAnnotationList list data =
+    List.foldl rememberTypeAnnotation data list
 
 
-rememberTypeAnnotation : Exposing -> Node TypeAnnotation -> ExposedModuleData -> ExposedModuleData
-rememberTypeAnnotation exposes (Node _ typeAnnotation) data =
+rememberTypeAnnotation : Node TypeAnnotation -> ExposedModuleData -> ExposedModuleData
+rememberTypeAnnotation (Node _ typeAnnotation) data =
     case typeAnnotation of
         TypeAnnotation.Typed name list ->
             data
                 |> rememberExposedSignatureType name
-                |> rememberTypeAnnotationList exposes list
+                |> rememberTypeAnnotationList list
 
         TypeAnnotation.FunctionTypeAnnotation left right ->
             data
-                |> rememberTypeAnnotation exposes left
-                |> rememberTypeAnnotation exposes right
+                |> rememberTypeAnnotation left
+                |> rememberTypeAnnotation right
 
         TypeAnnotation.Tupled list ->
             data
-                |> rememberTypeAnnotationList exposes list
+                |> rememberTypeAnnotationList list
 
         TypeAnnotation.Record fields ->
             data
-                |> rememberRecordFieldList exposes fields
+                |> rememberRecordFieldList fields
 
         TypeAnnotation.GenericRecord _ (Node _ fields) ->
             data
-                |> rememberRecordFieldList exposes fields
+                |> rememberRecordFieldList fields
 
         TypeAnnotation.Unit ->
             data
@@ -376,18 +384,18 @@ finalEvaluation context =
         InternalModule _ ->
             []
 
-        ExposedModule { exposes } data ->
+        ExposedModule data ->
             data.exposedSignatureTypes
-                |> List.filter (isTypePrivate exposes data)
+                |> List.filter (isTypePrivate data)
                 |> List.map makeError
 
 
-isTypePrivate : Exposing -> ExposedModuleData -> Node ( ModuleName, String ) -> Bool
-isTypePrivate exposes data (Node _ typeCall) =
+isTypePrivate : ExposedModuleData -> Node ( ModuleName, String ) -> Bool
+isTypePrivate data (Node _ typeCall) =
     case moduleNameForType data typeCall of
         ( [], name ) ->
             if Set.member name data.declaredTypes then
-                not (isTypeExposed exposes name)
+                not (isTypeExposed data.exposes name)
 
             else
                 False
@@ -486,16 +494,6 @@ isModuleExposed exposedModules moduleName =
             Set.member (String.join "." moduleName) list
 
 
-getExposedTypes : ModuleContext -> Set String
-getExposedTypes context =
-    case context of
-        InternalModule { exposedTypes } ->
-            exposedTypes
-
-        ExposedModule { exposedTypes } _ ->
-            exposedTypes
-
-
 makeError : Node ( ModuleName, String ) -> Rule.Error {}
 makeError (Node range typeName) =
     let
@@ -528,9 +526,12 @@ fromProjectToModuleContext _ (Node _ moduleName) { exposedModules, moduleTypes }
 
 fromModuleToProjectContext : Rule.ModuleKey -> Node ModuleName -> ModuleContext -> ProjectContext
 fromModuleToProjectContext _ (Node _ moduleName) context =
-    { initialProjectContext
-        | moduleTypes = Dict.singleton moduleName (getExposedTypes context)
-    }
+    case context of
+        InternalModule { exposedTypes } ->
+            { initialProjectContext | moduleTypes = Dict.singleton moduleName exposedTypes }
+
+        ExposedModule _ ->
+            initialProjectContext
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
@@ -585,16 +586,17 @@ initialInternalModuleContext =
 
 initialExposedModuleContext : ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
 initialExposedModuleContext exposedModules moduleTypes =
-    ExposedModule initialAnyModuleData
+    ExposedModule
         { declaredTypes = Set.empty
         , exposedModules = exposedModules
         , exposedSignatureTypes = []
+        , exposes = Exposing.Explicit []
         , importedTypes = Dict.empty
         , moduleTypes = moduleTypes
         }
 
 
-initialAnyModuleData : AnyModuleData
+initialAnyModuleData : InternalModuleData
 initialAnyModuleData =
     { exposedTypes = Set.empty
     , exposes = Exposing.Explicit []
@@ -608,11 +610,11 @@ type alias ProjectContext =
 
 
 type ModuleContext
-    = InternalModule AnyModuleData
-    | ExposedModule AnyModuleData ExposedModuleData
+    = InternalModule InternalModuleData
+    | ExposedModule ExposedModuleData
 
 
-type alias AnyModuleData =
+type alias InternalModuleData =
     { exposedTypes : Set String
     , exposes : Exposing
     }
@@ -622,6 +624,7 @@ type alias ExposedModuleData =
     { declaredTypes : Set String
     , exposedModules : ExposedModules
     , exposedSignatureTypes : List (Node ( ModuleName, String ))
+    , exposes : Exposing
     , importedTypes : Dict String ModuleName
     , moduleTypes : Dict ModuleName (Set String)
     }

@@ -15,6 +15,7 @@ all =
     describe "NoMissingTypeExpose"
         [ describe "in exposed functions" functionTests
         , describe "in exposed types" typeTests
+        , describe "in exposed type aliases" typeAliasTests
         , describe "in package projects" packageTests
         ]
 
@@ -331,9 +332,25 @@ type Happiness
     ]
 
 
-packageTests : List Test
-packageTests =
-    [ test "does not report a function using a type alias of a private type" <|
+typeAliasTests : List Test
+typeAliasTests =
+    [ test "passes when everything is exposed" <|
+        \() ->
+            """
+module Happiness exposing (..)
+
+
+type alias Happiness =
+    { happiness : Int }
+
+
+toString : Happiness -> String
+toString howHappy =
+    "Very"
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectNoErrors
+    , test "does not report a function using an exposed type alias of a private type" <|
         \() ->
             let
                 project : Project
@@ -365,7 +382,161 @@ type Happiness
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
-    , test "reports a function exposed by a package module using a type from an internal module" <|
+    , test "reports a function using a private type alias" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            """
+module Exposed exposing (toString)
+
+
+type alias Happiness =
+    { happiness : Int }
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+"""
+                |> Review.Test.runWithProjectData project rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 9, column = 12 }, end = { row = 9, column = 21 } }
+                    ]
+    , test "reports a function using an internal type alias" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import Mood
+
+
+toString : Mood.Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module Mood exposing (Happiness)
+
+
+type alias Happiness =
+    { howHappy : Int }
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectErrorsForModules
+                    [ ( "Exposed"
+                      , [ Review.Test.error
+                            { message = "Private type `Mood.Happiness` used by exposed function"
+                            , details =
+                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                                ]
+                            , under = "Mood.Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 26 } }
+                        ]
+                      )
+                    ]
+    , test "reports a function using an internal type alias exposed via (..)" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import Mood exposing (..)
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module Mood exposing (..)
+
+
+type alias Happiness =
+    { howHappy : Int }
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectErrorsForModules
+                    [ ( "Exposed"
+                      , [ Review.Test.error
+                            { message = "Private type `Happiness` used by exposed function"
+                            , details =
+                                [ "Type `Happiness` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                                ]
+                            , under = "Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
+                        ]
+                      )
+                    ]
+    , test "reports a function using an internal type alias exposed explicitly and imported via (..)" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import Mood exposing (..)
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module Mood exposing (Happiness)
+
+
+type alias Happiness =
+    { howHappy : Int }
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectErrorsForModules
+                    [ ( "Exposed"
+                      , [ Review.Test.error
+                            { message = "Private type `Happiness` used by exposed function"
+                            , details =
+                                [ "Type `Happiness` is not exposed but is used by an exposed function."
+                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                                ]
+                            , under = "Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
+                        ]
+                      )
+                    ]
+    ]
+
+
+packageTests : List Test
+packageTests =
+    [ test "reports a function exposed by a package module using a type from an internal module" <|
         \() ->
             let
                 project : Project
@@ -687,6 +858,34 @@ toString happiness =
     "Happy"
 """, """
 module ExposedMood exposing (Happiness)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectNoErrors
+    , test "does not report an exposed function using an type exposed all and imported all" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import ExposedMood exposing (..)
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module ExposedMood exposing (..)
 
 
 type Happiness
