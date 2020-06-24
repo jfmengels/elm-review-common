@@ -333,7 +333,39 @@ type Happiness
 
 packageTests : List Test
 packageTests =
-    [ test "reports a function exposed by a package module using a type from an internal module" <|
+    [ test "does not report a function using a type alias of a private type" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (Happiness, toString)
+
+import Mood
+
+
+type alias Happiness =
+    Mood.Happiness
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module Mood exposing (Happiness)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectNoErrors
+    , test "reports a function exposed by a package module using a type from an internal module" <|
         \() ->
             let
                 project : Project
