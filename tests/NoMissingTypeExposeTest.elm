@@ -498,6 +498,65 @@ type Happiness
                         ]
                       )
                     ]
+    , test "reports an exposed function using an internal type imported exposing all" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toRating)
+
+import Mood exposing (..)
+import Rating exposing (..)
+
+
+toRating : Happiness -> Rating
+toRating happiness =
+    Rating.five
+""", """
+module Mood exposing (Happiness)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+""", """
+module Rating exposing (Rating, five)
+
+
+type Rating =
+    Rating Int
+
+
+five : Rating
+five =
+    Rating 5
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectErrorsForModules
+                    [ ( "Exposed"
+                      , [ Review.Test.error
+                            { message = "Private type `Happiness` used by exposed function"
+                            , details =
+                                [ "Type `Happiness` is not exposed but is used by an exposed function."
+                                ]
+                            , under = "Happiness"
+                            }
+                        , Review.Test.error
+                            { message = "Private type `Rating` used by exposed function"
+                            , details =
+                                [ "Type `Rating` is not exposed but is used by an exposed function."
+                                ]
+                            , under = "Rating"
+                            }
+                            |> Review.Test.atExactly { start = { row = 8, column = 25 }, end = { row = 8, column = 31 } }
+                        ]
+                      )
+                    ]
     , test "does not report an exposed function using an exposed imported type" <|
         \() ->
             let
@@ -510,6 +569,34 @@ type Happiness
 module Exposed exposing (toString)
 
 import ExposedMood exposing (Happiness)
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+""", """
+module ExposedMood exposing (Happiness)
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+""" ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectNoErrors
+    , test "does not report an exposed function using an exposed type imported all" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+            in
+            [ """
+module Exposed exposing (toString)
+
+import ExposedMood exposing (..)
 
 
 toString : Happiness -> String
@@ -539,6 +626,27 @@ type Happiness
 module Exposed exposing (toString)
 
 import ExternalMood exposing (Happiness)
+
+
+toString : Happiness -> String
+toString happiness =
+    "Happy"
+"""
+                |> Review.Test.runWithProjectData project rule
+                |> Review.Test.expectNoErrors
+    , test "does not report an exposed function using a dependency's type exposing all" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+                        |> Project.addDependency dependency
+            in
+            """
+module Exposed exposing (toString)
+
+import ExternalMood exposing (..)
 
 
 toString : Happiness -> String

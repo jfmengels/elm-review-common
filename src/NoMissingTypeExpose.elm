@@ -20,26 +20,40 @@ import Set exposing (Set)
 
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoMissingTypeExpose" initialContext
-        |> Rule.withElmJsonModuleVisitor elmJsonVisitor
-        |> Rule.withDependenciesModuleVisitor dependencyDictVisitor
-        |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
-        |> Rule.withImportVisitor importVisitor
-        |> Rule.withDeclarationListVisitor declarationListVisitor
-        |> Rule.withFinalModuleEvaluation finalEvaluation
-        |> Rule.fromModuleRuleSchema
+    Rule.newProjectRuleSchema "NoMissingTypeExpose" initialProjectContext
+        |> Rule.withElmJsonProjectVisitor elmJsonVisitor
+        |> Rule.withDependenciesProjectVisitor dependencyDictVisitor
+        |> Rule.withModuleVisitor moduleVisitor
+        |> Rule.withContextFromImportedModules
+        |> Rule.withModuleContext
+            { fromProjectToModule = fromProjectToModuleContext
+            , fromModuleToProject = fromModuleToProjectContext
+            , foldProjectContexts = foldProjectContexts
+            }
+        |> Rule.fromProjectRuleSchema
 
 
-elmJsonVisitor : Maybe Project -> Context -> Context
+elmJsonVisitor : Maybe { elmJsonKey : Rule.ElmJsonKey, project : Project } -> ProjectContext -> ( List nothing, ProjectContext )
 elmJsonVisitor maybeProject context =
     case maybeProject of
-        Just (Elm.Project.Package { exposed }) ->
+        Just { project } ->
+            ( [], context |> rememberElmJsonProject project )
+
+        Nothing ->
+            ( [], context )
+
+
+rememberElmJsonProject : Project -> ProjectContext -> ProjectContext
+rememberElmJsonProject project context =
+    case project of
+        Elm.Project.Package { exposed } ->
             case exposed of
                 Elm.Project.ExposedList list ->
                     { context
                         | exposedModules =
                             list
                                 |> List.map Elm.Module.toString
+                                |> Set.fromList
                                 |> Package
                     }
 
@@ -51,39 +65,48 @@ elmJsonVisitor maybeProject context =
                                     (Tuple.second
                                         >> List.map Elm.Module.toString
                                     )
+                                |> Set.fromList
                                 |> Package
                     }
 
-        Just (Elm.Project.Application _) ->
+        Elm.Project.Application _ ->
             { context | exposedModules = Application }
 
-        Nothing ->
-            context
 
-
-dependencyDictVisitor : Dict String Dependency -> Context -> Context
+dependencyDictVisitor : Dict String Dependency -> ProjectContext -> ( List nothing, ProjectContext )
 dependencyDictVisitor dependencies context =
-    dependencies |> Dict.values |> List.foldl rememberDependency context
+    ( [], dependencies |> Dict.values |> List.foldl rememberDependency context )
 
 
-rememberDependency : Dependency -> Context -> Context
+rememberDependency : Dependency -> ProjectContext -> ProjectContext
 rememberDependency dependency context =
     dependency |> Dependency.modules |> List.foldl rememberDependencyModule context
 
 
-rememberDependencyModule : Elm.Docs.Module -> Context -> Context
+rememberDependencyModule : Elm.Docs.Module -> ProjectContext -> ProjectContext
 rememberDependencyModule { name } context =
     { context
         | exposedModules = addExposedModule name context.exposedModules
     }
 
 
-moduleDefinitionVisitor : Node Module -> Context -> ( List nothing, Context )
+moduleVisitor :
+    Rule.ModuleRuleSchema state ModuleContext
+    -> Rule.ModuleRuleSchema { state | hasAtLeastOneVisitor : () } ModuleContext
+moduleVisitor schema =
+    schema
+        |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
+        |> Rule.withImportVisitor importVisitor
+        |> Rule.withDeclarationListVisitor declarationListVisitor
+        |> Rule.withFinalModuleEvaluation finalEvaluation
+
+
+moduleDefinitionVisitor : Node Module -> ModuleContext -> ( List nothing, ModuleContext )
 moduleDefinitionVisitor (Node _ mod) context =
     ( [], { context | exposes = Module.exposingList mod } )
 
 
-importVisitor : Node Import -> Context -> ( List nothing, Context )
+importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
 importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
     ( []
     , context
@@ -92,7 +115,7 @@ importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
     )
 
 
-rememberImportedModuleAlias : ModuleName -> Maybe (Node ModuleName) -> Context -> Context
+rememberImportedModuleAlias : ModuleName -> Maybe (Node ModuleName) -> ModuleContext -> ModuleContext
 rememberImportedModuleAlias moduleName maybeModuleAlias context =
     case maybeModuleAlias of
         Just (Node _ moduleAlias) ->
@@ -107,20 +130,20 @@ rememberImportedModuleAlias moduleName maybeModuleAlias context =
             context
 
 
-rememberImportedExposingList : ModuleName -> Maybe (Node Exposing) -> Context -> Context
+rememberImportedExposingList : ModuleName -> Maybe (Node Exposing) -> ModuleContext -> ModuleContext
 rememberImportedExposingList moduleName maybeExposing context =
     case maybeExposing of
         Just (Node _ (Exposing.Explicit list)) ->
             List.foldl (rememberImportedExpose moduleName) context list
 
         Just (Node _ (Exposing.All _)) ->
-            context
+            rememberImportedModuleTypes moduleName context
 
         Nothing ->
             context
 
 
-rememberImportedExpose : ModuleName -> Node Exposing.TopLevelExpose -> Context -> Context
+rememberImportedExpose : ModuleName -> Node Exposing.TopLevelExpose -> ModuleContext -> ModuleContext
 rememberImportedExpose moduleName (Node _ expose) context =
     case expose of
         Exposing.TypeExpose { name } ->
@@ -136,30 +159,36 @@ rememberImportedExpose moduleName (Node _ expose) context =
             context
 
 
-rememberImportedType : ModuleName -> String -> Context -> Context
+rememberImportedModuleTypes : ModuleName -> ModuleContext -> ModuleContext
+rememberImportedModuleTypes moduleName context =
+    case Dict.get moduleName context.moduleTypes of
+        Just types ->
+            Set.foldl (rememberImportedType moduleName) context types
+
+        Nothing ->
+            context
+
+
+rememberImportedType : ModuleName -> String -> ModuleContext -> ModuleContext
 rememberImportedType moduleName typeName context =
     { context
         | importedTypes = Dict.insert typeName moduleName context.importedTypes
     }
 
 
-declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
+declarationListVisitor : List (Node Declaration) -> ModuleContext -> ( List nothing, ModuleContext )
 declarationListVisitor nodes context =
-    case context.exposes of
-        Exposing.All _ ->
-            ( [], context )
-
-        _ ->
-            ( []
-            , List.foldl rememberDeclaration context nodes
-            )
+    ( []
+    , List.foldl rememberDeclaration context nodes
+    )
 
 
-rememberDeclaration : Node Declaration -> Context -> Context
+rememberDeclaration : Node Declaration -> ModuleContext -> ModuleContext
 rememberDeclaration (Node _ declaration) context =
     case declaration of
         Declaration.CustomTypeDeclaration { name, constructors } ->
             context
+                |> rememberExposedType name
                 |> rememberDeclaredType name
                 |> rememberValueConstructorList name constructors
 
@@ -170,12 +199,21 @@ rememberDeclaration (Node _ declaration) context =
             context
 
 
-rememberDeclaredType : Node String -> Context -> Context
+rememberExposedType : Node String -> ModuleContext -> ModuleContext
+rememberExposedType (Node _ name) context =
+    if isTypeExposed context.exposes name then
+        { context | exposedTypes = Set.insert name context.exposedTypes }
+
+    else
+        context
+
+
+rememberDeclaredType : Node String -> ModuleContext -> ModuleContext
 rememberDeclaredType (Node _ name) context =
     { context | declaredTypes = Set.insert name context.declaredTypes }
 
 
-rememberValueConstructorList : Node String -> List (Node Type.ValueConstructor) -> Context -> Context
+rememberValueConstructorList : Node String -> List (Node Type.ValueConstructor) -> ModuleContext -> ModuleContext
 rememberValueConstructorList (Node _ name) list context =
     if isTypeExposedOpen context.exposes name then
         List.foldl rememberValueConstructor context list
@@ -184,32 +222,12 @@ rememberValueConstructorList (Node _ name) list context =
         context
 
 
-isTypeExposedOpen : Exposing -> String -> Bool
-isTypeExposedOpen exposes name =
-    case exposes of
-        Exposing.All _ ->
-            True
-
-        Exposing.Explicit list ->
-            List.any (isExposingAnOpenTypeNamed name) list
-
-
-isExposingAnOpenTypeNamed : String -> Node Exposing.TopLevelExpose -> Bool
-isExposingAnOpenTypeNamed needle (Node _ expose) =
-    case expose of
-        Exposing.TypeExpose { name, open } ->
-            name == needle && open /= Nothing
-
-        _ ->
-            False
-
-
-rememberValueConstructor : Node Type.ValueConstructor -> Context -> Context
+rememberValueConstructor : Node Type.ValueConstructor -> ModuleContext -> ModuleContext
 rememberValueConstructor (Node _ { arguments }) context =
     rememberTypeAnnotationList arguments context
 
 
-rememberFunctionSignature : Maybe (Node Signature) -> Context -> Context
+rememberFunctionSignature : Maybe (Node Signature) -> ModuleContext -> ModuleContext
 rememberFunctionSignature maybeSignature context =
     case maybeSignature of
         Just (Node _ { name, typeAnnotation }) ->
@@ -223,23 +241,23 @@ rememberFunctionSignature maybeSignature context =
             context
 
 
-rememberRecordFieldList : List (Node TypeAnnotation.RecordField) -> Context -> Context
+rememberRecordFieldList : List (Node TypeAnnotation.RecordField) -> ModuleContext -> ModuleContext
 rememberRecordFieldList fields context =
     List.foldl rememberRecordField context fields
 
 
-rememberRecordField : Node TypeAnnotation.RecordField -> Context -> Context
+rememberRecordField : Node TypeAnnotation.RecordField -> ModuleContext -> ModuleContext
 rememberRecordField (Node _ ( _, typeAnnotation )) context =
     context
         |> rememberTypeAnnotation typeAnnotation
 
 
-rememberTypeAnnotationList : List (Node TypeAnnotation) -> Context -> Context
+rememberTypeAnnotationList : List (Node TypeAnnotation) -> ModuleContext -> ModuleContext
 rememberTypeAnnotationList list context =
     List.foldl rememberTypeAnnotation context list
 
 
-rememberTypeAnnotation : Node TypeAnnotation -> Context -> Context
+rememberTypeAnnotation : Node TypeAnnotation -> ModuleContext -> ModuleContext
 rememberTypeAnnotation (Node _ typeAnnotation) context =
     case typeAnnotation of
         TypeAnnotation.Typed name list ->
@@ -271,40 +289,35 @@ rememberTypeAnnotation (Node _ typeAnnotation) context =
             context
 
 
-rememberExposedSignatureType : Node ( ModuleName, String ) -> Context -> Context
+rememberExposedSignatureType : Node ( ModuleName, String ) -> ModuleContext -> ModuleContext
 rememberExposedSignatureType qualifiedName context =
     { context
         | exposedSignatureTypes = qualifiedName :: context.exposedSignatureTypes
     }
 
 
-finalEvaluation : Context -> List (Rule.Error {})
+finalEvaluation : ModuleContext -> List (Rule.Error {})
 finalEvaluation context =
     context.exposedSignatureTypes
         |> List.filter (isTypePrivate context)
         |> List.map makeError
 
 
-isTypePrivate : Context -> Node ( ModuleName, String ) -> Bool
+isTypePrivate : ModuleContext -> Node ( ModuleName, String ) -> Bool
 isTypePrivate context (Node _ typeCall) =
     case moduleNameForType context typeCall of
         ( [], name ) ->
-            case context.exposes of
-                Exposing.All _ ->
-                    False
+            if Set.member name context.declaredTypes then
+                not (isTypeExposed context.exposes name)
 
-                Exposing.Explicit list ->
-                    if Set.member name context.declaredTypes then
-                        not (List.any (isExposingATypeNamed name) list)
-
-                    else
-                        False
+            else
+                False
 
         ( moduleName, _ ) ->
             not (isModuleExposed context.exposedModules moduleName)
 
 
-moduleNameForType : Context -> ( ModuleName, String ) -> ( ModuleName, String )
+moduleNameForType : ModuleContext -> ( ModuleName, String ) -> ( ModuleName, String )
 moduleNameForType context ( moduleName, typeName ) =
     case Dict.get typeName context.importedTypes of
         Just typeModuleName ->
@@ -312,6 +325,26 @@ moduleNameForType context ( moduleName, typeName ) =
 
         _ ->
             ( moduleName, typeName )
+
+
+isTypeExposed : Exposing -> String -> Bool
+isTypeExposed exposes name =
+    case exposes of
+        Exposing.All _ ->
+            True
+
+        Exposing.Explicit list ->
+            List.any (isExposingATypeNamed name) list
+
+
+isTypeExposedOpen : Exposing -> String -> Bool
+isTypeExposedOpen exposes name =
+    case exposes of
+        Exposing.All _ ->
+            True
+
+        Exposing.Explicit list ->
+            List.any (isExposingAnOpenTypeNamed name) list
 
 
 isExposingATypeNamed : String -> Node Exposing.TopLevelExpose -> Bool
@@ -330,6 +363,16 @@ isExposingATypeNamed needle (Node _ topLevelExpose) =
             name == needle
 
 
+isExposingAnOpenTypeNamed : String -> Node Exposing.TopLevelExpose -> Bool
+isExposingAnOpenTypeNamed needle (Node _ expose) =
+    case expose of
+        Exposing.TypeExpose { name, open } ->
+            name == needle && open /= Nothing
+
+        _ ->
+            False
+
+
 addExposedModule : String -> ExposedModules -> ExposedModules
 addExposedModule moduleName exposedModules =
     case exposedModules of
@@ -337,7 +380,7 @@ addExposedModule moduleName exposedModules =
             exposedModules
 
         Package list ->
-            Package (moduleName :: list)
+            Package (Set.insert moduleName list)
 
 
 addExposedModuleAlias : ModuleName -> String -> ExposedModules -> ExposedModules
@@ -347,8 +390,8 @@ addExposedModuleAlias moduleName moduleAlias exposedModules =
             exposedModules
 
         Package list ->
-            if List.member (String.join "." moduleName) list then
-                Package (moduleAlias :: list)
+            if Set.member (String.join "." moduleName) list then
+                Package (Set.insert moduleAlias list)
 
             else
                 exposedModules
@@ -361,7 +404,7 @@ isModuleExposed exposedModules moduleName =
             True
 
         Package list ->
-            List.member (String.join "." moduleName) list
+            Set.member (String.join "." moduleName) list
 
 
 makeError : Node ( ModuleName, String ) -> Rule.Error {}
@@ -384,25 +427,92 @@ formatTypeName ( moduleName, name ) =
     String.join "." (moduleName ++ [ name ])
 
 
-initialContext : Context
-initialContext =
-    { exposes = Exposing.Explicit []
-    , exposedModules = Application
-    , exposedSignatureTypes = []
-    , declaredTypes = Set.empty
-    , importedTypes = Dict.empty
+fromProjectToModuleContext : Rule.ModuleKey -> Node ModuleName -> ProjectContext -> ModuleContext
+fromProjectToModuleContext _ _ { exposedModules, moduleTypes } =
+    initialModuleContext exposedModules moduleTypes
+
+
+fromModuleToProjectContext : Rule.ModuleKey -> Node ModuleName -> ModuleContext -> ProjectContext
+fromModuleToProjectContext _ (Node _ moduleName) { exposedTypes } =
+    { initialProjectContext
+        | moduleTypes = Dict.singleton moduleName exposedTypes
     }
 
 
-type alias Context =
+foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
+foldProjectContexts old new =
+    { exposedModules = foldExposedModules old.exposedModules new.exposedModules
+    , moduleTypes = foldModuleTypes old.moduleTypes new.moduleTypes
+    }
+
+
+foldExposedModules : ExposedModules -> ExposedModules -> ExposedModules
+foldExposedModules oldExposedModules newExposedModules =
+    case ( oldExposedModules, newExposedModules ) of
+        ( Application, Application ) ->
+            Application
+
+        ( Application, Package _ ) ->
+            newExposedModules
+
+        ( Package _, Application ) ->
+            oldExposedModules
+
+        ( Package oldList, Package newList ) ->
+            Package (Set.union oldList newList)
+
+
+foldModuleTypes : Dict ModuleName (Set String) -> Dict ModuleName (Set String) -> Dict ModuleName (Set String)
+foldModuleTypes oldModuleTypes newModuleTypes =
+    Dict.foldl foldModuleTypesHelp oldModuleTypes newModuleTypes
+
+
+foldModuleTypesHelp : ModuleName -> Set String -> Dict ModuleName (Set String) -> Dict ModuleName (Set String)
+foldModuleTypesHelp moduleName newTypes moduleTypes =
+    case Dict.get moduleName moduleTypes of
+        Just oldTypes ->
+            Dict.insert moduleName (Set.union oldTypes newTypes) moduleTypes
+
+        Nothing ->
+            Dict.insert moduleName newTypes moduleTypes
+
+
+initialProjectContext : ProjectContext
+initialProjectContext =
+    { exposedModules = Application
+    , moduleTypes = Dict.empty
+    }
+
+
+initialModuleContext : ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
+initialModuleContext exposedModules moduleTypes =
+    { exposes = Exposing.Explicit []
+    , exposedModules = exposedModules
+    , exposedSignatureTypes = []
+    , exposedTypes = Set.empty
+    , declaredTypes = Set.empty
+    , importedTypes = Dict.empty
+    , moduleTypes = moduleTypes
+    }
+
+
+type alias ProjectContext =
+    { exposedModules : ExposedModules
+    , moduleTypes : Dict ModuleName (Set String)
+    }
+
+
+type alias ModuleContext =
     { exposes : Exposing
     , exposedModules : ExposedModules
     , exposedSignatureTypes : List (Node ( ModuleName, String ))
+    , exposedTypes : Set String
     , declaredTypes : Set String
     , importedTypes : Dict String ModuleName
+    , moduleTypes : Dict ModuleName (Set String)
     }
 
 
 type ExposedModules
     = Application
-    | Package (List String)
+    | Package (Set String)
