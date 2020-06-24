@@ -11,6 +11,7 @@ when inside the directory containing this file.
 
 -}
 
+import Documentation.ReadmeLinksPointToCurrentVersion
 import NoDebug.Log
 import NoDebug.TodoOrToString
 import NoExposingEverything
@@ -28,7 +29,8 @@ import Review.Rule exposing (Rule)
 
 config : List Rule
 config =
-    [ NoDebug.Log.rule
+    [ Documentation.ReadmeLinksPointToCurrentVersion.rule
+    , NoDebug.Log.rule
     , NoDebug.TodoOrToString.rule
     , NoExposingEverything.rule
     , NoImportingEverything.rule []
