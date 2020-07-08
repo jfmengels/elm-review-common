@@ -86,11 +86,11 @@ rule =
         |> Rule.fromProjectRuleSchema
 
 
-elmJsonVisitor : Maybe { elmJsonKey : Rule.ElmJsonKey, project : Project } -> ProjectContext -> ( List nothing, ProjectContext )
+elmJsonVisitor : Maybe { a | project : Project } -> ProjectContext -> ( List nothing, ProjectContext )
 elmJsonVisitor maybeProject context =
     case maybeProject of
         Just { project } ->
-            ( [], context |> rememberElmJsonProject project )
+            ( [], rememberElmJsonProject project context )
 
         Nothing ->
             ( [], context )
@@ -535,14 +535,14 @@ fromModuleToProjectContext _ (Node _ moduleName) context =
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
-foldProjectContexts old new =
-    { exposedModules = foldExposedModules old.exposedModules new.exposedModules
-    , moduleTypes = foldModuleTypes old.moduleTypes new.moduleTypes
+foldProjectContexts new old =
+    { exposedModules = foldExposedModules new.exposedModules old.exposedModules
+    , moduleTypes = foldModuleTypes new.moduleTypes old.moduleTypes
     }
 
 
 foldExposedModules : ExposedModules -> ExposedModules -> ExposedModules
-foldExposedModules oldExposedModules newExposedModules =
+foldExposedModules newExposedModules oldExposedModules =
     case ( oldExposedModules, newExposedModules ) of
         ( Application, Application ) ->
             Application
@@ -558,8 +558,8 @@ foldExposedModules oldExposedModules newExposedModules =
 
 
 foldModuleTypes : Dict ModuleName (Set String) -> Dict ModuleName (Set String) -> Dict ModuleName (Set String)
-foldModuleTypes oldModuleTypes newModuleTypes =
-    Dict.foldl foldModuleTypesHelp oldModuleTypes newModuleTypes
+foldModuleTypes newModuleTypes oldModuleTypes =
+    Dict.foldl foldModuleTypesHelp newModuleTypes oldModuleTypes
 
 
 foldModuleTypesHelp : ModuleName -> Set String -> Dict ModuleName (Set String) -> Dict ModuleName (Set String)
