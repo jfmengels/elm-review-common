@@ -28,7 +28,7 @@ import Set exposing (Set)
 
 {-| Reports types that should be exposed but are not.
 
-If a used type is not exposed then can be impossible to annotate functions or values that use them outside of the module. Affected types may be used in exposed function signatures, type aliases or other custom types.
+If a type is not exposed then it can be impossible to annotate functions or values that use them outside of the module. Affected types may be used in exposed function signatures, type aliases or other custom types.
 
     import NoMissingTypeExpose
 
@@ -52,7 +52,7 @@ If a used type is not exposed then can be impossible to annotate functions or va
     toString happiness =
         "Happy"
 
-    -- Private type `Happiness` used by exposed function `happy`
+    -- Private type `Happiness` used by exposed value `happy`
     happy : Happiness
     happy =
         Happy
@@ -604,10 +604,9 @@ makeError exposingListStart (Node range typeName) =
             formatTypeName typeName
     in
     Rule.errorWithFix
-        { message = "Private type `" ++ formattedName ++ "` used by exposed function"
+        { message = "Private type `" ++ formattedName ++ "` should be exposed"
         , details =
-            [ "Type `" ++ formattedName ++ "` is not exposed but is used by an exposed function."
-            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+            [ "Users of this module will not be able to annotate a value of this type if they wanted to. You should expose this type or an alias of this type."
             ]
         }
         range

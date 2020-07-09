@@ -20,6 +20,12 @@ all =
         ]
 
 
+details : List String
+details =
+    [ "Users of this module will not be able to annotate a value of this type if they wanted to. You should expose this type or an alias of this type."
+    ]
+
+
 functionTests : List Test
 functionTests =
     [ test "passes when everything is exposed" <|
@@ -77,11 +83,8 @@ toString howHappy =
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 12 }, end = { row = 11, column = 21 } }
@@ -120,11 +123,8 @@ ecstatic =
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 12 }, end = { row = 11, column = 21 } }
@@ -163,11 +163,8 @@ toString maybeHappy =
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 18 }, end = { row = 11, column = 27 } }
@@ -206,11 +203,8 @@ toString maybeHappy =
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 24 }, end = { row = 11, column = 33 } }
@@ -249,11 +243,8 @@ equal ( a, b ) =
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 11 }, end = { row = 11, column = 20 } }
@@ -273,11 +264,8 @@ equal ( a, b ) =
     a == b
 """
                     , Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 22 }, end = { row = 11, column = 31 } }
@@ -316,11 +304,8 @@ rank { happiness } =
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 22 }, end = { row = 11, column = 31 } }
@@ -359,11 +344,8 @@ rank { happiness } =
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 11, column = 26 }, end = { row = 11, column = 35 } }
@@ -440,11 +422,8 @@ type Happiness
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 6, column = 13 }, end = { row = 6, column = 22 } }
@@ -481,11 +460,8 @@ type Happiness
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 6, column = 11 }, end = { row = 6, column = 20 } }
@@ -539,11 +515,8 @@ type Happiness
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 6, column = 19 }, end = { row = 6, column = 28 } }
@@ -580,11 +553,8 @@ type Happiness
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 6, column = 23 }, end = { row = 6, column = 32 } }
@@ -621,11 +591,8 @@ type Happiness
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 6, column = 7 }, end = { row = 6, column = 16 } }
@@ -662,11 +629,8 @@ type Happiness
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 6, column = 5 }, end = { row = 6, column = 14 } }
@@ -761,11 +725,8 @@ toString happiness =
                 |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
-                        { message = "Private type `Happiness` used by exposed function"
-                        , details =
-                            [ "Type `Happiness` is not exposed but is used by an exposed function."
-                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                            ]
+                        { message = "Private type `Happiness` should be exposed"
+                        , details = details
                         , under = "Happiness"
                         }
                         |> Review.Test.atExactly { start = { row = 9, column = 12 }, end = { row = 9, column = 21 } }
@@ -811,11 +772,8 @@ type alias Happiness =
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `Mood.Happiness` used by exposed function"
-                            , details =
-                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `Mood.Happiness` should be exposed"
+                            , details = details
                             , under = "Mood.Happiness"
                             }
                             |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 26 } }
@@ -850,11 +808,8 @@ type alias Happiness =
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `Mood.Happiness` used by exposed function"
-                            , details =
-                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `Mood.Happiness` should be exposed"
+                            , details = details
                             , under = "Happiness"
                             }
                             |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
@@ -889,11 +844,8 @@ type alias Happiness =
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `Mood.Happiness` used by exposed function"
-                            , details =
-                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `Mood.Happiness` should be exposed"
+                            , details = details
                             , under = "Happiness"
                             }
                             |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
@@ -935,11 +887,8 @@ type Happiness
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `Mood.Happiness` used by exposed function"
-                            , details =
-                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `Mood.Happiness` should be exposed"
+                            , details = details
                             , under = "Mood.Happiness"
                             }
                         ]
@@ -1003,11 +952,8 @@ type Happiness
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `M.Happiness` used by exposed function"
-                            , details =
-                                [ "Type `M.Happiness` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `M.Happiness` should be exposed"
+                            , details = details
                             , under = "M.Happiness"
                             }
                         ]
@@ -1071,11 +1017,8 @@ type Happiness
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `Mood.Happiness` used by exposed function"
-                            , details =
-                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `Mood.Happiness` should be exposed"
+                            , details = details
                             , under = "Happiness"
                             }
                             |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
@@ -1124,19 +1067,13 @@ five =
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `Mood.Happiness` used by exposed function"
-                            , details =
-                                [ "Type `Mood.Happiness` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `Mood.Happiness` should be exposed"
+                            , details = details
                             , under = "Happiness"
                             }
                         , Review.Test.error
-                            { message = "Private type `Rating.Rating` used by exposed function"
-                            , details =
-                                [ "Type `Rating.Rating` is not exposed but is used by an exposed function."
-                                , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
-                                ]
+                            { message = "Private type `Rating.Rating` should be exposed"
+                            , details = details
                             , under = "Rating"
                             }
                             |> Review.Test.atExactly { start = { row = 8, column = 25 }, end = { row = 8, column = 31 } }
