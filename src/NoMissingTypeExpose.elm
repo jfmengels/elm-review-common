@@ -26,9 +26,9 @@ import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
 
-{-| Forbids exposed functions that use or return a private type.
+{-| Reports types that should be exposed but are not.
 
-If a used type is not exposed then it is impossible to annotate functions or values that use them outside of the module.
+If a used type is not exposed then can be impossible to annotate functions or values that use them outside of the module. Affected types may be used in exposed function signatures, type aliases or other custom types.
 
     import NoMissingTypeExpose
 
