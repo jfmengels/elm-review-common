@@ -59,7 +59,7 @@ If a used type is not exposed then it is impossible to annotate functions or val
 
 ## Success
 
-    module Happiness exposing (Happy, happy, toString)
+    module Happiness exposing (Happiness, happy, toString)
 
     type Happiness
         = Happy
