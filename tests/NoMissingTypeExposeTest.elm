@@ -463,6 +463,211 @@ type Happiness
     | Unhappy
 """
                     ]
+    , test "reports when an exposed typed type alias uses a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood)
+
+
+type alias Mood =
+    Maybe Happiness
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 6, column = 11 }, end = { row = 6, column = 20 } }
+                        |> Review.Test.whenFixed
+                            """
+module Happiness exposing (Happiness, Mood)
+
+
+type alias Mood =
+    Maybe Happiness
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                    ]
+    , test "reports when an exposed record type alias uses a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood)
+
+
+type alias Mood =
+    { happiness : Happiness }
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 6, column = 19 }, end = { row = 6, column = 28 } }
+                        |> Review.Test.whenFixed
+                            """
+module Happiness exposing (Happiness, Mood)
+
+
+type alias Mood =
+    { happiness : Happiness }
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                    ]
+    , test "reports when an exposed extended record type alias uses a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood)
+
+
+type alias Mood =
+    { a | happiness : Happiness }
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 6, column = 23 }, end = { row = 6, column = 32 } }
+                        |> Review.Test.whenFixed
+                            """
+module Happiness exposing (Happiness, Mood)
+
+
+type alias Mood =
+    { a | happiness : Happiness }
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                    ]
+    , test "reports when an exposed tuple type alias uses a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood)
+
+
+type alias Mood =
+    ( Happiness, Int )
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 6, column = 7 }, end = { row = 6, column = 16 } }
+                        |> Review.Test.whenFixed
+                            """
+module Happiness exposing (Happiness, Mood)
+
+
+type alias Mood =
+    ( Happiness, Int )
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                    ]
+    , test "reports when an exposed function type alias uses a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood)
+
+
+type alias Mood =
+    Happiness -> Int
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Private type `Happiness` used by exposed function"
+                        , details =
+                            [ "Type `Happiness` is not exposed but is used by an exposed function."
+                            , "Callers of this function will not be able to annotate other functions or variables that use this type outside of the module. You should expose this type or an alias of this type."
+                            ]
+                        , under = "Happiness"
+                        }
+                        |> Review.Test.atExactly { start = { row = 6, column = 5 }, end = { row = 6, column = 14 } }
+                        |> Review.Test.whenFixed
+                            """
+module Happiness exposing (Happiness, Mood)
+
+
+type alias Mood =
+    Happiness -> Int
+
+
+type Happiness
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                    ]
     ]
 
 

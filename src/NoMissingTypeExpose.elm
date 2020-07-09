@@ -353,6 +353,9 @@ exposedSignatureTypesForDeclaration exposes (Node _ declaration) exposedSignatur
         Declaration.CustomTypeDeclaration { name, constructors } ->
             exposedSignatureTypesForConstructorList exposes name constructors exposedSignatureTypes
 
+        Declaration.AliasDeclaration { name, typeAnnotation } ->
+            exposedSignatureTypesForAlias exposes name typeAnnotation exposedSignatureTypes
+
         Declaration.FunctionDeclaration { signature } ->
             exposedSignatureTypesForSignature exposes signature exposedSignatureTypes
 
@@ -380,6 +383,25 @@ exposedSignatureTypesForConstructor :
     -> List (Node ( ModuleName, String ))
 exposedSignatureTypesForConstructor (Node _ { arguments }) exposedSignatureTypes =
     exposedSignatureTypesForTypeAnnotationList arguments exposedSignatureTypes
+
+
+exposedSignatureTypesForAlias :
+    Exposing
+    -> Node String
+    -> Node TypeAnnotation
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForAlias exposes (Node _ name) typeAnnotation exposedSignatureTypes =
+    if isTypeExposed exposes name then
+        case typeAnnotation of
+            Node _ (TypeAnnotation.Typed _ []) ->
+                exposedSignatureTypes
+
+            _ ->
+                exposedSignatureTypesForTypeAnnotation typeAnnotation exposedSignatureTypes
+
+    else
+        exposedSignatureTypes
 
 
 exposedSignatureTypesForSignature :
