@@ -504,6 +504,23 @@ type Happiness
     | Unhappy
 """
                     ]
+    , test "does not report when an exposed type alias is a private type" <|
+        \() ->
+            """
+module Happiness exposing (Mood)
+
+
+type alias Mood =
+    Happiness Int
+
+
+type Happiness a
+    = Ecstatic
+    | FineIGuess
+    | Unhappy
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectNoErrors
     , test "reports when an exposed record type alias uses a private type" <|
         \() ->
             """

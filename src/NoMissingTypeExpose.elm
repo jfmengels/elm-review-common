@@ -394,8 +394,8 @@ exposedSignatureTypesForAlias :
 exposedSignatureTypesForAlias exposes (Node _ name) typeAnnotation exposedSignatureTypes =
     if isTypeExposed exposes name then
         case typeAnnotation of
-            Node _ (TypeAnnotation.Typed _ []) ->
-                exposedSignatureTypes
+            Node _ (TypeAnnotation.Typed _ list) ->
+                exposedSignatureTypesForTypeAnnotationList list exposedSignatureTypes
 
             _ ->
                 exposedSignatureTypesForTypeAnnotation typeAnnotation exposedSignatureTypes
