@@ -90,56 +90,56 @@ elmJsonVisitor : Maybe { a | project : Project } -> ProjectContext -> ( List not
 elmJsonVisitor maybeProject context =
     case maybeProject of
         Just { project } ->
-            ( [], rememberElmJsonProject project context )
+            ( []
+            , { context
+                | exposedModules = exposedModulesForElmJson project
+              }
+            )
 
         Nothing ->
             ( [], context )
 
 
-rememberElmJsonProject : Project -> ProjectContext -> ProjectContext
-rememberElmJsonProject project context =
+exposedModulesForElmJson : Project -> ExposedModules
+exposedModulesForElmJson project =
     case project of
         Elm.Project.Package { exposed } ->
-            { context
-                | exposedModules =
-                    Package (exposed |> elmProjectExposedList |> Set.fromList)
-            }
+            Package (elmProjectExposedList exposed)
 
         Elm.Project.Application _ ->
-            { context | exposedModules = Application }
+            Application
 
 
-elmProjectExposedList : Elm.Project.Exposed -> List String
+elmProjectExposedList : Elm.Project.Exposed -> Set String
 elmProjectExposedList exposed =
     case exposed of
         Elm.Project.ExposedList list ->
-            List.map Elm.Module.toString list
+            List.foldl (Elm.Module.toString >> Set.insert) Set.empty list
 
         Elm.Project.ExposedDict dict ->
             List.foldl
-                (Tuple.second
-                    >> List.map Elm.Module.toString
-                    >> (++)
+                (\( _, list ) acc ->
+                    List.foldl (Elm.Module.toString >> Set.insert) acc list
                 )
-                []
+                Set.empty
                 dict
 
 
 dependencyDictVisitor : Dict String Dependency -> ProjectContext -> ( List nothing, ProjectContext )
 dependencyDictVisitor dependencies context =
-    ( [], dependencies |> Dict.values |> List.foldl rememberDependency context )
+    ( []
+    , { context
+        | exposedModules =
+            Dict.values dependencies
+                |> List.foldl exposedModulesForDependency context.exposedModules
+      }
+    )
 
 
-rememberDependency : Dependency -> ProjectContext -> ProjectContext
-rememberDependency dependency context =
-    dependency |> Dependency.modules |> List.foldl rememberDependencyModule context
-
-
-rememberDependencyModule : Elm.Docs.Module -> ProjectContext -> ProjectContext
-rememberDependencyModule { name } context =
-    { context
-        | exposedModules = addExposedModule name context.exposedModules
-    }
+exposedModulesForDependency : Dependency -> ExposedModules -> ExposedModules
+exposedModulesForDependency dependency exposedModules =
+    Dependency.modules dependency
+        |> List.foldl (.name >> addExposedModule) exposedModules
 
 
 moduleVisitor :
@@ -172,210 +172,272 @@ importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
         ExposedModule data ->
             ( []
             , ExposedModule
-                (data
-                    |> rememberImportedModuleAlias (Node.value moduleName) moduleAlias
-                    |> rememberImportedExposingList (Node.value moduleName) exposingList
-                )
+                { data
+                    | exposedModules =
+                        exposedModulesForImportAlias (Node.value moduleName) moduleAlias data.exposedModules
+                    , importedTypes =
+                        importedTypesForImportExposing (Node.value moduleName) exposingList data.moduleTypes data.importedTypes
+                }
             )
 
 
-rememberImportedModuleAlias : ModuleName -> Maybe (Node ModuleName) -> ExposedModuleData -> ExposedModuleData
-rememberImportedModuleAlias moduleName maybeModuleAlias data =
+exposedModulesForImportAlias : ModuleName -> Maybe (Node ModuleName) -> ExposedModules -> ExposedModules
+exposedModulesForImportAlias moduleName maybeModuleAlias exposedModules =
     case maybeModuleAlias of
         Just (Node _ moduleAlias) ->
-            { data
-                | exposedModules =
-                    addExposedModuleAlias moduleName
-                        (String.join "." moduleAlias)
-                        data.exposedModules
-            }
+            addExposedModuleAlias moduleName
+                (String.join "." moduleAlias)
+                exposedModules
 
         Nothing ->
-            data
+            exposedModules
 
 
-rememberImportedExposingList : ModuleName -> Maybe (Node Exposing) -> ExposedModuleData -> ExposedModuleData
-rememberImportedExposingList moduleName maybeExposing data =
+importedTypesForImportExposing :
+    ModuleName
+    -> Maybe (Node Exposing)
+    -> Dict ModuleName (Set String)
+    -> Dict String ModuleName
+    -> Dict String ModuleName
+importedTypesForImportExposing moduleName maybeExposing moduleTypes importedTypes =
     case maybeExposing of
         Just (Node _ (Exposing.Explicit list)) ->
-            List.foldl (rememberImportedExpose moduleName) data list
+            List.foldl (importedTypesForImportExpose moduleName) importedTypes list
 
         Just (Node _ (Exposing.All _)) ->
-            rememberImportedModuleTypes moduleName data
+            importedTypesForModule moduleName moduleTypes importedTypes
 
         Nothing ->
-            data
+            importedTypes
 
 
-rememberImportedExpose : ModuleName -> Node Exposing.TopLevelExpose -> ExposedModuleData -> ExposedModuleData
-rememberImportedExpose moduleName (Node _ expose) data =
+importedTypesForImportExpose : ModuleName -> Node Exposing.TopLevelExpose -> Dict String ModuleName -> Dict String ModuleName
+importedTypesForImportExpose moduleName (Node _ expose) importedTypes =
     case expose of
         Exposing.TypeExpose { name } ->
-            data |> rememberImportedType moduleName name
+            rememberImportedType moduleName name importedTypes
 
         Exposing.TypeOrAliasExpose name ->
-            data |> rememberImportedType moduleName name
+            rememberImportedType moduleName name importedTypes
 
         Exposing.FunctionExpose _ ->
-            data
+            importedTypes
 
         Exposing.InfixExpose _ ->
-            data
+            importedTypes
 
 
-rememberImportedModuleTypes : ModuleName -> ExposedModuleData -> ExposedModuleData
-rememberImportedModuleTypes moduleName data =
-    case Dict.get moduleName data.moduleTypes of
+importedTypesForModule :
+    ModuleName
+    -> Dict ModuleName (Set String)
+    -> Dict String ModuleName
+    -> Dict String ModuleName
+importedTypesForModule moduleName moduleTypes importedTypes =
+    case Dict.get moduleName moduleTypes of
         Just types ->
-            Set.foldl (rememberImportedType moduleName) data types
+            Set.foldl (rememberImportedType moduleName) importedTypes types
 
         Nothing ->
-            data
+            importedTypes
 
 
-rememberImportedType : ModuleName -> String -> ExposedModuleData -> ExposedModuleData
-rememberImportedType moduleName typeName data =
-    { data
-        | importedTypes = Dict.insert typeName moduleName data.importedTypes
-    }
+rememberImportedType : ModuleName -> String -> Dict String ModuleName -> Dict String ModuleName
+rememberImportedType moduleName typeName importedTypes =
+    Dict.insert typeName moduleName importedTypes
 
 
 declarationListVisitor : List (Node Declaration) -> ModuleContext -> ( List nothing, ModuleContext )
 declarationListVisitor nodes context =
     ( []
-    , List.foldl rememberDeclaration context nodes
+    , case context of
+        InternalModule data ->
+            InternalModule
+                { data
+                    | exposedTypes =
+                        exposedTypesForDeclarationList data.exposes nodes data.exposedTypes
+                }
+
+        ExposedModule data ->
+            ExposedModule
+                { data
+                    | declaredTypes = declaredTypesForDeclarationList nodes data.declaredTypes
+                    , exposedSignatureTypes = exposedSignatureTypesForDeclarationList data.exposes nodes data.exposedSignatureTypes
+                }
     )
 
 
-rememberDeclaration : Node Declaration -> ModuleContext -> ModuleContext
-rememberDeclaration (Node _ declaration) context =
-    case declaration of
-        Declaration.CustomTypeDeclaration { name, constructors } ->
-            case context of
-                InternalModule data ->
-                    InternalModule (rememberExposedType name data)
+exposedTypesForDeclarationList : Exposing -> List (Node Declaration) -> Set String -> Set String
+exposedTypesForDeclarationList exposes list exposedTypes =
+    List.foldl (exposedTypesForDeclaration exposes) exposedTypes list
 
-                ExposedModule data ->
-                    ExposedModule
-                        (data
-                            |> rememberDeclaredType name
-                            |> rememberValueConstructorList name constructors
-                        )
+
+exposedTypesForDeclaration : Exposing -> Node Declaration -> Set String -> Set String
+exposedTypesForDeclaration exposes (Node _ declaration) exposedTypes =
+    case declaration of
+        Declaration.CustomTypeDeclaration { name } ->
+            rememberExposedType exposes name exposedTypes
 
         Declaration.AliasDeclaration { name } ->
-            case context of
-                InternalModule data ->
-                    InternalModule (rememberExposedType name data)
-
-                ExposedModule data ->
-                    ExposedModule (rememberDeclaredType name data)
-
-        Declaration.FunctionDeclaration { signature } ->
-            case context of
-                InternalModule _ ->
-                    context
-
-                ExposedModule data ->
-                    ExposedModule (rememberFunctionSignature signature data)
+            rememberExposedType exposes name exposedTypes
 
         _ ->
-            context
+            exposedTypes
 
 
-rememberExposedType : Node String -> InternalModuleData -> InternalModuleData
-rememberExposedType (Node _ name) data =
-    if isTypeExposed data.exposes name then
-        { data | exposedTypes = Set.insert name data.exposedTypes }
-
-    else
-        data
-
-
-rememberDeclaredType : Node String -> ExposedModuleData -> ExposedModuleData
-rememberDeclaredType (Node _ name) data =
-    { data | declaredTypes = Set.insert name data.declaredTypes }
-
-
-rememberValueConstructorList : Node String -> List (Node Type.ValueConstructor) -> ExposedModuleData -> ExposedModuleData
-rememberValueConstructorList (Node _ name) list data =
-    if isTypeExposedOpen data.exposes name then
-        List.foldl rememberValueConstructor data list
+rememberExposedType : Exposing -> Node String -> Set String -> Set String
+rememberExposedType exposes (Node _ name) exposedTypes =
+    if isTypeExposed exposes name then
+        Set.insert name exposedTypes
 
     else
-        data
+        exposedTypes
 
 
-rememberValueConstructor : Node Type.ValueConstructor -> ExposedModuleData -> ExposedModuleData
-rememberValueConstructor (Node _ { arguments }) data =
-    rememberTypeAnnotationList arguments data
+declaredTypesForDeclarationList : List (Node Declaration) -> Set String -> Set String
+declaredTypesForDeclarationList list declaredTypes =
+    List.foldl declaredTypesForDeclaration declaredTypes list
 
 
-rememberFunctionSignature : Maybe (Node Signature) -> ExposedModuleData -> ExposedModuleData
-rememberFunctionSignature maybeSignature data =
+declaredTypesForDeclaration : Node Declaration -> Set String -> Set String
+declaredTypesForDeclaration (Node _ declaration) declaredTypes =
+    case declaration of
+        Declaration.CustomTypeDeclaration { name } ->
+            rememberDeclaredType name declaredTypes
+
+        Declaration.AliasDeclaration { name } ->
+            rememberDeclaredType name declaredTypes
+
+        _ ->
+            declaredTypes
+
+
+rememberDeclaredType : Node String -> Set String -> Set String
+rememberDeclaredType (Node _ name) declaredTypes =
+    Set.insert name declaredTypes
+
+
+exposedSignatureTypesForDeclarationList :
+    Exposing
+    -> List (Node Declaration)
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForDeclarationList exposes list exposedSignatureTypes =
+    List.foldl (exposedSignatureTypesForDeclaration exposes) exposedSignatureTypes list
+
+
+exposedSignatureTypesForDeclaration :
+    Exposing
+    -> Node Declaration
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForDeclaration exposes (Node _ declaration) exposedSignatureTypes =
+    case declaration of
+        Declaration.CustomTypeDeclaration { name, constructors } ->
+            exposedSignatureTypesForConstructorList exposes name constructors exposedSignatureTypes
+
+        Declaration.FunctionDeclaration { signature } ->
+            exposedSignatureTypesForSignature exposes signature exposedSignatureTypes
+
+        _ ->
+            exposedSignatureTypes
+
+
+exposedSignatureTypesForConstructorList :
+    Exposing
+    -> Node String
+    -> List (Node Type.ValueConstructor)
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForConstructorList exposes (Node _ name) list exposedSignatureTypes =
+    if isTypeExposedOpen exposes name then
+        List.foldl exposedSignatureTypesForConstructor exposedSignatureTypes list
+
+    else
+        exposedSignatureTypes
+
+
+exposedSignatureTypesForConstructor :
+    Node Type.ValueConstructor
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForConstructor (Node _ { arguments }) exposedSignatureTypes =
+    exposedSignatureTypesForTypeAnnotationList arguments exposedSignatureTypes
+
+
+exposedSignatureTypesForSignature :
+    Exposing
+    -> Maybe (Node Signature)
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForSignature exposes maybeSignature exposedSignatureTypes =
     case maybeSignature of
         Just (Node _ { name, typeAnnotation }) ->
-            if Exposing.exposesFunction (Node.value name) data.exposes then
-                rememberTypeAnnotation typeAnnotation data
+            if Exposing.exposesFunction (Node.value name) exposes then
+                exposedSignatureTypesForTypeAnnotation typeAnnotation exposedSignatureTypes
 
             else
-                data
+                exposedSignatureTypes
 
         Nothing ->
-            data
+            exposedSignatureTypes
 
 
-rememberRecordFieldList : List (Node TypeAnnotation.RecordField) -> ExposedModuleData -> ExposedModuleData
-rememberRecordFieldList fields data =
-    List.foldl rememberRecordField data fields
+exposedSignatureTypesForRecordFieldList :
+    List (Node TypeAnnotation.RecordField)
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForRecordFieldList fields exposedSignatureTypes =
+    List.foldl exposedSignatureTypesForRecordField exposedSignatureTypes fields
 
 
-rememberRecordField : Node TypeAnnotation.RecordField -> ExposedModuleData -> ExposedModuleData
-rememberRecordField (Node _ ( _, typeAnnotation )) data =
-    rememberTypeAnnotation typeAnnotation data
+exposedSignatureTypesForRecordField :
+    Node TypeAnnotation.RecordField
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForRecordField (Node _ ( _, typeAnnotation )) exposedSignatureTypes =
+    exposedSignatureTypesForTypeAnnotation typeAnnotation exposedSignatureTypes
 
 
-rememberTypeAnnotationList : List (Node TypeAnnotation) -> ExposedModuleData -> ExposedModuleData
-rememberTypeAnnotationList list data =
-    List.foldl rememberTypeAnnotation data list
+exposedSignatureTypesForTypeAnnotationList :
+    List (Node TypeAnnotation)
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForTypeAnnotationList list exposedSignatureTypes =
+    List.foldl exposedSignatureTypesForTypeAnnotation exposedSignatureTypes list
 
 
-rememberTypeAnnotation : Node TypeAnnotation -> ExposedModuleData -> ExposedModuleData
-rememberTypeAnnotation (Node _ typeAnnotation) data =
+exposedSignatureTypesForTypeAnnotation :
+    Node TypeAnnotation
+    -> List (Node ( ModuleName, String ))
+    -> List (Node ( ModuleName, String ))
+exposedSignatureTypesForTypeAnnotation (Node _ typeAnnotation) exposedSignatureTypes =
     case typeAnnotation of
         TypeAnnotation.Typed name list ->
-            data
-                |> rememberExposedSignatureType name
-                |> rememberTypeAnnotationList list
+            (name :: exposedSignatureTypes)
+                |> exposedSignatureTypesForTypeAnnotationList list
 
         TypeAnnotation.FunctionTypeAnnotation left right ->
-            data
-                |> rememberTypeAnnotation left
-                |> rememberTypeAnnotation right
+            exposedSignatureTypes
+                |> exposedSignatureTypesForTypeAnnotation left
+                |> exposedSignatureTypesForTypeAnnotation right
 
         TypeAnnotation.Tupled list ->
-            data
-                |> rememberTypeAnnotationList list
+            exposedSignatureTypes
+                |> exposedSignatureTypesForTypeAnnotationList list
 
         TypeAnnotation.Record fields ->
-            data
-                |> rememberRecordFieldList fields
+            exposedSignatureTypes
+                |> exposedSignatureTypesForRecordFieldList fields
 
         TypeAnnotation.GenericRecord _ (Node _ fields) ->
-            data
-                |> rememberRecordFieldList fields
+            exposedSignatureTypes
+                |> exposedSignatureTypesForRecordFieldList fields
 
         TypeAnnotation.Unit ->
-            data
+            exposedSignatureTypes
 
         TypeAnnotation.GenericType _ ->
-            data
-
-
-rememberExposedSignatureType : Node ( ModuleName, String ) -> ExposedModuleData -> ExposedModuleData
-rememberExposedSignatureType qualifiedName data =
-    { data
-        | exposedSignatureTypes = qualifiedName :: data.exposedSignatureTypes
-    }
+            exposedSignatureTypes
 
 
 finalEvaluation : ModuleContext -> List (Rule.Error {})
