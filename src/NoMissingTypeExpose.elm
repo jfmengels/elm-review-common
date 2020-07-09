@@ -16,9 +16,11 @@ import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
+import Elm.Syntax.Range as Range
 import Elm.Syntax.Signature exposing (Signature)
 import Elm.Syntax.Type as Type
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
+import Review.Fix as Fix exposing (Fix)
 import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
@@ -160,7 +162,23 @@ moduleDefinitionVisitor (Node _ mod) context =
             ( [], InternalModule { data | exposes = Module.exposingList mod } )
 
         ExposedModule data ->
-            ( [], ExposedModule { data | exposes = Module.exposingList mod } )
+            ( []
+            , ExposedModule
+                { data
+                    | exposes = Module.exposingList mod
+                    , exposingListStart = exposingListStartLocation (Module.exposingList mod)
+                }
+            )
+
+
+exposingListStartLocation : Exposing -> Maybe Range.Location
+exposingListStartLocation exposes =
+    case exposes of
+        Exposing.Explicit ((Node range _) :: _) ->
+            Just range.start
+
+        _ ->
+            Nothing
 
 
 importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
@@ -448,13 +466,14 @@ finalEvaluation context =
 
         ExposedModule data ->
             data.exposedSignatureTypes
+                |> List.map (Node.map (moduleNameForType data.importedTypes))
                 |> List.filter (isTypePrivate data)
-                |> List.map makeError
+                |> List.map (makeError data.exposingListStart)
 
 
 isTypePrivate : ExposedModuleData -> Node ( ModuleName, String ) -> Bool
 isTypePrivate data (Node _ typeCall) =
-    case moduleNameForType data typeCall of
+    case typeCall of
         ( [], name ) ->
             if Set.member name data.declaredTypes then
                 not (isTypeExposed data.exposes name)
@@ -466,9 +485,9 @@ isTypePrivate data (Node _ typeCall) =
             not (isModuleExposed data.exposedModules moduleName)
 
 
-moduleNameForType : ExposedModuleData -> ( ModuleName, String ) -> ( ModuleName, String )
-moduleNameForType data ( moduleName, typeName ) =
-    case Dict.get typeName data.importedTypes of
+moduleNameForType : Dict String ModuleName -> ( ModuleName, String ) -> ( ModuleName, String )
+moduleNameForType importedTypes ( moduleName, typeName ) =
+    case Dict.get typeName importedTypes of
         Just typeModuleName ->
             ( typeModuleName, typeName )
 
@@ -556,13 +575,13 @@ isModuleExposed exposedModules moduleName =
             Set.member (String.join "." moduleName) list
 
 
-makeError : Node ( ModuleName, String ) -> Rule.Error {}
-makeError (Node range typeName) =
+makeError : Maybe Range.Location -> Node ( ModuleName, String ) -> Rule.Error {}
+makeError exposingListStart (Node range typeName) =
     let
         formattedName =
             formatTypeName typeName
     in
-    Rule.error
+    Rule.errorWithFix
         { message = "Private type `" ++ formattedName ++ "` used by exposed function"
         , details =
             [ "Type `" ++ formattedName ++ "` is not exposed but is used by an exposed function."
@@ -570,6 +589,17 @@ makeError (Node range typeName) =
             ]
         }
         range
+        (exposeTypeFix exposingListStart typeName)
+
+
+exposeTypeFix : Maybe Range.Location -> ( ModuleName, String ) -> List Fix
+exposeTypeFix exposingListStart ( moduleName, name ) =
+    case ( exposingListStart, moduleName ) of
+        ( Just start, [] ) ->
+            [ Fix.insertAt start (name ++ ", ") ]
+
+        _ ->
+            []
 
 
 formatTypeName : ( ModuleName, String ) -> String
@@ -653,6 +683,7 @@ initialExposedModuleContext exposedModules moduleTypes =
         , exposedModules = exposedModules
         , exposedSignatureTypes = []
         , exposes = Exposing.Explicit []
+        , exposingListStart = Nothing
         , importedTypes = Dict.empty
         , moduleTypes = moduleTypes
         }
@@ -687,6 +718,7 @@ type alias ExposedModuleData =
     , exposedModules : ExposedModules
     , exposedSignatureTypes : List (Node ( ModuleName, String ))
     , exposes : Exposing
+    , exposingListStart : Maybe Range.Location
     , importedTypes : Dict String ModuleName
     , moduleTypes : Dict ModuleName (Set String)
     }
