@@ -31,3 +31,7 @@ config =
     , NoMissingTypeExpose.rule
     ]
 ```
+
+## Thanks
+
+Thanks to @sparksp for writing [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/review-common/1.1.0/NoMissingTypeExpose).
