@@ -32,53 +32,29 @@ functionTests =
         \() ->
             """
 module Happiness exposing (..)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Happy
 toString : Happiness -> String
-toString howHappy =
-    "Very"
+toString howHappy = "Happy"
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectNoErrors
-    , test "passes when an exposed function uses an exposed type" <|
+    , test "passes when an exposed type is used" <|
         \() ->
             """
 module Happiness exposing (Happiness, toString)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toString : Happiness -> String
-toString howHappy =
-    "Very"
+toString howHappy = "Very"
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectNoErrors
-    , test "reports when an exposed function uses a private type" <|
+    , test "reports when a private type is used" <|
         \() ->
             """
 module Happiness exposing (toString)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toString : Happiness -> String
-toString howHappy =
-    "Very"
+toString howHappy = "Very"
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -87,38 +63,22 @@ toString howHappy =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 12 }, end = { row = 11, column = 21 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 12 }, end = { row = 4, column = 21 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, toString)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toString : Happiness -> String
-toString howHappy =
-    "Very"
+toString howHappy = "Very"
 """
                     ]
-    , test "reports when an exposed function returns a private type" <|
+    , test "reports when a private type is returned" <|
         \() ->
             """
 module Happiness exposing (ecstatic)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 ecstatic : Happiness
-ecstatic =
-    Ecstatic
+ecstatic = Ecstatic
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -127,38 +87,22 @@ ecstatic =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 12 }, end = { row = 11, column = 21 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 12 }, end = { row = 4, column = 21 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, ecstatic)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 ecstatic : Happiness
-ecstatic =
-    Ecstatic
+ecstatic = Ecstatic
 """
                     ]
-    , test "reports when an exposed function uses a typed private type" <|
+    , test "reports when a private type is used in a Maybe" <|
         \() ->
             """
 module Happiness exposing (toString)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toString : Maybe Happiness -> String
-toString maybeHappy =
-    "Very"
+toString maybeHappy = "Very"
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -167,38 +111,22 @@ toString maybeHappy =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 18 }, end = { row = 11, column = 27 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 18 }, end = { row = 4, column = 27 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, toString)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toString : Maybe Happiness -> String
-toString maybeHappy =
-    "Very"
+toString maybeHappy = "Very"
 """
                     ]
-    , test "reports when an exposed function uses an external typed private type" <|
+    , test "reports when an external private type is used in a Maybe" <|
         \() ->
             """
 module Happiness exposing (toString)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toString : Maybe.Maybe Happiness -> String
-toString maybeHappy =
-    "Very"
+toString maybeHappy = "Very"
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -207,38 +135,22 @@ toString maybeHappy =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 24 }, end = { row = 11, column = 33 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 24 }, end = { row = 4, column = 33 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, toString)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toString : Maybe.Maybe Happiness -> String
-toString maybeHappy =
-    "Very"
+toString maybeHappy = "Very"
 """
                     ]
-    , test "reports when an exposed function uses a private type in a tuple" <|
+    , test "reports when a private type is used in a tuple" <|
         \() ->
             """
 module Happiness exposing (equal)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 equal : ( Happiness, Happiness ) -> Bool
-equal ( a, b ) =
-    a == b
+equal ( a, b ) = a == b
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -247,59 +159,35 @@ equal ( a, b ) =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 11 }, end = { row = 11, column = 20 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 11 }, end = { row = 4, column = 20 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, equal)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 equal : ( Happiness, Happiness ) -> Bool
-equal ( a, b ) =
-    a == b
+equal ( a, b ) = a == b
 """
                     , Review.Test.error
                         { message = "Private type `Happiness` should be exposed"
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 22 }, end = { row = 11, column = 31 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 22 }, end = { row = 4, column = 31 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, equal)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 equal : ( Happiness, Happiness ) -> Bool
-equal ( a, b ) =
-    a == b
+equal ( a, b ) = a == b
 """
                     ]
-    , test "reports when an exposed function uses a private type in a record" <|
+    , test "reports when a private type is used in a record" <|
         \() ->
             """
 module Happiness exposing (rank)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 rank : { happiness : Happiness } -> Int
-rank { happiness } =
-    0
+rank { happiness } = 0
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -308,38 +196,22 @@ rank { happiness } =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 22 }, end = { row = 11, column = 31 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 22 }, end = { row = 4, column = 31 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, rank)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 rank : { happiness : Happiness } -> Int
-rank { happiness } =
-    0
+rank { happiness } = 0
 """
                     ]
-    , test "reports when an exposed function uses a private type in a generic record" <|
+    , test "reports when a private type is used in an extensible record" <|
         \() ->
             """
 module Happiness exposing (rank)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 rank : { a | happiness : Happiness } -> Int
-rank { happiness } =
-    0
+rank { happiness } = 0
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -348,21 +220,13 @@ rank { happiness } =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 11, column = 26 }, end = { row = 11, column = 35 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 26 }, end = { row = 4, column = 35 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, rank)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 rank : { a | happiness : Happiness } -> Int
-rank { happiness } =
-    0
+rank { happiness } = 0
 """
                     ]
     ]
@@ -374,16 +238,8 @@ typeTests =
         \() ->
             """
 module Happiness exposing (Happiness, Mood(..))
-
-
-type Mood
-    = Happy Happiness
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Mood = Happy Happiness
+type Happiness = Ecstatic
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectNoErrors
@@ -391,16 +247,8 @@ type Happiness
         \() ->
             """
 module Happiness exposing (Mood)
-
-
-type Mood
-    = Happy Happiness
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Mood = Happy Happiness
+type Happiness = Ecstatic
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectNoErrors
@@ -408,16 +256,8 @@ type Happiness
         \() ->
             """
 module Happiness exposing (Mood(..))
-
-
-type Mood
-    = Happy Happiness
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Mood = Happy Happiness
+type Happiness = Ecstatic
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectErrors
@@ -426,227 +266,12 @@ type Happiness
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 6, column = 13 }, end = { row = 6, column = 22 } }
+                        |> Review.Test.atExactly { start = { row = 3, column = 19 }, end = { row = 3, column = 28 } }
                         |> Review.Test.whenFixed
                             """
 module Happiness exposing (Happiness, Mood(..))
-
-
-type Mood
-    = Happy Happiness
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                    ]
-    , test "reports when an exposed typed type alias uses a private type" <|
-        \() ->
-            """
-module Happiness exposing (Mood)
-
-
-type alias Mood =
-    Maybe Happiness
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectErrors
-                    [ Review.Test.error
-                        { message = "Private type `Happiness` should be exposed"
-                        , details = details
-                        , under = "Happiness"
-                        }
-                        |> Review.Test.atExactly { start = { row = 6, column = 11 }, end = { row = 6, column = 20 } }
-                        |> Review.Test.whenFixed
-                            """
-module Happiness exposing (Happiness, Mood)
-
-
-type alias Mood =
-    Maybe Happiness
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                    ]
-    , test "does not report when an exposed type alias is a private type" <|
-        \() ->
-            """
-module Happiness exposing (Mood)
-
-
-type alias Mood =
-    Happiness Int
-
-
-type Happiness a
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectNoErrors
-    , test "reports when an exposed record type alias uses a private type" <|
-        \() ->
-            """
-module Happiness exposing (Mood)
-
-
-type alias Mood =
-    { happiness : Happiness }
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectErrors
-                    [ Review.Test.error
-                        { message = "Private type `Happiness` should be exposed"
-                        , details = details
-                        , under = "Happiness"
-                        }
-                        |> Review.Test.atExactly { start = { row = 6, column = 19 }, end = { row = 6, column = 28 } }
-                        |> Review.Test.whenFixed
-                            """
-module Happiness exposing (Happiness, Mood)
-
-
-type alias Mood =
-    { happiness : Happiness }
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                    ]
-    , test "reports when an exposed extended record type alias uses a private type" <|
-        \() ->
-            """
-module Happiness exposing (Mood)
-
-
-type alias Mood =
-    { a | happiness : Happiness }
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectErrors
-                    [ Review.Test.error
-                        { message = "Private type `Happiness` should be exposed"
-                        , details = details
-                        , under = "Happiness"
-                        }
-                        |> Review.Test.atExactly { start = { row = 6, column = 23 }, end = { row = 6, column = 32 } }
-                        |> Review.Test.whenFixed
-                            """
-module Happiness exposing (Happiness, Mood)
-
-
-type alias Mood =
-    { a | happiness : Happiness }
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                    ]
-    , test "reports when an exposed tuple type alias uses a private type" <|
-        \() ->
-            """
-module Happiness exposing (Mood)
-
-
-type alias Mood =
-    ( Happiness, Int )
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectErrors
-                    [ Review.Test.error
-                        { message = "Private type `Happiness` should be exposed"
-                        , details = details
-                        , under = "Happiness"
-                        }
-                        |> Review.Test.atExactly { start = { row = 6, column = 7 }, end = { row = 6, column = 16 } }
-                        |> Review.Test.whenFixed
-                            """
-module Happiness exposing (Happiness, Mood)
-
-
-type alias Mood =
-    ( Happiness, Int )
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                    ]
-    , test "reports when an exposed function type alias uses a private type" <|
-        \() ->
-            """
-module Happiness exposing (Mood)
-
-
-type alias Mood =
-    Happiness -> Int
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectErrors
-                    [ Review.Test.error
-                        { message = "Private type `Happiness` should be exposed"
-                        , details = details
-                        , under = "Happiness"
-                        }
-                        |> Review.Test.atExactly { start = { row = 6, column = 5 }, end = { row = 6, column = 14 } }
-                        |> Review.Test.whenFixed
-                            """
-module Happiness exposing (Happiness, Mood)
-
-
-type alias Mood =
-    Happiness -> Int
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Mood = Happy Happiness
+type Happiness = Ecstatic
 """
                     ]
     ]
@@ -658,15 +283,9 @@ typeAliasTests =
         \() ->
             """
 module Happiness exposing (..)
-
-
-type alias Happiness =
-    { happiness : Int }
-
-
+type alias Happiness = { happiness : Int }
 toString : Happiness -> String
-toString howHappy =
-    "Very"
+toString howHappy = "Very"
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectNoErrors
@@ -680,25 +299,13 @@ toString howHappy =
             in
             [ """
 module Exposed exposing (Happiness, toString)
-
 import Mood
-
-
-type alias Happiness =
-    Mood.Happiness
-
-
+type alias Happiness = Mood.Happiness
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module Mood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -712,15 +319,9 @@ type Happiness
             in
             """
 module Exposed exposing (toString)
-
-
-type alias Happiness =
-    { happiness : Int }
-
-
+type alias Happiness = { happiness : Int }
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """
                 |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectErrors
@@ -729,19 +330,13 @@ toString happiness =
                         , details = details
                         , under = "Happiness"
                         }
-                        |> Review.Test.atExactly { start = { row = 9, column = 12 }, end = { row = 9, column = 21 } }
+                        |> Review.Test.atExactly { start = { row = 4, column = 12 }, end = { row = 4, column = 21 } }
                         |> Review.Test.whenFixed
                             """
 module Exposed exposing (Happiness, toString)
-
-
-type alias Happiness =
-    { happiness : Int }
-
-
+type alias Happiness = { happiness : Int }
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """
                     ]
     , test "reports a function using an internal type alias" <|
@@ -754,19 +349,12 @@ toString happiness =
             in
             [ """
 module Exposed exposing (toString)
-
 import Mood
-
-
 toString : Mood.Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module Mood exposing (Happiness)
-
-
-type alias Happiness =
-    { howHappy : Int }
+type alias Happiness = { howHappy : Int }
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectErrorsForModules
@@ -776,7 +364,7 @@ type alias Happiness =
                             , details = details
                             , under = "Mood.Happiness"
                             }
-                            |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 26 } }
+                            |> Review.Test.atExactly { start = { row = 4, column = 12 }, end = { row = 4, column = 26 } }
                         ]
                       )
                     ]
@@ -790,19 +378,12 @@ type alias Happiness =
             in
             [ """
 module Exposed exposing (toString)
-
 import Mood exposing (..)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module Mood exposing (..)
-
-
-type alias Happiness =
-    { howHappy : Int }
+type alias Happiness = { howHappy : Int }
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectErrorsForModules
@@ -812,7 +393,7 @@ type alias Happiness =
                             , details = details
                             , under = "Happiness"
                             }
-                            |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
+                            |> Review.Test.atExactly { start = { row = 4, column = 12 }, end = { row = 4, column = 21 } }
                         ]
                       )
                     ]
@@ -826,19 +407,12 @@ type alias Happiness =
             in
             [ """
 module Exposed exposing (toString)
-
 import Mood exposing (..)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module Mood exposing (Happiness)
-
-
-type alias Happiness =
-    { howHappy : Int }
+type alias Happiness = { howHappy : Int }
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectErrorsForModules
@@ -848,10 +422,131 @@ type alias Happiness =
                             , details = details
                             , under = "Happiness"
                             }
-                            |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
+                            |> Review.Test.atExactly { start = { row = 4, column = 12 }, end = { row = 4, column = 21 } }
                         ]
                       )
                     ]
+    , describe "when an exposed type alias uses a private type" <|
+        [ test "does not report when the type alias is directly a private type" <|
+            \() ->
+                """
+module Happiness exposing (Mood)
+type alias Mood = Happiness Int
+type Happiness a = Ecstatic
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "reports a private type in another type" <|
+            \() ->
+                """
+module Happiness exposing (Mood)
+type alias Mood = Maybe Happiness
+type Happiness = Ecstatic
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Private type `Happiness` should be exposed"
+                            , details = details
+                            , under = "Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 25 }, end = { row = 3, column = 34 } }
+                            |> Review.Test.whenFixed
+                                """
+module Happiness exposing (Happiness, Mood)
+type alias Mood = Maybe Happiness
+type Happiness = Ecstatic
+"""
+                        ]
+        , test "reports a private type in a record" <|
+            \() ->
+                """
+module Happiness exposing (Mood)
+type alias Mood = { happiness : Happiness }
+type Happiness = Ecstatic
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Private type `Happiness` should be exposed"
+                            , details = details
+                            , under = "Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 33 }, end = { row = 3, column = 42 } }
+                            |> Review.Test.whenFixed
+                                """
+module Happiness exposing (Happiness, Mood)
+type alias Mood = { happiness : Happiness }
+type Happiness = Ecstatic
+"""
+                        ]
+        , test "reports private type in an extensible record" <|
+            \() ->
+                """
+module Happiness exposing (Mood)
+type alias Mood = { a | happiness : Happiness }
+type Happiness = Ecstatic
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Private type `Happiness` should be exposed"
+                            , details = details
+                            , under = "Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 37 }, end = { row = 3, column = 46 } }
+                            |> Review.Test.whenFixed
+                                """
+module Happiness exposing (Happiness, Mood)
+type alias Mood = { a | happiness : Happiness }
+type Happiness = Ecstatic
+"""
+                        ]
+        , test "reports a private type in a tuple" <|
+            \() ->
+                """
+module Happiness exposing (Mood)
+type alias Mood = ( Happiness, Int )
+type Happiness = Ecstatic
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Private type `Happiness` should be exposed"
+                            , details = details
+                            , under = "Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 21 }, end = { row = 3, column = 30 } }
+                            |> Review.Test.whenFixed
+                                """
+module Happiness exposing (Happiness, Mood)
+type alias Mood = ( Happiness, Int )
+type Happiness = Ecstatic
+"""
+                        ]
+        , test "reports a private type in a function" <|
+            \() ->
+                """
+module Happiness exposing (Mood)
+type alias Mood = Happiness -> Int
+type Happiness = Ecstatic
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Private type `Happiness` should be exposed"
+                            , details = details
+                            , under = "Happiness"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 19 }, end = { row = 3, column = 28 } }
+                            |> Review.Test.whenFixed
+                                """
+module Happiness exposing (Happiness, Mood)
+type alias Mood = Happiness -> Int
+type Happiness = Ecstatic
+"""
+                        ]
+        ]
     ]
 
 
@@ -867,21 +562,12 @@ packageTests =
             in
             [ """
 module Exposed exposing (toString)
-
 import Mood
-
-
 toString : Mood.Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module Mood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectErrorsForModules
@@ -904,21 +590,12 @@ type Happiness
             in
             [ """
 module Exposed exposing (toString)
-
 import ExposedMood
-
-
 toString : ExposedMood.Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module ExposedMood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -932,21 +609,12 @@ type Happiness
             in
             [ """
 module Exposed exposing (toString)
-
 import Mood as M
-
-
 toString : M.Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module Mood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectErrorsForModules
@@ -969,21 +637,12 @@ type Happiness
             in
             [ """
 module Exposed exposing (toString)
-
 import ExposedMood as M
-
-
 toString : M.Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module ExposedMood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -997,21 +656,12 @@ type Happiness
             in
             [ """
 module Exposed exposing (toString)
-
 import Mood exposing (Happiness)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module Mood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectErrorsForModules
@@ -1021,7 +671,7 @@ type Happiness
                             , details = details
                             , under = "Happiness"
                             }
-                            |> Review.Test.atExactly { start = { row = 7, column = 12 }, end = { row = 7, column = 21 } }
+                            |> Review.Test.atExactly { start = { row = 4, column = 12 }, end = { row = 4, column = 21 } }
                         ]
                       )
                     ]
@@ -1035,33 +685,18 @@ type Happiness
             in
             [ """
 module Exposed exposing (toRating)
-
 import Mood exposing (..)
 import Rating exposing (..)
-
-
 toRating : Happiness -> Rating
-toRating happiness =
-    Rating.five
+toRating happiness = Rating.five
 """, """
 module Mood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """, """
 module Rating exposing (Rating, five)
-
-
-type Rating =
-    Rating Int
-
-
+type Rating = Rating Int
 five : Rating
-five =
-    Rating 5
+five = Rating 5
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectErrorsForModules
@@ -1076,7 +711,7 @@ five =
                             , details = details
                             , under = "Rating"
                             }
-                            |> Review.Test.atExactly { start = { row = 8, column = 25 }, end = { row = 8, column = 31 } }
+                            |> Review.Test.atExactly { start = { row = 5, column = 25 }, end = { row = 5, column = 31 } }
                         ]
                       )
                     ]
@@ -1090,30 +725,15 @@ five =
             in
             [ """
 module Mood exposing (Happiness, toRating)
-
 import Rating exposing (Rating)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
-
-
+type Happiness = Ecstatic
 toRating : Happiness -> Rating
-toRating happiness =
-    Rating.five
+toRating happiness = Rating.five
 """, """
 module Rating exposing (Rating, five)
-
-
-type Rating =
-    Rating Int
-
-
+type Rating = Rating Int
 five : Rating
-five =
-    Rating 5
+five = Rating 5
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -1127,21 +747,12 @@ five =
             in
             [ """
 module Exposed exposing (toString)
-
 import ExposedMood exposing (Happiness)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module ExposedMood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -1155,21 +766,12 @@ type Happiness
             in
             [ """
 module Exposed exposing (toString)
-
 import ExposedMood exposing (..)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module ExposedMood exposing (Happiness)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -1183,21 +785,12 @@ type Happiness
             in
             [ """
 module Exposed exposing (toString)
-
 import ExposedMood exposing (..)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """, """
 module ExposedMood exposing (..)
-
-
-type Happiness
-    = Ecstatic
-    | FineIGuess
-    | Unhappy
+type Happiness = Ecstatic
 """ ]
                 |> Review.Test.runOnModulesWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -1212,13 +805,9 @@ type Happiness
             in
             """
 module Exposed exposing (toString)
-
 import ExternalMood exposing (Happiness)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """
                 |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -1233,13 +822,9 @@ toString happiness =
             in
             """
 module Exposed exposing (toString)
-
 import ExternalMood exposing (..)
-
-
 toString : Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """
                 |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -1254,13 +839,9 @@ toString happiness =
             in
             """
 module Exposed exposing (toString)
-
 import ExternalMood
-
-
 toString : ExternalMood.Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """
                 |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectNoErrors
@@ -1275,13 +856,9 @@ toString happiness =
             in
             """
 module Exposed exposing (toString)
-
 import ExternalMood as M
-
-
 toString : M.Happiness -> String
-toString happiness =
-    "Happy"
+toString happiness = "Happy"
 """
                 |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectNoErrors
