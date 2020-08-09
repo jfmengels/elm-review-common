@@ -72,6 +72,15 @@ If a type is not exposed then it can be impossible to annotate functions or valu
     happy =
         Happy
 
+
+## Try it out
+
+You can try this rule out by running the following command:
+
+```bash
+elm-review --template jfmengels/review-common/example --rules NoMissingTypeExpose
+```
+
 -}
 rule : Rule
 rule =

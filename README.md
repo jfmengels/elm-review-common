@@ -32,6 +32,15 @@ config =
     ]
 ```
 
+## Try it out
+
+You can try the example configuration above out by running the following command:
+
+```bash
+elm-review --template jfmengels/review-common/example
+```
+
+
 ## Thanks
 
 Thanks to @sparksp for writing [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/review-common/1.2.1/NoMissingTypeExpose).
