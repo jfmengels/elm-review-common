@@ -609,6 +609,7 @@ isModuleExposed exposedModules moduleName =
 makeError : Maybe Range.Location -> Node ( ModuleName, String ) -> Rule.Error {}
 makeError exposingListStart (Node range typeName) =
     let
+        formattedName : String
         formattedName =
             formatTypeName typeName
     in
