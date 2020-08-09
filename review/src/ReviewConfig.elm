@@ -15,8 +15,10 @@ import Documentation.ReadmeLinksPointToCurrentVersion
 import NoDebug.Log
 import NoDebug.TodoOrToString
 import NoExposingEverything
+import NoForbiddenWords
 import NoImportingEverything
 import NoMissingTypeAnnotation
+import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
@@ -35,8 +37,10 @@ config =
     , NoDebug.TodoOrToString.rule
         |> Rule.ignoreErrorsForDirectories [ "tests/" ]
     , NoExposingEverything.rule
+    , NoForbiddenWords.rule [ "REPLACEME" ]
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
+    , NoMissingTypeAnnotationInLetIn.rule
     , NoMissingTypeExpose.rule
     , NoUnused.CustomTypeConstructors.rule []
     , NoUnused.Dependencies.rule
