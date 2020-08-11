@@ -1,9 +1,9 @@
 {
     "type": "package",
-    "name": "jfmengels/review-common",
+    "name": "jfmengels/elm-review-common",
     "summary": "Provides common linting rules for elm-review",
     "license": "BSD-3-Clause",
-    "version": "1.2.1",
+    "version": "1.0.0",
     "exposed-modules": [
         "NoExposingEverything",
         "NoImportingEverything",
