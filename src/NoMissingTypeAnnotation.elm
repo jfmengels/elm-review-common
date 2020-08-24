@@ -43,15 +43,6 @@ For that, enable [`NoMissingTypeAnnotationInLetIn`](./NoMissingTypeAnnotationInL
         in
         c
 
-
-## Try it out
-
-You can try this rule out by running the following command:
-
-```bash
-elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeAnnotation
-```
-
 -}
 rule : Rule
 rule =

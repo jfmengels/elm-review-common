@@ -44,15 +44,6 @@ you can configure a list of exceptions.
     -- If configured with `[ "Html" ]`
     import Html exposing (..)
 
-
-## Try it out
-
-You can try this rule out by running the following command:
-
-```bash
-elm-review --template jfmengels/elm-review-common/example --rules NoImportingEverything
-```
-
 -}
 rule : List String -> Rule
 rule exceptions =
