@@ -141,4 +141,27 @@ a = let
     d
 """
                         ]
+        , test "should suggest a fix when the value is simple (unit)" <|
+            \_ ->
+                """module A exposing (..)
+a = let
+      hasNoTypeAnnotation = ()
+    in
+    d
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                            , details = details
+                            , under = "hasNoTypeAnnotation"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a = let
+      hasNoTypeAnnotation : ()
+      hasNoTypeAnnotation = ()
+    in
+    d
+"""
+                        ]
         ]

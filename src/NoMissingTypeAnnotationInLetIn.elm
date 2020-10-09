@@ -144,5 +144,8 @@ inferType node =
         Expression.Floatable _ ->
             Just "Float"
 
+        Expression.UnitExpr ->
+            Just "()"
+
         _ ->
             Nothing
