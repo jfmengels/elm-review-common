@@ -42,8 +42,8 @@ a = let
             \_ ->
                 """module A exposing (..)
 a = let
-      hasNoTypeAnnotation_1 = 1
-      hasNoTypeAnnotation_2 = 1
+      hasNoTypeAnnotation_1 = foo
+      hasNoTypeAnnotation_2 = foo
     in
     d
 """
@@ -72,4 +72,27 @@ a = let
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should suggest a fix when the value is simple (string)" <|
+            \_ ->
+                """module A exposing (..)
+a = let
+      hasNoTypeAnnotation = ""
+    in
+    d
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                            , details = details
+                            , under = "hasNoTypeAnnotation"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a = let
+      hasNoTypeAnnotation : String
+      hasNoTypeAnnotation = ""
+    in
+    d
+"""
+                        ]
         ]

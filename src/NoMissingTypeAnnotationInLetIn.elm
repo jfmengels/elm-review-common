@@ -8,6 +8,7 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
+import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Error, Rule)
 
 
@@ -96,12 +97,46 @@ reportFunctionWithoutSignature function =
                     function.declaration
                         |> Node.value
                         |> .name
+
+                maybeType : Maybe String
+                maybeType =
+                    inferType (function.declaration |> Node.value |> .expression)
             in
-            Rule.error
+            Rule.errorWithFix
                 { message = "Missing type annotation for `" ++ Node.value name ++ "`"
                 , details =
                     [ "Type annotations help you understand what happens in the code, and it will help the compiler give better error messages."
                     ]
                 }
                 (Node.range name)
+                (createFix name maybeType)
                 |> Just
+
+
+createFix : Node String -> Maybe String -> List Fix
+createFix functionNameNode maybeType =
+    case maybeType of
+        Just type_ ->
+            let
+                functionName : String
+                functionName =
+                    Node.value functionNameNode
+
+                position : { row : Int, column : Int }
+                position =
+                    (Node.range functionNameNode).start
+            in
+            [ Fix.insertAt position (functionName ++ " : " ++ type_ ++ "\n" ++ String.repeat (position.column - 1) " ") ]
+
+        Nothing ->
+            []
+
+
+inferType : Node Expression -> Maybe String
+inferType node =
+    case Node.value node of
+        Expression.Literal _ ->
+            Just "String"
+
+        _ ->
+            Nothing
