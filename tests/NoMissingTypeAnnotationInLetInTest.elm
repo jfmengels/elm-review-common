@@ -14,6 +14,14 @@ details =
 all : Test
 all =
     describe "NoMissingTypeAnnotationInLetIn"
+        [ reportTests
+        , fixTests
+        ]
+
+
+reportTests : Test
+reportTests =
+    describe "Reports"
         [ test "should not report anything for top-level declarations even if they have no type annotation" <|
             \_ ->
                 """module A exposing (..)
@@ -72,7 +80,13 @@ a = let
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
-        , test "should suggest a fix when the value is simple (string)" <|
+        ]
+
+
+fixTests : Test
+fixTests =
+    describe "Fixing"
+        [ test "should suggest a fix when the value is simple (string)" <|
             \_ ->
                 """module A exposing (..)
 a = let
