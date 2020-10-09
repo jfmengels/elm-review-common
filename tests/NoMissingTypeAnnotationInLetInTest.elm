@@ -86,96 +86,47 @@ a = let
 fixTests : Test
 fixTests =
     describe "Fixing"
-        [ test "should suggest a fix when the value is simple (string)" <|
-            \_ ->
-                """module A exposing (..)
-a = let
-      hasNoTypeAnnotation = ""
-    in
-    d
-"""
-                    |> Review.Test.run rule
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
-                            , details = details
-                            , under = "hasNoTypeAnnotation"
-                            }
-                            |> Review.Test.whenFixed """module A exposing (..)
-a = let
-      hasNoTypeAnnotation : String
-      hasNoTypeAnnotation = ""
-    in
-    d
-"""
-                        ]
-        , test "should suggest a fix when the value is simple (number)" <|
-            \_ ->
-                """module A exposing (..)
-a = let
-      hasNoTypeAnnotation = 1
-    in
-    d
-"""
-                    |> Review.Test.run rule
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
-                            , details = details
-                            , under = "hasNoTypeAnnotation"
-                            }
-                            |> Review.Test.whenFixed """module A exposing (..)
-a = let
-      hasNoTypeAnnotation : number
-      hasNoTypeAnnotation = 1
-    in
-    d
-"""
-                        ]
-        , test "should suggest a fix when the value is simple (Float)" <|
-            \_ ->
-                """module A exposing (..)
-a = let
-      hasNoTypeAnnotation = 1.0
-    in
-    d
-"""
-                    |> Review.Test.run rule
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
-                            , details = details
-                            , under = "hasNoTypeAnnotation"
-                            }
-                            |> Review.Test.whenFixed """module A exposing (..)
-a = let
-      hasNoTypeAnnotation : Float
-      hasNoTypeAnnotation = 1.0
-    in
-    d
-"""
-                        ]
-        , test "should suggest a fix when the value is simple (unit)" <|
-            \_ ->
-                """module A exposing (..)
-a = let
-      hasNoTypeAnnotation = ()
-    in
-    d
-"""
-                    |> Review.Test.run rule
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
-                            , details = details
-                            , under = "hasNoTypeAnnotation"
-                            }
-                            |> Review.Test.whenFixed """module A exposing (..)
-a = let
-      hasNoTypeAnnotation : ()
-      hasNoTypeAnnotation = ()
-    in
-    d
-"""
-                        ]
+        [ fixTest "when value is a literal string"
+            { value = "\"abc\""
+            , expectedType = "String"
+            }
+        , fixTest "when value is a literal integer"
+            { value = "1"
+            , expectedType = "number"
+            }
+        , fixTest "when value is a literal float"
+            { value = "1.0"
+            , expectedType = "Float"
+            }
+        , fixTest "when value is a literal unit"
+            { value = "()"
+            , expectedType = "()"
+            }
         ]
+
+
+fixTest : String -> { value : String, expectedType : String } -> Test
+fixTest title { value, expectedType } =
+    test title <|
+        \_ ->
+            ("""module A exposing (..)
+a = let
+      hasNoTypeAnnotation = """ ++ value ++ """
+    in
+    d
+""")
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                        , details = details
+                        , under = "hasNoTypeAnnotation"
+                        }
+                        |> Review.Test.whenFixed ("""module A exposing (..)
+a = let
+      hasNoTypeAnnotation : """ ++ expectedType ++ """
+      hasNoTypeAnnotation = """ ++ value ++ """
+    in
+    d
+""")
+                    ]
