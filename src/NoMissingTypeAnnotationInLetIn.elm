@@ -138,5 +138,11 @@ inferType node =
         Expression.Literal _ ->
             Just "String"
 
+        Expression.Integer _ ->
+            Just "number"
+
+        Expression.Floatable _ ->
+            Just "Float"
+
         _ ->
             Nothing
