@@ -233,13 +233,27 @@ inferType2 context node =
                     Nothing
 
                 function :: arguments ->
-                    --inferType context function
-                    --    |> List.drop (List.length arguments)
-                    Nothing
+                    inferType2 context function
+                        |> Maybe.andThen (applyArguments context arguments)
 
         _ ->
             -- TODO Handle other cases
             Nothing
+
+
+applyArguments : Context -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArguments context arguments type_ =
+    case arguments of
+        [] ->
+            Just type_
+
+        first :: restOfArguments ->
+            case type_ of
+                Elm.Type.Lambda input output ->
+                    applyArguments context restOfArguments output
+
+                _ ->
+                    Nothing
 
 
 typeAnnotationToElmType : Node TypeAnnotation -> Elm.Type.Type
