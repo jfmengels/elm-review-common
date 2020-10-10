@@ -324,6 +324,12 @@ inferType context node =
                 _ ->
                     Nothing
 
+        Expression.RecordAccessFunction fieldName ->
+            Just <|
+                Elm.Type.Lambda
+                    (Elm.Type.Record [ ( String.dropLeft 1 fieldName, Elm.Type.Var "a" ) ] (Just "b"))
+                    (Elm.Type.Var "a")
+
         _ ->
             -- TODO Handle other cases
             Nothing

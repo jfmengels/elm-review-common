@@ -325,6 +325,13 @@ someValue = something"""
             , topLevelDeclarations = """someValue : thing -> { a : String, b : Int }
 someValue = something"""
             }
+        , fixTest "when value is a record access function"
+            -- TODO Create another case where this generic type is already in scope
+            { arguments = ""
+            , value = ".field"
+            , expectedType = "{ b | field : a } -> a"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
