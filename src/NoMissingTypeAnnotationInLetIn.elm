@@ -73,7 +73,7 @@ rule =
 
 type alias Context =
     { lookupTable : ModuleNameLookupTable
-    , knownTypes : Dict String (List String)
+    , knownTypes : Dict String Elm.Type.Type
     }
 
 
@@ -303,8 +303,9 @@ inferType context node =
                     [ "Bool" ]
 
                 ( Just [], _ ) ->
-                    Dict.get name context.knownTypes
-                        |> Maybe.withDefault []
+                    --Dict.get name context.knownTypes
+                    --    |> Maybe.withDefault []
+                    []
 
                 _ ->
                     []
@@ -330,7 +331,7 @@ inferType context node =
 declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
 declarationListVisitor nodes context =
     let
-        knownTypes : Dict String (List String)
+        knownTypes : Dict String Elm.Type.Type
         knownTypes =
             nodes
                 |> List.filterMap typeOfDeclaration
@@ -339,7 +340,7 @@ declarationListVisitor nodes context =
     ( [], { context | knownTypes = knownTypes } )
 
 
-typeOfDeclaration : Node Declaration -> Maybe ( String, List String )
+typeOfDeclaration : Node Declaration -> Maybe ( String, Elm.Type.Type )
 typeOfDeclaration node =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
@@ -351,9 +352,18 @@ typeOfDeclaration node =
                         |> .name
                         |> Node.value
             in
-            function.signature
-                |> Maybe.andThen (Node.value >> .typeAnnotation >> typeAnnotationAsString)
-                |> Maybe.map (Tuple.pair functionName)
+            case function.signature of
+                Just signature ->
+                    Just
+                        ( functionName
+                        , signature
+                            |> Node.value
+                            |> .typeAnnotation
+                            |> typeAnnotationToElmType
+                        )
+
+                Nothing ->
+                    Nothing
 
         _ ->
             Nothing
