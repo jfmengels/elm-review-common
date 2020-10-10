@@ -266,6 +266,11 @@ someValue = something"""
             , expectedType = "List String"
             , topLevelDeclarations = ""
             }
+        , noFixTest "should not provide a fix when value is a list of only unknown values"
+            { arguments = ""
+            , value = """[ thing, someThing abc, otherThing ]"""
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"

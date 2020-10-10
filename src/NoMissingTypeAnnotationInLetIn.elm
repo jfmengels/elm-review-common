@@ -299,9 +299,18 @@ inferType context node =
 
 inferTypeForList : Context -> List (Node Expression) -> Maybe Elm.Type.Type
 inferTypeForList context nodes =
+    if List.isEmpty nodes then
+        Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
+
+    else
+        inferTypeForNonEmptyList context nodes
+
+
+inferTypeForNonEmptyList : Context -> List (Node Expression) -> Maybe Elm.Type.Type
+inferTypeForNonEmptyList context nodes =
     case nodes of
         [] ->
-            Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
+            Nothing
 
         head :: tail ->
             case inferType context head of
@@ -309,7 +318,7 @@ inferTypeForList context nodes =
                     Just (Elm.Type.Type "List" [ inferredType ])
 
                 Nothing ->
-                    inferTypeForList context tail
+                    inferTypeForNonEmptyList context tail
 
 
 applyArguments : Context -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
