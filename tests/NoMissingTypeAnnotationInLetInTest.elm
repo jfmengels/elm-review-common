@@ -208,6 +208,13 @@ someValue = something"""
             , topLevelDeclarations = """someValue : String -> List (Attribute msg)
 someValue = something"""
             }
+        , fixTest "when value is a function call to a known top-level function where parens are needed for the underlying function"
+            { arguments = ""
+            , value = "someValue string"
+            , expectedType = "(Thing -> Thing) -> Int"
+            , topLevelDeclarations = """someValue : String -> (Thing -> Thing) -> Int
+someValue = something"""
+            }
         ]
 
 

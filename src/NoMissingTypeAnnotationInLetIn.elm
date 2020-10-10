@@ -172,8 +172,8 @@ typeAsStringWithParensMaybe type_ =
             }
 
         Elm.Type.Lambda input output ->
-            { value = typeAsString input ++ " -> " ++ typeAsString output
-            , mayNeedParens = False
+            { value = typeAsStringWrappedInParens input ++ " -> " ++ typeAsString output
+            , mayNeedParens = True
             }
 
         Elm.Type.Tuple types ->
