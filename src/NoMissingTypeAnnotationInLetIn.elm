@@ -303,22 +303,46 @@ inferTypeForList context nodes =
         Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
 
     else
-        inferTypeForNonEmptyList context nodes
+        inferTypeForNonEmptyList context nodes Nothing
 
 
-inferTypeForNonEmptyList : Context -> List (Node Expression) -> Maybe Elm.Type.Type
-inferTypeForNonEmptyList context nodes =
+inferTypeForNonEmptyList : Context -> List (Node Expression) -> Maybe Elm.Type.Type -> Maybe Elm.Type.Type
+inferTypeForNonEmptyList context nodes maybeCurrentlyInferredType =
     case nodes of
         [] ->
-            Nothing
+            case maybeCurrentlyInferredType of
+                Just currentlyInferredType ->
+                    Just (Elm.Type.Type "List" [ currentlyInferredType ])
+
+                Nothing ->
+                    Nothing
 
         head :: tail ->
             case inferType context head of
                 Just inferredType ->
-                    Just (Elm.Type.Type "List" [ inferredType ])
+                    if Set.isEmpty (findTypeVariables inferredType) then
+                        Just (Elm.Type.Type "List" [ inferredType ])
+
+                    else
+                        let
+                            newInferredType : Maybe Elm.Type.Type
+                            newInferredType =
+                                case maybeCurrentlyInferredType of
+                                    Just currentlyInferredType ->
+                                        Just (mergeTypeInferrals currentlyInferredType inferredType)
+
+                                    Nothing ->
+                                        Just inferredType
+                        in
+                        inferTypeForNonEmptyList context tail newInferredType
 
                 Nothing ->
-                    inferTypeForNonEmptyList context tail
+                    inferTypeForNonEmptyList context tail maybeCurrentlyInferredType
+
+
+mergeTypeInferrals : Elm.Type.Type -> Elm.Type.Type -> Elm.Type.Type
+mergeTypeInferrals typeA typeB =
+    typeB
 
 
 applyArguments : Context -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
