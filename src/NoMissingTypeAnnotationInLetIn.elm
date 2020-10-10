@@ -123,9 +123,10 @@ reportFunctionWithoutSignature context function =
                         |> Node.value
                         |> .name
 
-                maybeType : List String
+                maybeType : Maybe String
                 maybeType =
-                    inferType context (function.declaration |> Node.value |> .expression)
+                    inferType2 context (function.declaration |> Node.value |> .expression)
+                        |> Maybe.map typeAsString
             in
             Rule.errorWithFix
                 { message = "Missing type annotation for `" ++ Node.value name ++ "`"
@@ -138,22 +139,23 @@ reportFunctionWithoutSignature context function =
                 |> Just
 
 
-createFix : Node String -> List String -> List Fix
-createFix functionNameNode inferredType =
-    if List.isEmpty inferredType then
-        []
+createFix : Node String -> Maybe String -> List Fix
+createFix functionNameNode maybeInferredType =
+    case maybeInferredType of
+        Nothing ->
+            []
 
-    else
-        let
-            functionName : String
-            functionName =
-                Node.value functionNameNode
+        Just inferredType ->
+            let
+                functionName : String
+                functionName =
+                    Node.value functionNameNode
 
-            position : { row : Int, column : Int }
-            position =
-                (Node.range functionNameNode).start
-        in
-        [ Fix.insertAt position (functionName ++ " : " ++ String.join " -> " inferredType ++ "\n" ++ String.repeat (position.column - 1) " ") ]
+                position : { row : Int, column : Int }
+                position =
+                    (Node.range functionNameNode).start
+            in
+            [ Fix.insertAt position (functionName ++ " : " ++ inferredType ++ "\n" ++ String.repeat (position.column - 1) " ") ]
 
 
 typeAsString : Elm.Type.Type -> String
@@ -196,13 +198,15 @@ inferType2 : Context -> Node Expression -> Maybe Elm.Type.Type
 inferType2 context node =
     case Node.value node of
         Expression.Literal _ ->
-            Just (Elm.Type.Type "String.String" [])
+            -- TODO Re-add "String." but remove it at stringification time
+            Just (Elm.Type.Type "String" [])
 
         Expression.Integer _ ->
             Just (Elm.Type.Var "number")
 
         Expression.Floatable _ ->
-            Just (Elm.Type.Type "Basics.Float" [])
+            -- TODO Re-add "Basics." but remove it at stringification time
+            Just (Elm.Type.Type "Float" [])
 
         Expression.UnitExpr ->
             Just (Elm.Type.Tuple [])
@@ -210,10 +214,12 @@ inferType2 context node =
         Expression.FunctionOrValue _ name ->
             case ( ModuleNameLookupTable.moduleNameFor context.lookupTable node, name ) of
                 ( Just [ "Basics" ], "True" ) ->
-                    Just (Elm.Type.Type "Basics.Bool" [])
+                    -- TODO Re-add "Basics." but remove it at stringification time
+                    Just (Elm.Type.Type "Bool" [])
 
                 ( Just [ "Basics" ], "False" ) ->
-                    Just (Elm.Type.Type "Basics.Bool" [])
+                    -- TODO Re-add "Basics." but remove it at stringification time
+                    Just (Elm.Type.Type "Bool" [])
 
                 ( Just [], _ ) ->
                     --Dict.get name context.knownTypes
