@@ -293,7 +293,20 @@ inferType context node =
             inferTypeForList context nodes
 
         Expression.RecordExpr fields ->
-            Just (Elm.Type.Record [] Nothing)
+            let
+                inferredFields : List ( String, Elm.Type.Type )
+                inferredFields =
+                    List.filterMap
+                        (Node.value
+                            >> (\( fieldName, fieldValue ) ->
+                                    Maybe.map
+                                        (Tuple.pair (Node.value fieldName))
+                                        (inferType context fieldValue)
+                               )
+                        )
+                        fields
+            in
+            Just (Elm.Type.Record inferredFields Nothing)
 
         _ ->
             -- TODO Handle other cases
