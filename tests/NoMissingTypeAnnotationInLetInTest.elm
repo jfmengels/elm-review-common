@@ -221,6 +221,12 @@ someValue = something"""
             , topLevelDeclarations = """someValue : a -> a
 someValue = something"""
             }
+        , noFixTest "should not provide a fix (for now) when function has arguments"
+            { arguments = "thing"
+            , value = "someValue thing"
+            , topLevelDeclarations = """someValue : String -> Int
+someValue = something"""
+            }
         ]
 
 

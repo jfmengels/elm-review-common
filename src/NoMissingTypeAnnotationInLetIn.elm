@@ -118,25 +118,27 @@ reportFunctionWithoutSignature context function =
 
         Nothing ->
             let
-                name : Node String
-                name =
-                    function.declaration
-                        |> Node.value
-                        |> .name
+                declaration : Expression.FunctionImplementation
+                declaration =
+                    Node.value function.declaration
 
                 maybeType : Maybe String
                 maybeType =
-                    inferType context (function.declaration |> Node.value |> .expression)
-                        |> Maybe.map typeAsString
+                    if List.isEmpty declaration.arguments then
+                        inferType context declaration.expression
+                            |> Maybe.map typeAsString
+
+                    else
+                        Nothing
             in
             Rule.errorWithFix
-                { message = "Missing type annotation for `" ++ Node.value name ++ "`"
+                { message = "Missing type annotation for `" ++ Node.value declaration.name ++ "`"
                 , details =
                     [ "Type annotations help you understand what happens in the code, and it will help the compiler give better error messages."
                     ]
                 }
-                (Node.range name)
-                (createFix name maybeType)
+                (Node.range declaration.name)
+                (createFix declaration.name maybeType)
                 |> Just
 
 
