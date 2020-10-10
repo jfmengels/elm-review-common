@@ -260,6 +260,12 @@ someValue = something"""
             , expectedType = "List number"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a list where the first and some elements are unknown"
+            { arguments = ""
+            , value = """[ thing, "abc", otherThing ]"""
+            , expectedType = "List String"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"

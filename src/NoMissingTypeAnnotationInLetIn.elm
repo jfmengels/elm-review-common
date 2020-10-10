@@ -309,7 +309,7 @@ inferTypeForList context nodes =
                     Just (Elm.Type.Type "List" [ inferredType ])
 
                 Nothing ->
-                    Nothing
+                    inferTypeForList context tail
 
 
 applyArguments : Context -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
