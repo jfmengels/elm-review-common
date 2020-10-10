@@ -244,6 +244,41 @@ inferType2 context node =
             Nothing
 
 
+typeAnnotationToElmType : Node TypeAnnotation -> Elm.Type.Type
+typeAnnotationToElmType node =
+    case Node.value node of
+        TypeAnnotation.GenericType var ->
+            Elm.Type.Var var
+
+        TypeAnnotation.Typed (Node _ ( moduleName, name )) nodes ->
+            Elm.Type.Type (String.join "." (moduleName ++ [ name ])) (List.map typeAnnotationToElmType nodes)
+
+        TypeAnnotation.Unit ->
+            Elm.Type.Tuple []
+
+        TypeAnnotation.Tupled nodes ->
+            Elm.Type.Tuple (List.map typeAnnotationToElmType nodes)
+
+        TypeAnnotation.Record recordDefinition ->
+            Elm.Type.Record
+                (List.map
+                    (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
+                    recordDefinition
+                )
+                Nothing
+
+        TypeAnnotation.GenericRecord genericVar recordDefinition ->
+            Elm.Type.Record
+                (List.map
+                    (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
+                    (Node.value recordDefinition)
+                )
+                (Just (Node.value genericVar))
+
+        TypeAnnotation.FunctionTypeAnnotation input output ->
+            Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
+
+
 inferType : Context -> Node Expression -> List String
 inferType context node =
     case Node.value node of
