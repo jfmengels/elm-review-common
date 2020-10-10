@@ -207,7 +207,12 @@ typeAsStringWithParensMaybe type_ =
                         Nothing ->
                             ""
             in
-            { value = "{" ++ extensibleValueAsString ++ String.join ", " (List.map recordFieldAsString fields) ++ "}"
+            { value =
+                if List.isEmpty fields then
+                    "{}"
+
+                else
+                    "{ " ++ extensibleValueAsString ++ String.join ", " (List.map recordFieldAsString fields) ++ " }"
             , mayNeedParens = False
             }
 

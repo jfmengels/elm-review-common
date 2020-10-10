@@ -152,12 +152,26 @@ someValue = 1.0"""
             , topLevelDeclarations = """someValue : ()
 someValue = ()"""
             }
-        , fixTest "when value equals a typeclass"
+        , fixTest "when value equals a top-level value: typeclass"
             { arguments = ""
             , value = "someValue"
             , expectedType = "number"
             , topLevelDeclarations = """someValue : number
 someValue = 1"""
+            }
+        , fixTest "when value equals a top-level value: empty record"
+            { arguments = ""
+            , value = "someValue"
+            , expectedType = "{}"
+            , topLevelDeclarations = """someValue : { }
+someValue = { a = 1 }"""
+            }
+        , fixTest "when value equals a top-level value: record"
+            { arguments = ""
+            , value = "someValue"
+            , expectedType = "{ a : Int, b : String }"
+            , topLevelDeclarations = """someValue : { a : Int, b:String }
+someValue = someThing"""
             }
         , fixTest "when value equals a generic type"
             { arguments = ""
