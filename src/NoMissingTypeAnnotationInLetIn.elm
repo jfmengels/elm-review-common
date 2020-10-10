@@ -253,9 +253,21 @@ typeAnnotationAsString node =
             Just [ genericType ]
 
         TypeAnnotation.FunctionTypeAnnotation input output ->
-            Maybe.map2 (++)
-                (typeAnnotationAsString input)
-                (typeAnnotationAsString output)
+            let
+                inferredInputType : Maybe (List String)
+                inferredInputType =
+                    typeAnnotationAsString input
+            in
+            case Maybe.map2 Tuple.pair inferredInputType (typeAnnotationAsString output) of
+                Just ( inferredInputType_, outputType ) ->
+                    if List.length inferredInputType_ >= 2 then
+                        Just ([ String.join " -> " inferredInputType_ ] ++ outputType)
+
+                    else
+                        Just (inferredInputType_ ++ outputType)
+
+                Nothing ->
+                    Nothing
 
         _ ->
             -- TODO Handle other cases

@@ -178,6 +178,12 @@ someValue = something"""
             , topLevelDeclarations = """someValue : Thing -> String -> Int
 someValue = something"""
             }
+        , fixTest "when value is a call to known top-level function with a function as argument"
+            { value = "someValue thing string"
+            , expectedType = "Int"
+            , topLevelDeclarations = """someValue : (Thing -> Thing) -> String -> Int
+someValue = something"""
+            }
         ]
 
 
