@@ -277,6 +277,18 @@ inferType context node =
                     inferType context function
                         |> Maybe.andThen (applyArguments context arguments)
 
+        Expression.TupledExpression nodes ->
+            let
+                inferredTypes : List Elm.Type.Type
+                inferredTypes =
+                    List.filterMap (inferType context) nodes
+            in
+            if List.length inferredTypes == List.length nodes then
+                Just (Elm.Type.Tuple inferredTypes)
+
+            else
+                Nothing
+
         _ ->
             -- TODO Handle other cases
             Nothing

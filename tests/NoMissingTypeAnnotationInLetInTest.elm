@@ -229,6 +229,18 @@ someValue = something"""
             , topLevelDeclarations = """someValue : String -> (Thing -> Thing) -> Int
 someValue = something"""
             }
+        , fixTest "when value is a tuple"
+            { arguments = ""
+            , value = """( "abc", 1.0 )"""
+            , expectedType = "( String, Float )"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a 3-tuple"
+            { arguments = ""
+            , value = """( "abc", 1.0, 1 )"""
+            , expectedType = "( String, Float, number )"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
