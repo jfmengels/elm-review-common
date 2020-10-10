@@ -7,9 +7,10 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 -}
 
 import Dict exposing (Dict)
-import Elm.Syntax.Declaration exposing (Declaration)
+import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
-import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Node as Node exposing (Node(..))
+import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
@@ -64,13 +65,14 @@ elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeA
 rule : Rule
 rule =
     Rule.newModuleRuleSchemaUsingContextCreator "NoMissingTypeAnnotationInLetIn" initialContext
+        |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
     { lookupTable : ModuleNameLookupTable
-    , knownTypes : Dict String String
+    , knownTypes : Dict String (List String)
     }
 
 
@@ -79,7 +81,7 @@ initialContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { lookupTable = lookupTable
-            , knownTypes = Dict.singleton "someValue" "String"
+            , knownTypes = Dict.empty
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -179,9 +181,63 @@ inferType context node =
 
                 ( Just [], _ ) ->
                     Dict.get name context.knownTypes
+                        |> Maybe.map (String.join " USE ARROWS HERE ")
 
                 _ ->
                     Nothing
 
         _ ->
+            -- TODO Handle other cases
+            Nothing
+
+
+
+-- DECLARATION LIST VISITOR
+
+
+declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
+declarationListVisitor nodes context =
+    let
+        knownTypes : Dict String (List String)
+        knownTypes =
+            nodes
+                |> List.filterMap typeOfDeclaration
+                |> Dict.fromList
+    in
+    ( [], { context | knownTypes = knownTypes } )
+
+
+typeOfDeclaration : Node Declaration -> Maybe ( String, List String )
+typeOfDeclaration node =
+    case Node.value node of
+        Declaration.FunctionDeclaration function ->
+            let
+                functionName : String
+                functionName =
+                    function.declaration
+                        |> Node.value
+                        |> .name
+                        |> Node.value
+            in
+            function.signature
+                |> Maybe.andThen (Node.value >> .typeAnnotation >> typeAnnotationAsString)
+                |> Maybe.map (Tuple.pair functionName)
+
+        _ ->
+            Nothing
+
+
+typeAnnotationAsString : Node TypeAnnotation -> Maybe (List String)
+typeAnnotationAsString node =
+    case Node.value node of
+        TypeAnnotation.Typed (Node _ ( moduleName, name )) arguments ->
+            -- TODO use arguments
+            if List.isEmpty arguments then
+                Just [ String.join "." (moduleName ++ [ name ]) ]
+
+            else
+                Nothing
+
+        _ ->
+            -- TODO Handle other cases
             Nothing
