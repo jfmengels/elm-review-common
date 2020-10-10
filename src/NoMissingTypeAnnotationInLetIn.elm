@@ -500,13 +500,13 @@ declarationListVisitor nodes context =
         knownTypes : Dict String Elm.Type.Type
         knownTypes =
             nodes
-                |> List.filterMap typeOfDeclaration
+                |> List.concatMap typeOfDeclaration
                 |> Dict.fromList
     in
     ( [], { context | knownTypes = knownTypes } )
 
 
-typeOfDeclaration : Node Declaration -> Maybe ( String, Elm.Type.Type )
+typeOfDeclaration : Node Declaration -> List ( String, Elm.Type.Type )
 typeOfDeclaration node =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
@@ -520,16 +520,16 @@ typeOfDeclaration node =
             in
             case function.signature of
                 Just signature ->
-                    Just
-                        ( functionName
-                        , signature
+                    [ ( functionName
+                      , signature
                             |> Node.value
                             |> .typeAnnotation
                             |> typeAnnotationToElmType
-                        )
+                      )
+                    ]
 
                 Nothing ->
-                    Nothing
+                    []
 
         _ ->
-            Nothing
+            []
