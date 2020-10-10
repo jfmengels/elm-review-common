@@ -412,7 +412,7 @@ applyArgumentsInternal context arguments previousTypeVariables type_ =
             else
                 Nothing
 
-        first :: restOfArguments ->
+        _ :: restOfArguments ->
             case type_ of
                 Elm.Type.Lambda input output ->
                     let
@@ -530,6 +530,32 @@ typeOfDeclaration node =
 
                 Nothing ->
                     []
+
+        Declaration.CustomTypeDeclaration type_ ->
+            let
+                customTypeType : Elm.Type.Type
+                customTypeType =
+                    Elm.Type.Type
+                        (Node.value type_.name)
+                        (List.map (Node.value >> Elm.Type.Var) type_.generics)
+            in
+            List.map
+                (\(Node _ { name, arguments }) ->
+                    let
+                        functionType : Elm.Type.Type
+                        functionType =
+                            arguments
+                                |> List.foldr
+                                    (\input output ->
+                                        Elm.Type.Lambda
+                                            (typeAnnotationToElmType input)
+                                            output
+                                    )
+                                    customTypeType
+                    in
+                    ( Node.value name, functionType )
+                )
+                type_.constructors
 
         _ ->
             []

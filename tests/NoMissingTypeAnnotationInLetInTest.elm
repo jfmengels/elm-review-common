@@ -332,6 +332,29 @@ someValue = something"""
             , expectedType = "{ b | field : a } -> a"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a custom type variant without arguments"
+            { arguments = ""
+            , value = "A"
+            , expectedType = "CustomType"
+            , topLevelDeclarations = "type CustomType = A | B"
+            }
+        , fixTest "when value is part of a custom type that will use generics"
+            { arguments = ""
+            , value = "A"
+            , expectedType = "a -> CustomType a"
+            , topLevelDeclarations = "type CustomType a = A a | B"
+            }
+        , noFixTest "should not provide a fix (for now) when a custom type's variant uses generics"
+            { arguments = ""
+            , value = "A 1"
+            , topLevelDeclarations = "type CustomType a = A a | B"
+            }
+        , fixTest "should provide a fix when a custom type's variant does not use the type's generics"
+            { arguments = ""
+            , value = "B"
+            , expectedType = "CustomType a"
+            , topLevelDeclarations = "type CustomType a = A a | B"
+            }
         , noFixTest "when value is a record access function used on an expression"
             -- TODO This should be supported when we infer type variables better
             { arguments = ""
