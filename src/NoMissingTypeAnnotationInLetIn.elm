@@ -178,7 +178,12 @@ typeAsStringWithParensMaybe type_ =
             }
 
         Elm.Type.Tuple types ->
-            { value = "(" ++ String.join ", " (List.map typeAsString types) ++ ")"
+            { value =
+                if List.isEmpty types then
+                    "()"
+
+                else
+                    "( " ++ String.join ", " (List.map typeAsString types) ++ " )"
             , mayNeedParens = False
             }
 
