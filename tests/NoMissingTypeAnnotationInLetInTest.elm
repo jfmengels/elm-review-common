@@ -142,6 +142,18 @@ someValue = 1.0"""
             , topLevelDeclarations = """someValue : ()
 someValue = ()"""
             }
+        , fixTest "when value equals a typeclass"
+            { value = "someValue"
+            , expectedType = "number"
+            , topLevelDeclarations = """someValue : number
+someValue = 1"""
+            }
+        , fixTest "when value equals a generic type"
+            { value = "someValue"
+            , expectedType = "genericType"
+            , topLevelDeclarations = """someValue : genericType
+someValue = 1"""
+            }
         ]
 
 

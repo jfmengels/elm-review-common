@@ -241,6 +241,9 @@ typeAnnotationAsString node =
         TypeAnnotation.Unit ->
             Just [ "()" ]
 
+        TypeAnnotation.GenericType genericType ->
+            Just [ genericType ]
+
         _ ->
             -- TODO Handle other cases
             Nothing
