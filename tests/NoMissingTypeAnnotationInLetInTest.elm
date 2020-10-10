@@ -89,97 +89,114 @@ fixTests : Test
 fixTests =
     describe "Fixing"
         [ fixTest "when value is a literal string"
-            { value = "\"abc\""
+            { arguments = ""
+            , value = "\"abc\""
             , expectedType = "String"
             , topLevelDeclarations = ""
             }
         , fixTest "when value is a literal integer"
-            { value = "1"
+            { arguments = ""
+            , value = "1"
             , expectedType = "number"
             , topLevelDeclarations = ""
             }
         , fixTest "when value is a literal float"
-            { value = "1.0"
+            { arguments = ""
+            , value = "1.0"
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
         , fixTest "when value is a literal unit"
-            { value = "()"
+            { arguments = ""
+            , value = "()"
             , expectedType = "()"
             , topLevelDeclarations = ""
             }
         , fixTest "when value is `True`"
-            { value = "False"
+            { arguments = ""
+            , value = "False"
             , expectedType = "Bool"
             , topLevelDeclarations = ""
             }
         , fixTest "when value is `False`"
-            { value = "False"
+            { arguments = ""
+            , value = "False"
             , expectedType = "Bool"
             , topLevelDeclarations = ""
             }
         , fixTest "when value equals a top-level value: String"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "String"
             , topLevelDeclarations = """someValue : String
 someValue = "abc\""""
             }
         , fixTest "when value equals a top-level value: Int"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "Int"
             , topLevelDeclarations = """someValue : Int
 someValue = 1"""
             }
         , fixTest "when value equals a top-level value: Float"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "Float"
             , topLevelDeclarations = """someValue : Float
 someValue = 1.0"""
             }
         , fixTest "when value equals a top-level value: unit"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "()"
             , topLevelDeclarations = """someValue : ()
 someValue = ()"""
             }
         , fixTest "when value equals a typeclass"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "number"
             , topLevelDeclarations = """someValue : number
 someValue = 1"""
             }
         , fixTest "when value equals a generic type"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "genericType"
             , topLevelDeclarations = """someValue : genericType
 someValue = 1"""
             }
         , fixTest "when value equals a function"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "String -> Int"
             , topLevelDeclarations = """someValue : String -> Int
 someValue = String.length"""
             }
         , fixTest "when value equals a function (multiple arguments)"
-            { value = "someValue"
+            { arguments = ""
+            , value = "someValue"
             , expectedType = "Thing -> String -> Int"
             , topLevelDeclarations = """someValue : Thing -> String -> Int
 someValue = something"""
             }
         , fixTest "when value is a function call to a known top-level function"
-            { value = "someValue thing"
+            { arguments = ""
+            , value = "someValue thing"
             , expectedType = "String -> Int"
             , topLevelDeclarations = """someValue : Thing -> String -> Int
 someValue = something"""
             }
         , fixTest "when value is a function call to a known top-level function (multiple arguments)"
-            { value = "someValue thing string"
+            { arguments = ""
+            , value = "someValue thing string"
             , expectedType = "Int"
             , topLevelDeclarations = """someValue : Thing -> String -> Int
 someValue = something"""
             }
         , fixTest "when value is a call to known top-level function with a function as argument"
-            { value = "someValue thing string"
+            { arguments = ""
+            , value = "someValue thing string"
             , expectedType = "Int"
             , topLevelDeclarations = """someValue : (Thing -> Thing) -> String -> Int
 someValue = something"""
@@ -187,14 +204,14 @@ someValue = something"""
         ]
 
 
-fixTest : String -> { value : String, expectedType : String, topLevelDeclarations : String } -> Test
-fixTest title { value, expectedType, topLevelDeclarations } =
+fixTest : String -> { arguments : String, value : String, expectedType : String, topLevelDeclarations : String } -> Test
+fixTest title { arguments, value, expectedType, topLevelDeclarations } =
     test title <|
         \_ ->
             ("""module A exposing (..)
 """ ++ topLevelDeclarations ++ """
 a = let
-      hasNoTypeAnnotation = """ ++ value ++ """
+      hasNoTypeAnnotation """ ++ arguments ++ """ = """ ++ value ++ """
     in
     d
 """)
@@ -209,7 +226,7 @@ a = let
 """ ++ topLevelDeclarations ++ """
 a = let
       hasNoTypeAnnotation : """ ++ expectedType ++ """
-      hasNoTypeAnnotation = """ ++ value ++ """
+      hasNoTypeAnnotation """ ++ arguments ++ """ = """ ++ value ++ """
     in
     d
 """)
