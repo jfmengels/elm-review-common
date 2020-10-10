@@ -312,6 +312,19 @@ someValue = something"""
             , expectedType = "String"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a record access on a record"
+            { arguments = ""
+            , value = """{ a = "abc", b = 1.0 }.a"""
+            , expectedType = "String"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a record access on a complex value"
+            { arguments = ""
+            , value = "(someValue thing).a"
+            , expectedType = "String"
+            , topLevelDeclarations = """someValue : thing -> { a : String, b : Int }
+someValue = something"""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"

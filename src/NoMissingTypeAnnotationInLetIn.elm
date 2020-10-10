@@ -315,9 +315,32 @@ inferType context node =
             else
                 Nothing
 
+        Expression.RecordAccess expression (Node _ fieldName) ->
+            case inferType context expression of
+                Just (Elm.Type.Record fields _) ->
+                    find (\( name, _ ) -> fieldName == name) fields
+                        |> Maybe.map Tuple.second
+
+                _ ->
+                    Nothing
+
         _ ->
             -- TODO Handle other cases
             Nothing
+
+
+find : (a -> Bool) -> List a -> Maybe a
+find predicate list =
+    case list of
+        [] ->
+            Nothing
+
+        head :: tail ->
+            if predicate head then
+                Just head
+
+            else
+                find predicate tail
 
 
 inferTypeForList : Context -> List (Node Expression) -> Maybe Elm.Type.Type
