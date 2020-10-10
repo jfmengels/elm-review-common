@@ -1,6 +1,8 @@
 module NoMissingTypeAnnotationInLetInTest exposing (all)
 
+import Dependencies.ElmCore
 import NoMissingTypeAnnotationInLetIn exposing (rule)
+import Review.Project as Project exposing (Project)
 import Review.Test
 import Test exposing (Test, describe, test)
 
@@ -30,7 +32,7 @@ hasTypeAnnotation = 1
 
 hasNoTypeAnnotation = doSomething
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.runWithProjectData project rule
                     |> Review.Test.expectNoErrors
         , test "should not report anything when all let in declarations have a type annotation" <|
             \_ ->
@@ -44,7 +46,7 @@ a = let
     in
     b + c
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.runWithProjectData project rule
                     |> Review.Test.expectNoErrors
         , test "should report an error when a let in declaration has no type annotation" <|
             \_ ->
@@ -55,7 +57,7 @@ a = let
     in
     d
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.runWithProjectData project rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Missing type annotation for `hasNoTypeAnnotation_1`"
@@ -78,7 +80,7 @@ a = let
     in
     d
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.runWithProjectData project rule
                     |> Review.Test.expectNoErrors
         ]
 
@@ -102,6 +104,14 @@ fixTests =
             { value = "()"
             , expectedType = "()"
             }
+        , fixTest "when value is `True`"
+            { value = "False"
+            , expectedType = "Bool"
+            }
+        , fixTest "when value is `False`"
+            { value = "False"
+            , expectedType = "Bool"
+            }
         ]
 
 
@@ -115,7 +125,7 @@ a = let
     in
     d
 """)
-                |> Review.Test.run rule
+                |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectErrors
                     [ Review.Test.error
                         { message = "Missing type annotation for `hasNoTypeAnnotation`"
@@ -130,3 +140,9 @@ a = let
     d
 """)
                     ]
+
+
+project : Project
+project =
+    Project.new
+        |> Project.addDependency Dependencies.ElmCore.dependency

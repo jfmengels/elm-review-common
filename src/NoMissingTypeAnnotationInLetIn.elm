@@ -9,6 +9,7 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
 import Review.Fix as Fix exposing (Fix)
+import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 
 
@@ -60,32 +61,46 @@ elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeA
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoMissingTypeAnnotationInLetIn" ()
-        |> Rule.withSimpleExpressionVisitor expressionVisitor
+    Rule.newModuleRuleSchemaUsingContextCreator "NoMissingTypeAnnotationInLetIn" initialContext
+        |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
 
-expressionVisitor : Node Expression -> List (Error {})
-expressionVisitor expression =
+type alias Context =
+    { lookupTable : ModuleNameLookupTable
+    }
+
+
+initialContext : Rule.ContextCreator () Context
+initialContext =
+    Rule.initContextCreator
+        (\lookupTable () -> { lookupTable = lookupTable })
+        |> Rule.withModuleNameLookupTable
+
+
+expressionVisitor : Node Expression -> Context -> ( List (Error {}), Context )
+expressionVisitor expression context =
     case Node.value expression of
         Expression.LetExpression { declarations } ->
-            List.filterMap
+            ( List.filterMap
                 (\declaration ->
                     case Node.value declaration of
                         Expression.LetFunction function ->
-                            reportFunctionWithoutSignature function
+                            reportFunctionWithoutSignature context function
 
                         _ ->
                             Nothing
                 )
                 declarations
+            , context
+            )
 
         _ ->
-            []
+            ( [], context )
 
 
-reportFunctionWithoutSignature : Expression.Function -> Maybe (Error {})
-reportFunctionWithoutSignature function =
+reportFunctionWithoutSignature : Context -> Expression.Function -> Maybe (Error {})
+reportFunctionWithoutSignature context function =
     case function.signature of
         Just _ ->
             Nothing
@@ -100,7 +115,7 @@ reportFunctionWithoutSignature function =
 
                 maybeType : Maybe String
                 maybeType =
-                    inferType (function.declaration |> Node.value |> .expression)
+                    inferType context.lookupTable (function.declaration |> Node.value |> .expression)
             in
             Rule.errorWithFix
                 { message = "Missing type annotation for `" ++ Node.value name ++ "`"
@@ -132,8 +147,8 @@ createFix functionNameNode maybeType =
             []
 
 
-inferType : Node Expression -> Maybe String
-inferType node =
+inferType : ModuleNameLookupTable -> Node Expression -> Maybe String
+inferType lookupTable node =
     case Node.value node of
         Expression.Literal _ ->
             Just "String"
@@ -146,6 +161,17 @@ inferType node =
 
         Expression.UnitExpr ->
             Just "()"
+
+        Expression.FunctionOrValue _ name ->
+            case ( ModuleNameLookupTable.moduleNameFor lookupTable node, name ) of
+                ( Just [ "Basics" ], "True" ) ->
+                    Just "Bool"
+
+                ( Just [ "Basics" ], "False" ) ->
+                    Just "Bool"
+
+                _ ->
+                    Nothing
 
         _ ->
             Nothing
