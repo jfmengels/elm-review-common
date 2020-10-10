@@ -118,11 +118,29 @@ fixTests =
             , expectedType = "Bool"
             , topLevelDeclarations = ""
             }
-        , fixTest "when value equals a top-level value"
+        , fixTest "when value equals a top-level value: String"
             { value = "someValue"
             , expectedType = "String"
             , topLevelDeclarations = """someValue : String
 someValue = "abc\""""
+            }
+        , fixTest "when value equals a top-level value: Int"
+            { value = "someValue"
+            , expectedType = "Int"
+            , topLevelDeclarations = """someValue : Int
+someValue = 1"""
+            }
+        , fixTest "when value equals a top-level value: Float"
+            { value = "someValue"
+            , expectedType = "Float"
+            , topLevelDeclarations = """someValue : Float
+someValue = 1.0"""
+            }
+        , fixTest "when value equals a top-level value: unit"
+            { value = "someValue"
+            , expectedType = "()"
+            , topLevelDeclarations = """someValue : ()
+someValue = ()"""
             }
         ]
 

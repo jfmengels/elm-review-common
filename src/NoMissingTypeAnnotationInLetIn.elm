@@ -238,6 +238,9 @@ typeAnnotationAsString node =
             else
                 Nothing
 
+        TypeAnnotation.Unit ->
+            Just [ "()" ]
+
         _ ->
             -- TODO Handle other cases
             Nothing
