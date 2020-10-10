@@ -6,6 +6,8 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 
 -}
 
+import Dict exposing (Dict)
+import Elm.Syntax.Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
 import Review.Fix as Fix exposing (Fix)
@@ -68,13 +70,18 @@ rule =
 
 type alias Context =
     { lookupTable : ModuleNameLookupTable
+    , knownTypes : Dict String String
     }
 
 
 initialContext : Rule.ContextCreator () Context
 initialContext =
     Rule.initContextCreator
-        (\lookupTable () -> { lookupTable = lookupTable })
+        (\lookupTable () ->
+            { lookupTable = lookupTable
+            , knownTypes = Dict.singleton "someValue" "String"
+            }
+        )
         |> Rule.withModuleNameLookupTable
 
 
@@ -115,7 +122,7 @@ reportFunctionWithoutSignature context function =
 
                 maybeType : Maybe String
                 maybeType =
-                    inferType context.lookupTable (function.declaration |> Node.value |> .expression)
+                    inferType context (function.declaration |> Node.value |> .expression)
             in
             Rule.errorWithFix
                 { message = "Missing type annotation for `" ++ Node.value name ++ "`"
@@ -147,8 +154,8 @@ createFix functionNameNode maybeType =
             []
 
 
-inferType : ModuleNameLookupTable -> Node Expression -> Maybe String
-inferType lookupTable node =
+inferType : Context -> Node Expression -> Maybe String
+inferType context node =
     case Node.value node of
         Expression.Literal _ ->
             Just "String"
@@ -163,12 +170,15 @@ inferType lookupTable node =
             Just "()"
 
         Expression.FunctionOrValue _ name ->
-            case ( ModuleNameLookupTable.moduleNameFor lookupTable node, name ) of
+            case ( ModuleNameLookupTable.moduleNameFor context.lookupTable node, name ) of
                 ( Just [ "Basics" ], "True" ) ->
                     Just "Bool"
 
                 ( Just [ "Basics" ], "False" ) ->
                     Just "Bool"
+
+                ( Just [], _ ) ->
+                    Dict.get name context.knownTypes
 
                 _ ->
                     Nothing

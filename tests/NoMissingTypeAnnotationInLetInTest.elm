@@ -91,35 +91,48 @@ fixTests =
         [ fixTest "when value is a literal string"
             { value = "\"abc\""
             , expectedType = "String"
+            , topLevelDeclarations = ""
             }
         , fixTest "when value is a literal integer"
             { value = "1"
             , expectedType = "number"
+            , topLevelDeclarations = ""
             }
         , fixTest "when value is a literal float"
             { value = "1.0"
             , expectedType = "Float"
+            , topLevelDeclarations = ""
             }
         , fixTest "when value is a literal unit"
             { value = "()"
             , expectedType = "()"
+            , topLevelDeclarations = ""
             }
         , fixTest "when value is `True`"
             { value = "False"
             , expectedType = "Bool"
+            , topLevelDeclarations = ""
             }
         , fixTest "when value is `False`"
             { value = "False"
             , expectedType = "Bool"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value equals a top-level value"
+            { value = "someValue"
+            , expectedType = "String"
+            , topLevelDeclarations = """someValue : String
+someValue = "abc\""""
             }
         ]
 
 
-fixTest : String -> { value : String, expectedType : String } -> Test
-fixTest title { value, expectedType } =
+fixTest : String -> { value : String, expectedType : String, topLevelDeclarations : String } -> Test
+fixTest title { value, expectedType, topLevelDeclarations } =
     test title <|
         \_ ->
             ("""module A exposing (..)
+""" ++ topLevelDeclarations ++ """
 a = let
       hasNoTypeAnnotation = """ ++ value ++ """
     in
@@ -133,6 +146,7 @@ a = let
                         , under = "hasNoTypeAnnotation"
                         }
                         |> Review.Test.whenFixed ("""module A exposing (..)
+""" ++ topLevelDeclarations ++ """
 a = let
       hasNoTypeAnnotation : """ ++ expectedType ++ """
       hasNoTypeAnnotation = """ ++ value ++ """
