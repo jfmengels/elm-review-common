@@ -15,6 +15,7 @@ import Elm.Type
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
+import Set exposing (Set)
 
 
 {-| Reports `let in` declarations that do not have a type annotation.
@@ -271,17 +272,60 @@ inferType context node =
 
 applyArguments : Context -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
 applyArguments context arguments type_ =
+    applyArgumentsInternal context arguments Set.empty type_
+
+
+applyArgumentsInternal : Context -> List (Node Expression) -> Set String -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArgumentsInternal context arguments previousTypeVariables type_ =
     case arguments of
         [] ->
-            Just type_
+            if Set.intersect (findTypeVariables type_) previousTypeVariables |> Set.isEmpty then
+                Just type_
+
+            else
+                Nothing
 
         first :: restOfArguments ->
             case type_ of
                 Elm.Type.Lambda input output ->
-                    applyArguments context restOfArguments output
+                    let
+                        typeVariables : Set String
+                        typeVariables =
+                            Set.union
+                                (findTypeVariables input)
+                                previousTypeVariables
+                    in
+                    applyArgumentsInternal context restOfArguments typeVariables output
 
                 _ ->
                     Nothing
+
+
+findTypeVariables : Elm.Type.Type -> Set String
+findTypeVariables type_ =
+    case type_ of
+        Elm.Type.Var string ->
+            Set.singleton string
+
+        Elm.Type.Lambda input output ->
+            Set.union
+                (findTypeVariables input)
+                (findTypeVariables output)
+
+        Elm.Type.Tuple types ->
+            types
+                |> List.map findTypeVariables
+                |> List.foldl Set.union Set.empty
+
+        Elm.Type.Type _ types ->
+            types
+                |> List.map findTypeVariables
+                |> List.foldl Set.union Set.empty
+
+        Elm.Type.Record fields _ ->
+            fields
+                |> List.map (Tuple.second >> findTypeVariables)
+                |> List.foldl Set.union Set.empty
 
 
 typeAnnotationToElmType : Node TypeAnnotation -> Elm.Type.Type

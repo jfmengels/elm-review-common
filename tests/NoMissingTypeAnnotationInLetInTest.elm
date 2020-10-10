@@ -215,6 +215,12 @@ someValue = something"""
             , topLevelDeclarations = """someValue : String -> (Thing -> Thing) -> Int
 someValue = something"""
             }
+        , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
+            { arguments = ""
+            , value = "someValue string"
+            , topLevelDeclarations = """someValue : a -> a
+someValue = something"""
+            }
         ]
 
 
@@ -244,6 +250,27 @@ a = let
     in
     d
 """)
+                    ]
+
+
+noFixTest : String -> { arguments : String, value : String, topLevelDeclarations : String } -> Test
+noFixTest title { arguments, value, topLevelDeclarations } =
+    test title <|
+        \_ ->
+            ("""module A exposing (..)
+""" ++ topLevelDeclarations ++ """
+a = let
+      hasNoTypeAnnotation """ ++ arguments ++ """ = """ ++ value ++ """
+    in
+    d
+""")
+                |> Review.Test.runWithProjectData project rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                        , details = details
+                        , under = "hasNoTypeAnnotation"
+                        }
                     ]
 
 
