@@ -332,6 +332,19 @@ someValue = something"""
             , expectedType = "{ b | field : a } -> a"
             , topLevelDeclarations = ""
             }
+        , noFixTest "when value is a record access function used on an expression"
+            -- TODO This should be supported when we infer type variables better
+            { arguments = ""
+            , value = ".field { field = 1.0 } "
+            , topLevelDeclarations = ""
+            }
+        , Test.skip <|
+            fixTest "when value is an operator function"
+                { arguments = ""
+                , value = "(+)"
+                , expectedType = "number -> number -> number"
+                , topLevelDeclarations = ""
+                }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
