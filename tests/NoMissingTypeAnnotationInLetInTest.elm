@@ -241,6 +241,13 @@ someValue = something"""
             , expectedType = "( String, Float, number )"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is an empty list"
+            -- TODO Create another case where this generic type is already in scope
+            { arguments = ""
+            , value = """[]"""
+            , expectedType = "List nothing"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"

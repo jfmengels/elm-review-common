@@ -289,8 +289,21 @@ inferType context node =
             else
                 Nothing
 
+        Expression.ListExpr nodes ->
+            inferTypeForList context nodes
+
         _ ->
             -- TODO Handle other cases
+            Nothing
+
+
+inferTypeForList : Context -> List (Node Expression) -> Maybe Elm.Type.Type
+inferTypeForList context nodes =
+    case nodes of
+        [] ->
+            Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
+
+        head :: tail ->
             Nothing
 
 
