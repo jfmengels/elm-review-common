@@ -166,6 +166,18 @@ someValue = String.length"""
             , topLevelDeclarations = """someValue : Thing -> String -> Int
 someValue = something"""
             }
+        , fixTest "when value is a function call to a known top-level function"
+            { value = "someValue thing"
+            , expectedType = "String -> Int"
+            , topLevelDeclarations = """someValue : Thing -> String -> Int
+someValue = something"""
+            }
+        , fixTest "when value is a function call to a known top-level function (multiple arguments)"
+            { value = "someValue thing string"
+            , expectedType = "Int"
+            , topLevelDeclarations = """someValue : Thing -> String -> Int
+someValue = something"""
+            }
         ]
 
 

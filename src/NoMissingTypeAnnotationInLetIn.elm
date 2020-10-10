@@ -185,6 +185,15 @@ inferType context node =
                 _ ->
                     []
 
+        Expression.Application elements ->
+            case elements of
+                [] ->
+                    []
+
+                function :: arguments ->
+                    inferType context function
+                        |> List.drop (List.length arguments)
+
         _ ->
             -- TODO Handle other cases
             []
