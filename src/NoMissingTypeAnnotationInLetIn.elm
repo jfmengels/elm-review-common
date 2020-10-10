@@ -304,7 +304,12 @@ inferTypeForList context nodes =
             Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
 
         head :: tail ->
-            Nothing
+            case inferType context head of
+                Just inferredType ->
+                    Just (Elm.Type.Type "List" [ inferredType ])
+
+                Nothing ->
+                    Nothing
 
 
 applyArguments : Context -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type

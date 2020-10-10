@@ -248,6 +248,18 @@ someValue = something"""
             , expectedType = "List nothing"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a list with known values"
+            { arguments = ""
+            , value = """[ "abc" ]"""
+            , expectedType = "List String"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a list with typeclasses"
+            { arguments = ""
+            , value = """[ 1 ]"""
+            , expectedType = "List number"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
