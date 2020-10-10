@@ -122,7 +122,7 @@ reportFunctionWithoutSignature context function =
                         |> Node.value
                         |> .name
 
-                maybeType : Maybe String
+                maybeType : List String
                 maybeType =
                     inferType context (function.declaration |> Node.value |> .expression)
             in
@@ -137,58 +137,57 @@ reportFunctionWithoutSignature context function =
                 |> Just
 
 
-createFix : Node String -> Maybe String -> List Fix
-createFix functionNameNode maybeType =
-    case maybeType of
-        Just type_ ->
-            let
-                functionName : String
-                functionName =
-                    Node.value functionNameNode
+createFix : Node String -> List String -> List Fix
+createFix functionNameNode inferredType =
+    if List.isEmpty inferredType then
+        []
 
-                position : { row : Int, column : Int }
-                position =
-                    (Node.range functionNameNode).start
-            in
-            [ Fix.insertAt position (functionName ++ " : " ++ type_ ++ "\n" ++ String.repeat (position.column - 1) " ") ]
+    else
+        let
+            functionName : String
+            functionName =
+                Node.value functionNameNode
 
-        Nothing ->
-            []
+            position : { row : Int, column : Int }
+            position =
+                (Node.range functionNameNode).start
+        in
+        [ Fix.insertAt position (functionName ++ " : " ++ String.join " -> " inferredType ++ "\n" ++ String.repeat (position.column - 1) " ") ]
 
 
-inferType : Context -> Node Expression -> Maybe String
+inferType : Context -> Node Expression -> List String
 inferType context node =
     case Node.value node of
         Expression.Literal _ ->
-            Just "String"
+            [ "String" ]
 
         Expression.Integer _ ->
-            Just "number"
+            [ "number" ]
 
         Expression.Floatable _ ->
-            Just "Float"
+            [ "Float" ]
 
         Expression.UnitExpr ->
-            Just "()"
+            [ "()" ]
 
         Expression.FunctionOrValue _ name ->
             case ( ModuleNameLookupTable.moduleNameFor context.lookupTable node, name ) of
                 ( Just [ "Basics" ], "True" ) ->
-                    Just "Bool"
+                    [ "Bool" ]
 
                 ( Just [ "Basics" ], "False" ) ->
-                    Just "Bool"
+                    [ "Bool" ]
 
                 ( Just [], _ ) ->
                     Dict.get name context.knownTypes
-                        |> Maybe.map (String.join " -> ")
+                        |> Maybe.withDefault []
 
                 _ ->
-                    Nothing
+                    []
 
         _ ->
             -- TODO Handle other cases
-            Nothing
+            []
 
 
 
