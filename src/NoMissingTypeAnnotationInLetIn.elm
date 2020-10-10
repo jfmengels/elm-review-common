@@ -11,6 +11,7 @@ import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
+import Elm.Type
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
@@ -153,6 +154,88 @@ createFix functionNameNode inferredType =
                 (Node.range functionNameNode).start
         in
         [ Fix.insertAt position (functionName ++ " : " ++ String.join " -> " inferredType ++ "\n" ++ String.repeat (position.column - 1) " ") ]
+
+
+typeAsString : Elm.Type.Type -> String
+typeAsString type_ =
+    case type_ of
+        Elm.Type.Var string ->
+            string
+
+        Elm.Type.Lambda input output ->
+            typeAsString input ++ " -> " ++ typeAsString output
+
+        Elm.Type.Tuple types ->
+            "(" ++ String.join ", " (List.map typeAsString types) ++ ")"
+
+        Elm.Type.Type string types ->
+            -- TODO Handle aliasing correctly
+            -- TODO Add imports if necessary
+            String.join " " (string :: List.map typeAsString types)
+
+        Elm.Type.Record fields maybeExtensibleValue ->
+            let
+                extensibleValueAsString : String
+                extensibleValueAsString =
+                    case maybeExtensibleValue of
+                        Just extensibleValue ->
+                            extensibleValue ++ " | "
+
+                        Nothing ->
+                            ""
+            in
+            "{" ++ extensibleValueAsString ++ String.join ", " (List.map recordFieldAsString fields) ++ "}"
+
+
+recordFieldAsString : ( String, Elm.Type.Type ) -> String
+recordFieldAsString ( fieldName, fieldType ) =
+    fieldName ++ " : " ++ typeAsString fieldType
+
+
+inferType2 : Context -> Node Expression -> Maybe Elm.Type.Type
+inferType2 context node =
+    case Node.value node of
+        Expression.Literal _ ->
+            Just (Elm.Type.Type "String.String" [])
+
+        Expression.Integer _ ->
+            Just (Elm.Type.Var "number")
+
+        Expression.Floatable _ ->
+            Just (Elm.Type.Type "Basics.Float" [])
+
+        Expression.UnitExpr ->
+            Just (Elm.Type.Tuple [])
+
+        Expression.FunctionOrValue _ name ->
+            case ( ModuleNameLookupTable.moduleNameFor context.lookupTable node, name ) of
+                ( Just [ "Basics" ], "True" ) ->
+                    Just (Elm.Type.Type "Basics.Bool" [])
+
+                ( Just [ "Basics" ], "False" ) ->
+                    Just (Elm.Type.Type "Basics.Bool" [])
+
+                ( Just [], _ ) ->
+                    --Dict.get name context.knownTypes
+                    --    |> Maybe.withDefault []
+                    Nothing
+
+                _ ->
+                    Nothing
+
+        Expression.Application elements ->
+            case elements of
+                [] ->
+                    Nothing
+
+                function :: arguments ->
+                    --inferType context function
+                    --    |> List.drop (List.length arguments)
+                    Nothing
+
+        _ ->
+            -- TODO Handle other cases
+            Nothing
 
 
 inferType : Context -> Node Expression -> List String
