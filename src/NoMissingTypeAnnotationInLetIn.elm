@@ -292,6 +292,9 @@ inferType context node =
         Expression.ListExpr nodes ->
             inferTypeForList context nodes
 
+        Expression.RecordExpr fields ->
+            Just (Elm.Type.Record [] Nothing)
+
         _ ->
             -- TODO Handle other cases
             Nothing
