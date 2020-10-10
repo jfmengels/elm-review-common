@@ -238,6 +238,9 @@ recordFieldAsString ( fieldName, fieldType ) =
 inferType : Context -> Node Expression -> Maybe Elm.Type.Type
 inferType context node =
     case Node.value node of
+        Expression.ParenthesizedExpression expr ->
+            inferType context expr
+
         Expression.Literal _ ->
             -- TODO Re-add "String." but remove it at stringification time
             Just (Elm.Type.Type "String" [])
