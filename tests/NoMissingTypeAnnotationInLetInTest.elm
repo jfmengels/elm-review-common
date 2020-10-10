@@ -301,6 +301,11 @@ someValue = something"""
             , expectedType = "{ a : String, b : Float }"
             , topLevelDeclarations = ""
             }
+        , noFixTest "should not provide a fix when value is a record where some fields are unknown"
+            { arguments = ""
+            , value = "{ a = someThing, b = 1.0 }"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"

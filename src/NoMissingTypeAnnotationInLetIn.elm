@@ -306,7 +306,11 @@ inferType context node =
                         )
                         fields
             in
-            Just (Elm.Type.Record inferredFields Nothing)
+            if List.length inferredFields == List.length fields then
+                Just (Elm.Type.Record inferredFields Nothing)
+
+            else
+                Nothing
 
         _ ->
             -- TODO Handle other cases
