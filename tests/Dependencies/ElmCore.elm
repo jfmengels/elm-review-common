@@ -1,9 +1,7 @@
 module Dependencies.ElmCore exposing (dependency)
 
-import Elm.Constraint exposing (Constraint(..))
-import Elm.Docs exposing (..)
-import Elm.Project exposing (Exposed(..), Project(..))
-import Elm.Type exposing (Type(..))
+import Elm.Docs
+import Elm.Project
 import Json.Decode as Decode
 import Review.Project.Dependency as Dependency exposing (Dependency)
 

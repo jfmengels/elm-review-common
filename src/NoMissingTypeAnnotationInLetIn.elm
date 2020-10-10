@@ -125,7 +125,7 @@ reportFunctionWithoutSignature context function =
 
                 maybeType : Maybe String
                 maybeType =
-                    inferType2 context (function.declaration |> Node.value |> .expression)
+                    inferType context (function.declaration |> Node.value |> .expression)
                         |> Maybe.map typeAsString
             in
             Rule.errorWithFix
@@ -194,8 +194,8 @@ recordFieldAsString ( fieldName, fieldType ) =
     fieldName ++ " : " ++ typeAsString fieldType
 
 
-inferType2 : Context -> Node Expression -> Maybe Elm.Type.Type
-inferType2 context node =
+inferType : Context -> Node Expression -> Maybe Elm.Type.Type
+inferType context node =
     case Node.value node of
         Expression.Literal _ ->
             -- TODO Re-add "String." but remove it at stringification time
@@ -233,7 +233,7 @@ inferType2 context node =
                     Nothing
 
                 function :: arguments ->
-                    inferType2 context function
+                    inferType context function
                         |> Maybe.andThen (applyArguments context arguments)
 
         _ ->
@@ -291,51 +291,6 @@ typeAnnotationToElmType node =
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
 
 
-inferType : Context -> Node Expression -> List String
-inferType context node =
-    case Node.value node of
-        Expression.Literal _ ->
-            [ "String" ]
-
-        Expression.Integer _ ->
-            [ "number" ]
-
-        Expression.Floatable _ ->
-            [ "Float" ]
-
-        Expression.UnitExpr ->
-            [ "()" ]
-
-        Expression.FunctionOrValue _ name ->
-            case ( ModuleNameLookupTable.moduleNameFor context.lookupTable node, name ) of
-                ( Just [ "Basics" ], "True" ) ->
-                    [ "Bool" ]
-
-                ( Just [ "Basics" ], "False" ) ->
-                    [ "Bool" ]
-
-                ( Just [], _ ) ->
-                    --Dict.get name context.knownTypes
-                    --    |> Maybe.withDefault []
-                    []
-
-                _ ->
-                    []
-
-        Expression.Application elements ->
-            case elements of
-                [] ->
-                    []
-
-                function :: arguments ->
-                    inferType context function
-                        |> List.drop (List.length arguments)
-
-        _ ->
-            -- TODO Handle other cases
-            []
-
-
 
 -- DECLARATION LIST VISITOR
 
@@ -378,43 +333,4 @@ typeOfDeclaration node =
                     Nothing
 
         _ ->
-            Nothing
-
-
-typeAnnotationAsString : Node TypeAnnotation -> Maybe (List String)
-typeAnnotationAsString node =
-    case Node.value node of
-        TypeAnnotation.Typed (Node _ ( moduleName, name )) arguments ->
-            -- TODO use arguments
-            if List.isEmpty arguments then
-                Just [ String.join "." (moduleName ++ [ name ]) ]
-
-            else
-                Nothing
-
-        TypeAnnotation.Unit ->
-            Just [ "()" ]
-
-        TypeAnnotation.GenericType genericType ->
-            Just [ genericType ]
-
-        TypeAnnotation.FunctionTypeAnnotation input output ->
-            let
-                inferredInputType : Maybe (List String)
-                inferredInputType =
-                    typeAnnotationAsString input
-            in
-            case Maybe.map2 Tuple.pair inferredInputType (typeAnnotationAsString output) of
-                Just ( inferredInputType_, outputType ) ->
-                    if List.length inferredInputType_ >= 2 then
-                        Just ([ String.join " -> " inferredInputType_ ] ++ outputType)
-
-                    else
-                        Just (inferredInputType_ ++ outputType)
-
-                Nothing ->
-                    Nothing
-
-        _ ->
-            -- TODO Handle other cases
             Nothing
