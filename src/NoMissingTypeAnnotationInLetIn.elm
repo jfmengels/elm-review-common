@@ -184,8 +184,8 @@ typeAsStringWithParensMaybe type_ =
         Elm.Type.Type string types ->
             -- TODO Handle aliasing correctly
             -- TODO Add imports if necessary
-            { value = String.join " " (string :: List.map typeAsString types)
-            , mayNeedParens = False
+            { value = String.join " " (string :: List.map typeAsStringWrappedInParens types)
+            , mayNeedParens = not (List.isEmpty types)
             }
 
         Elm.Type.Record fields maybeExtensibleValue ->
@@ -202,6 +202,19 @@ typeAsStringWithParensMaybe type_ =
             { value = "{" ++ extensibleValueAsString ++ String.join ", " (List.map recordFieldAsString fields) ++ "}"
             , mayNeedParens = False
             }
+
+
+typeAsStringWrappedInParens : Elm.Type.Type -> String
+typeAsStringWrappedInParens type_ =
+    let
+        { value, mayNeedParens } =
+            typeAsStringWithParensMaybe type_
+    in
+    if mayNeedParens then
+        "(" ++ value ++ ")"
+
+    else
+        value
 
 
 recordFieldAsString : ( String, Elm.Type.Type ) -> String
