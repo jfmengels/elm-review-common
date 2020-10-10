@@ -222,9 +222,7 @@ inferType2 context node =
                     Just (Elm.Type.Type "Bool" [])
 
                 ( Just [], _ ) ->
-                    --Dict.get name context.knownTypes
-                    --    |> Maybe.withDefault []
-                    Nothing
+                    Dict.get name context.knownTypes
 
                 _ ->
                     Nothing
