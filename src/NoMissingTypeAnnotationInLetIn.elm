@@ -160,20 +160,33 @@ createFix functionNameNode maybeInferredType =
 
 typeAsString : Elm.Type.Type -> String
 typeAsString type_ =
+    (typeAsStringWithParensMaybe type_).value
+
+
+typeAsStringWithParensMaybe : Elm.Type.Type -> { value : String, mayNeedParens : Bool }
+typeAsStringWithParensMaybe type_ =
     case type_ of
         Elm.Type.Var string ->
-            string
+            { value = string
+            , mayNeedParens = False
+            }
 
         Elm.Type.Lambda input output ->
-            typeAsString input ++ " -> " ++ typeAsString output
+            { value = typeAsString input ++ " -> " ++ typeAsString output
+            , mayNeedParens = False
+            }
 
         Elm.Type.Tuple types ->
-            "(" ++ String.join ", " (List.map typeAsString types) ++ ")"
+            { value = "(" ++ String.join ", " (List.map typeAsString types) ++ ")"
+            , mayNeedParens = False
+            }
 
         Elm.Type.Type string types ->
             -- TODO Handle aliasing correctly
             -- TODO Add imports if necessary
-            String.join " " (string :: List.map typeAsString types)
+            { value = String.join " " (string :: List.map typeAsString types)
+            , mayNeedParens = False
+            }
 
         Elm.Type.Record fields maybeExtensibleValue ->
             let
@@ -186,7 +199,9 @@ typeAsString type_ =
                         Nothing ->
                             ""
             in
-            "{" ++ extensibleValueAsString ++ String.join ", " (List.map recordFieldAsString fields) ++ "}"
+            { value = "{" ++ extensibleValueAsString ++ String.join ", " (List.map recordFieldAsString fields) ++ "}"
+            , mayNeedParens = False
+            }
 
 
 recordFieldAsString : ( String, Elm.Type.Type ) -> String
