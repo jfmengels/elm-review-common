@@ -154,6 +154,18 @@ someValue = 1"""
             , topLevelDeclarations = """someValue : genericType
 someValue = 1"""
             }
+        , fixTest "when value equals a function"
+            { value = "someValue"
+            , expectedType = "String -> Int"
+            , topLevelDeclarations = """someValue : String -> Int
+someValue = String.length"""
+            }
+        , fixTest "when value equals a function (multiple arguments)"
+            { value = "someValue"
+            , expectedType = "Thing -> String -> Int"
+            , topLevelDeclarations = """someValue : Thing -> String -> Int
+someValue = something"""
+            }
         ]
 
 

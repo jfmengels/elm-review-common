@@ -181,7 +181,7 @@ inferType context node =
 
                 ( Just [], _ ) ->
                     Dict.get name context.knownTypes
-                        |> Maybe.map (String.join " USE ARROWS HERE ")
+                        |> Maybe.map (String.join " -> ")
 
                 _ ->
                     Nothing
@@ -243,6 +243,11 @@ typeAnnotationAsString node =
 
         TypeAnnotation.GenericType genericType ->
             Just [ genericType ]
+
+        TypeAnnotation.FunctionTypeAnnotation input output ->
+            Maybe.map2 (++)
+                (typeAnnotationAsString input)
+                (typeAnnotationAsString output)
 
         _ ->
             -- TODO Handle other cases
