@@ -367,9 +367,8 @@ inferType context node =
             -- TODO Handle this case
             Nothing
 
-        Expression.RecordUpdateExpression _ _ ->
-            -- TODO Handle this case
-            Nothing
+        Expression.RecordUpdateExpression name _ ->
+            Dict.get (Node.value name) context.knownTypes
 
         Expression.GLSLExpression _ ->
             -- TODO Handle this case

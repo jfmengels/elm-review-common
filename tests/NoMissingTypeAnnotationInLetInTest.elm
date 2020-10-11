@@ -453,6 +453,27 @@ someValue = something"""
             , expectedType = "number"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a record update expression"
+            { arguments = ""
+            , value = "{ person | age = 10 }"
+            , expectedType = "{ name : String, age : Int }"
+            , topLevelDeclarations = """person : { name : String, age : Int }
+person = someThing"""
+            }
+        , fixTest "when value is a record update expression of a record with generics but doesn't change that field"
+            { arguments = ""
+            , value = "{ person | age = 10 }"
+            , expectedType = "{ name : String, age : Int, generic : List a }"
+            , topLevelDeclarations = """person : { name : String, age : Int, generic : List a }
+person = someThing"""
+            }
+        , fixTest "when value is a record update expression of a record where it changes a field with generic"
+            { arguments = ""
+            , value = "{ person | generic = 10 }"
+            , expectedType = "Person"
+            , topLevelDeclarations = """person : Person
+person = someThing"""
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""
