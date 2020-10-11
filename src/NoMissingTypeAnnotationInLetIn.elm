@@ -342,39 +342,7 @@ inferType context node =
             Nothing
 
         Expression.IfBlock _ ifTrue ifFalse ->
-            case inferType context ifTrue of
-                Just trueType_ ->
-                    let
-                        trueExprTypeVariables : Set String
-                        trueExprTypeVariables =
-                            findTypeVariables trueType_
-                    in
-                    if Set.isEmpty trueExprTypeVariables then
-                        Just trueType_
-
-                    else
-                        case inferType context ifFalse of
-                            Just falseType_ ->
-                                let
-                                    refinedType : Elm.Type.Type
-                                    refinedType =
-                                        refineInferredType trueType_ falseType_
-
-                                    typeVariables : Set String
-                                    typeVariables =
-                                        findTypeVariables refinedType
-                                in
-                                if Set.isEmpty typeVariables || trueExprTypeVariables == findTypeVariables falseType_ then
-                                    Just refinedType
-
-                                else
-                                    Nothing
-
-                            Nothing ->
-                                Nothing
-
-                Nothing ->
-                    inferType context ifFalse
+            inferTypeFromCombinationOf context [ ifTrue, ifFalse ]
 
         Expression.PrefixOperator _ ->
             -- TODO Handle this case
@@ -406,6 +374,78 @@ inferType context node =
         Expression.GLSLExpression _ ->
             -- TODO Handle this case
             Nothing
+
+
+inferTypeFromCombinationOf : Context -> List (Node Expression) -> Maybe Elm.Type.Type
+inferTypeFromCombinationOf context expressions =
+    inferTypeFromCombinationOfInternal
+        context
+        { hasUnknowns = False, maybeInferred = Nothing, typeVariablesList = [] }
+        expressions
+
+
+inferTypeFromCombinationOfInternal :
+    Context
+    ->
+        { hasUnknowns : Bool
+        , maybeInferred : Maybe Elm.Type.Type
+        , typeVariablesList : List (Set String)
+        }
+    -> List (Node Expression)
+    -> Maybe Elm.Type.Type
+inferTypeFromCombinationOfInternal context previousItemsResult expressions =
+    case expressions of
+        [] ->
+            if previousItemsResult.hasUnknowns then
+                Nothing
+
+            else
+                case previousItemsResult.typeVariablesList of
+                    [] ->
+                        -- Should not happen?
+                        Nothing
+
+                    head :: tail ->
+                        if List.all ((==) head) tail then
+                            previousItemsResult.maybeInferred
+
+                        else
+                            Nothing
+
+        head :: tail ->
+            case inferType context head of
+                Just inferredType ->
+                    let
+                        typeVariables : Set String
+                        typeVariables =
+                            findTypeVariables inferredType
+
+                        refinedType_ : Elm.Type.Type
+                        refinedType_ =
+                            case previousItemsResult.maybeInferred of
+                                Just previouslyInferred ->
+                                    refineInferredType previouslyInferred inferredType
+
+                                Nothing ->
+                                    inferredType
+                    in
+                    if Set.isEmpty typeVariables then
+                        Just inferredType
+
+                    else
+                        inferTypeFromCombinationOfInternal
+                            context
+                            { previousItemsResult
+                                | maybeInferred = Just refinedType_
+                                , typeVariablesList = typeVariables :: previousItemsResult.typeVariablesList
+                            }
+                            tail
+
+                Nothing ->
+                    inferTypeFromCombinationOfInternal
+                        context
+                        { previousItemsResult | hasUnknowns = True }
+                        tail
 
 
 find : (a -> Bool) -> List a -> Maybe a

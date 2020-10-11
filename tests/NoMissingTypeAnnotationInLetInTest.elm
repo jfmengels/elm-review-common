@@ -433,18 +433,23 @@ someValue = something"""
             }
         , fixTest "when value is an if condition and first condition could be more precise"
             { arguments = ""
-            , value = """if condition then 1 else 1.0 """
+            , value = "if condition then 1 else 1.0"
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
         , noFixTest "when value is an if condition and first condition could be more precise but second is unknown"
             { arguments = ""
-            , value = """if condition then 1 else someThing """
+            , value = "if condition then 1 else someThing"
+            , topLevelDeclarations = ""
+            }
+        , noFixTest "when value is an if condition and first condition is unknown but second could be more precise"
+            { arguments = ""
+            , value = "if condition then someThing else 1"
             , topLevelDeclarations = ""
             }
         , fixTest "when value is an if condition and both conditions use the same type variables"
             { arguments = ""
-            , value = """if condition then 1 else 1 """
+            , value = "if condition then 1 else 1"
             , expectedType = "number"
             , topLevelDeclarations = ""
             }
