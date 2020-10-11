@@ -360,8 +360,23 @@ inferType context node =
         Expression.Negation expr ->
             inferType context expr
 
-        Expression.LetExpression { expression } ->
-            inferType context expression
+        Expression.LetExpression { declarations, expression } ->
+            case inferType context expression of
+                Just inferredType ->
+                    Just inferredType
+
+                Nothing ->
+                    let
+                        newContext : Context
+                        newContext =
+                            { context
+                                | typeByNameLookup =
+                                    context.typeByNameLookup
+                                        |> addNewScope
+                                        |> addToTypeByNameLookup (List.concatMap typeOfLetDeclaration declarations)
+                            }
+                    in
+                    inferType newContext expression
 
         Expression.CaseExpression _ ->
             -- TODO Handle this case
@@ -564,26 +579,59 @@ typeAnnotationToElmType node =
 
 
 type TypeByNameLookup
-    = TypeByNameLookup (Dict String Elm.Type.Type)
+    = TypeByNameLookup (Dict String Elm.Type.Type) (List (Dict String Elm.Type.Type))
 
 
 emptyTypeByNameLookup : TypeByNameLookup
 emptyTypeByNameLookup =
-    TypeByNameLookup Dict.empty
+    TypeByNameLookup Dict.empty []
 
 
 addToTypeByNameLookup : List ( String, Elm.Type.Type ) -> TypeByNameLookup -> TypeByNameLookup
-addToTypeByNameLookup types (TypeByNameLookup lookup) =
+addToTypeByNameLookup types (TypeByNameLookup lookup higherLevelLookups) =
     TypeByNameLookup
         (Dict.union
             (Dict.fromList types)
             lookup
         )
+        higherLevelLookups
+
+
+addNewScope : TypeByNameLookup -> TypeByNameLookup
+addNewScope (TypeByNameLookup lookup higherLevelLookups) =
+    TypeByNameLookup
+        Dict.empty
+        (lookup :: higherLevelLookups)
+
+
+popScope : TypeByNameLookup -> TypeByNameLookup
+popScope ((TypeByNameLookup _ higherLevelLookups) as originalLookupTable) =
+    case higherLevelLookups of
+        head :: rest ->
+            TypeByNameLookup head rest
+
+        [] ->
+            originalLookupTable
 
 
 lookupTypeByName : TypeByNameLookup -> String -> Maybe Elm.Type.Type
-lookupTypeByName (TypeByNameLookup lookup) name =
-    Dict.get name lookup
+lookupTypeByName (TypeByNameLookup lookup higherLevelLookups) name =
+    lookupTypeByNameInternal name (lookup :: higherLevelLookups)
+
+
+lookupTypeByNameInternal : String -> List (Dict String Elm.Type.Type) -> Maybe Elm.Type.Type
+lookupTypeByNameInternal name lookupTables =
+    case lookupTables of
+        [] ->
+            Nothing
+
+        lookupTable :: restOfLookupTables ->
+            case Dict.get name lookupTable of
+                Just type_ ->
+                    Just type_
+
+                Nothing ->
+                    lookupTypeByNameInternal name restOfLookupTables
 
 
 
@@ -600,6 +648,40 @@ declarationListVisitor nodes context =
                 context.typeByNameLookup
       }
     )
+
+
+typeOfLetDeclaration : Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
+typeOfLetDeclaration node =
+    case Node.value node of
+        Expression.LetFunction function ->
+            typeOfFunctionDeclaration function
+
+        Expression.LetDestructuring _ _ ->
+            []
+
+
+typeOfFunctionDeclaration : Expression.Function -> List ( String, Elm.Type.Type )
+typeOfFunctionDeclaration function =
+    let
+        functionName : String
+        functionName =
+            function.declaration
+                |> Node.value
+                |> .name
+                |> Node.value
+    in
+    case function.signature of
+        Just signature ->
+            [ ( functionName
+              , signature
+                    |> Node.value
+                    |> .typeAnnotation
+                    |> typeAnnotationToElmType
+              )
+            ]
+
+        Nothing ->
+            []
 
 
 typeOfDeclaration : Node Declaration -> List ( String, Elm.Type.Type )
