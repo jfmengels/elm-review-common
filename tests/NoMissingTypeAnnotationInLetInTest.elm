@@ -390,6 +390,30 @@ someValue = something"""
             , expectedType = "String -> Cmd msg"
             , topLevelDeclarations = "port output : String -> Cmd msg"
             }
+        , fixTest "when value is an if condition"
+            { arguments = ""
+            , value = """if condition then "abc" else "bcd" """
+            , expectedType = "String"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is an if condition and true block is not known"
+            { arguments = ""
+            , value = """if condition then someThing else "bcd" """
+            , expectedType = "String"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is an if condition and first condition could be more precise"
+            { arguments = ""
+            , value = """if condition then 1 else 1.0 """
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is an if condition and first condition could be more precise but second is unknown"
+            { arguments = ""
+            , value = """if condition then 1 else someThing """
+            , expectedType = "number"
+            , topLevelDeclarations = ""
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""

@@ -334,9 +334,22 @@ inferType context node =
             -- TODO Handle this case
             Nothing
 
-        Expression.IfBlock _ _ _ ->
-            -- TODO Handle this case
-            Nothing
+        Expression.IfBlock _ ifTrue ifFalse ->
+            case inferType context ifTrue of
+                Just trueType_ ->
+                    if Set.isEmpty (findTypeVariables trueType_) then
+                        Just trueType_
+
+                    else
+                        case inferType context ifFalse of
+                            Just falseType_ ->
+                                Just (refineInferredType trueType_ falseType_)
+
+                            Nothing ->
+                                Just trueType_
+
+                Nothing ->
+                    inferType context ifFalse
 
         Expression.PrefixOperator _ ->
             -- TODO Handle this case
