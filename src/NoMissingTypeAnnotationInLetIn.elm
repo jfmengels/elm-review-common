@@ -467,7 +467,7 @@ find predicate list =
 
 
 refineInferredType : Elm.Type.Type -> Elm.Type.Type -> Elm.Type.Type
-refineInferredType typeA typeB =
+refineInferredType _ typeB =
     typeB
 
 
