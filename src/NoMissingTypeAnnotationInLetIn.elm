@@ -300,7 +300,12 @@ inferType context node =
                 Nothing
 
         Expression.ListExpr nodes ->
-            inferTypeForList context nodes
+            if List.isEmpty nodes then
+                Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
+
+            else
+                inferTypeFromCombinationOf context nodes
+                    |> Maybe.map (\type_ -> Elm.Type.Type "List" [ type_ ])
 
         Expression.RecordExpr fields ->
             let
@@ -459,49 +464,6 @@ find predicate list =
 
             else
                 find predicate tail
-
-
-inferTypeForList : Context -> List (Node Expression) -> Maybe Elm.Type.Type
-inferTypeForList context nodes =
-    if List.isEmpty nodes then
-        Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
-
-    else
-        inferTypeForNonEmptyList context nodes Nothing
-
-
-inferTypeForNonEmptyList : Context -> List (Node Expression) -> Maybe Elm.Type.Type -> Maybe Elm.Type.Type
-inferTypeForNonEmptyList context nodes maybeCurrentlyInferredType =
-    case nodes of
-        [] ->
-            case maybeCurrentlyInferredType of
-                Just currentlyInferredType ->
-                    Just (Elm.Type.Type "List" [ currentlyInferredType ])
-
-                Nothing ->
-                    Nothing
-
-        head :: tail ->
-            case inferType context head of
-                Just inferredType ->
-                    if Set.isEmpty (findTypeVariables inferredType) then
-                        Just (Elm.Type.Type "List" [ inferredType ])
-
-                    else
-                        let
-                            newInferredType : Maybe Elm.Type.Type
-                            newInferredType =
-                                case maybeCurrentlyInferredType of
-                                    Just currentlyInferredType ->
-                                        Just (refineInferredType currentlyInferredType inferredType)
-
-                                    Nothing ->
-                                        Just inferredType
-                        in
-                        inferTypeForNonEmptyList context tail newInferredType
-
-                Nothing ->
-                    inferTypeForNonEmptyList context tail maybeCurrentlyInferredType
 
 
 refineInferredType : Elm.Type.Type -> Elm.Type.Type -> Elm.Type.Type
