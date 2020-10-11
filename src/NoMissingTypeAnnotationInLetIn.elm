@@ -580,14 +580,13 @@ typeOfDeclaration node =
                 _ ->
                     []
 
-        Declaration.PortDeclaration _ ->
-            -- TODO Handle
-            []
+        Declaration.PortDeclaration { name, typeAnnotation } ->
+            [ ( Node.value name, typeAnnotationToElmType typeAnnotation ) ]
 
         Declaration.InfixDeclaration _ ->
             -- TODO Handle
             []
 
         Declaration.Destructuring _ _ ->
-            -- TODO Handle
+            -- Can't occur
             []

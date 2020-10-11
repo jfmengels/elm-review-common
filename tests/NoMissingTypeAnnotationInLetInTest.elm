@@ -378,6 +378,18 @@ someValue = something"""
             , value = "TypeAlias"
             , topLevelDeclarations = "type alias TypeAlias = Something"
             }
+        , fixTest "when value is reference to a ingoing port"
+            { arguments = ""
+            , value = "input"
+            , expectedType = "(String -> msg) -> Sub msg"
+            , topLevelDeclarations = "port input : (String -> msg) -> Sub msg"
+            }
+        , fixTest "when value is reference to a outgoing port"
+            { arguments = ""
+            , value = "output"
+            , expectedType = "String -> Cmd msg"
+            , topLevelDeclarations = "port output : String -> Cmd msg"
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""
