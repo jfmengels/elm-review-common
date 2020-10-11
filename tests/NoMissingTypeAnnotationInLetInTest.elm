@@ -504,12 +504,27 @@ someValue = something"""
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
-        , fixTest "when value is a let expression that uses something it declared whose type we need to infer"
+        , fixTestWithAdditionalErrors "when value is a let expression that uses something it declared whose type we need to infer"
             { arguments = ""
             , value = "let list = 1.0       in list"
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
+            [ Review.Test.error
+                { message = "Missing type annotation for `list`"
+                , details = details
+                , under = "list"
+                }
+                |> Review.Test.atExactly { start = { row = 4, column = 34 }, end = { row = 4, column = 38 } }
+                |> Review.Test.whenFixed """module A exposing (..)
+
+a = let
+      hasNoTypeAnnotation  = let list : Float
+                                 list = 1.0       in list
+    in
+    d
+"""
+            ]
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""

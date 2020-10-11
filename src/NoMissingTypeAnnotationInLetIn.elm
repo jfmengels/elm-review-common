@@ -373,7 +373,7 @@ inferType context node =
                                 | typeByNameLookup =
                                     context.typeByNameLookup
                                         |> addNewScope
-                                        |> addToTypeByNameLookup (List.concatMap typeOfLetDeclaration declarations)
+                                        |> addToTypeByNameLookup (List.concatMap (typeOfLetDeclaration context) declarations)
                             }
                     in
                     inferType newContext expression
@@ -650,18 +650,18 @@ declarationListVisitor nodes context =
     )
 
 
-typeOfLetDeclaration : Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
-typeOfLetDeclaration node =
+typeOfLetDeclaration : Context -> Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
+typeOfLetDeclaration context node =
     case Node.value node of
         Expression.LetFunction function ->
-            typeOfFunctionDeclaration function
+            typeOfFunctionDeclaration context function
 
         Expression.LetDestructuring _ _ ->
             []
 
 
-typeOfFunctionDeclaration : Expression.Function -> List ( String, Elm.Type.Type )
-typeOfFunctionDeclaration function =
+typeOfFunctionDeclaration : Context -> Expression.Function -> List ( String, Elm.Type.Type )
+typeOfFunctionDeclaration context function =
     let
         functionName : String
         functionName =
@@ -681,7 +681,12 @@ typeOfFunctionDeclaration function =
             ]
 
         Nothing ->
-            []
+            case inferType context (function.declaration |> Node.value |> .expression) of
+                Just inferredType ->
+                    [ ( functionName, inferredType ) ]
+
+                Nothing ->
+                    []
 
 
 typeOfDeclaration : Node Declaration -> List ( String, Elm.Type.Type )
