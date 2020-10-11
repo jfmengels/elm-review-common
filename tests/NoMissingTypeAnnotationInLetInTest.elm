@@ -100,6 +100,12 @@ fixTests =
             , expectedType = "number"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a literal hex"
+            { arguments = ""
+            , value = "0x12"
+            , expectedType = "number"
+            , topLevelDeclarations = ""
+            }
         , fixTest "when value is a literal float"
             { arguments = ""
             , value = "1.0"

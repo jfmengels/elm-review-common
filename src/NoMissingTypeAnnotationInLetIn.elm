@@ -248,6 +248,9 @@ inferType context node =
         Expression.Integer _ ->
             Just (Elm.Type.Var "number")
 
+        Expression.Hex _ ->
+            Just (Elm.Type.Var "number")
+
         Expression.Floatable _ ->
             -- TODO Re-add "Basics." but remove it at stringification time
             Just (Elm.Type.Type "Float" [])
@@ -357,10 +360,6 @@ inferType context node =
 
         Expression.Operator _ ->
             -- Never occurs
-            Nothing
-
-        Expression.Hex _ ->
-            -- TODO Handle this case
             Nothing
 
         Expression.Negation _ ->
