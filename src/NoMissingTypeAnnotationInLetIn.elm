@@ -74,6 +74,7 @@ rule =
 
 type alias Context =
     { moduleNameLookupTable : ModuleNameLookupTable
+    , typeByNameLookup : TypeByNameLookup
     , knownTypes : Dict String Elm.Type.Type
     }
 
@@ -83,6 +84,7 @@ initialContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { moduleNameLookupTable = lookupTable
+            , typeByNameLookup = emptyTypeByNameLookup
             , knownTypes = Dict.empty
             }
         )
