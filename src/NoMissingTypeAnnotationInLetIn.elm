@@ -73,7 +73,7 @@ rule =
 
 
 type alias Context =
-    { lookupTable : ModuleNameLookupTable
+    { moduleNameLookupTable : ModuleNameLookupTable
     , knownTypes : Dict String Elm.Type.Type
     }
 
@@ -82,7 +82,7 @@ initialContext : Rule.ContextCreator () Context
 initialContext =
     Rule.initContextCreator
         (\lookupTable () ->
-            { lookupTable = lookupTable
+            { moduleNameLookupTable = lookupTable
             , knownTypes = Dict.empty
             }
         )
@@ -263,7 +263,7 @@ inferType context node =
             Just (Elm.Type.Tuple [])
 
         Expression.FunctionOrValue _ name ->
-            case ( ModuleNameLookupTable.moduleNameFor context.lookupTable node, name ) of
+            case ( ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable node, name ) of
                 ( Just [ "Basics" ], "True" ) ->
                     -- TODO Re-add "Basics." but remove it at stringification time
                     Just (Elm.Type.Type "Bool" [])
