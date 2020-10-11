@@ -361,6 +361,23 @@ someValue = something"""
             , expectedType = "CustomType a"
             , topLevelDeclarations = "type CustomType a = A a | B"
             }
+        , fixTest "should provide a fix when value is a record type alias"
+            { arguments = ""
+            , value = "TypeAlias"
+            , expectedType = "Int -> String -> TypeAlias"
+            , topLevelDeclarations = "type alias TypeAlias = { a : Int, b : String }"
+            }
+        , fixTest "should provide a fix when value is a record type alias with generics"
+            { arguments = ""
+            , value = "TypeAlias"
+            , expectedType = "b -> String -> TypeAlias a b"
+            , topLevelDeclarations = "type alias TypeAlias a b = { a | c : b, d : String }"
+            }
+        , noFixTest "should not provide a fix when value is an alias to something that is not a record"
+            { arguments = ""
+            , value = "TypeAlias"
+            , topLevelDeclarations = "type alias TypeAlias = Something"
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""

@@ -544,18 +544,50 @@ typeOfDeclaration node =
                     let
                         functionType : Elm.Type.Type
                         functionType =
-                            arguments
-                                |> List.foldr
-                                    (\input output ->
-                                        Elm.Type.Lambda
-                                            (typeAnnotationToElmType input)
-                                            output
-                                    )
-                                    customTypeType
+                            List.foldr
+                                (\input output ->
+                                    Elm.Type.Lambda
+                                        (typeAnnotationToElmType input)
+                                        output
+                                )
+                                customTypeType
+                                arguments
                     in
                     ( Node.value name, functionType )
                 )
                 type_.constructors
 
-        _ ->
+        Declaration.AliasDeclaration typeAlias ->
+            let
+                aliasType : Elm.Type.Type
+                aliasType =
+                    Elm.Type.Type
+                        (Node.value typeAlias.name)
+                        (List.map (Node.value >> Elm.Type.Var) typeAlias.generics)
+            in
+            case typeAnnotationToElmType typeAlias.typeAnnotation of
+                Elm.Type.Record fields _ ->
+                    let
+                        functionType : Elm.Type.Type
+                        functionType =
+                            List.foldr
+                                (\( _, type_ ) output -> Elm.Type.Lambda type_ output)
+                                aliasType
+                                fields
+                    in
+                    [ ( Node.value typeAlias.name, functionType ) ]
+
+                _ ->
+                    []
+
+        Declaration.PortDeclaration _ ->
+            -- TODO Handle
+            []
+
+        Declaration.InfixDeclaration _ ->
+            -- TODO Handle
+            []
+
+        Declaration.Destructuring _ _ ->
+            -- TODO Handle
             []
