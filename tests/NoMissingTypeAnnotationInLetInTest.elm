@@ -124,6 +124,23 @@ fixTests =
             , expectedType = "()"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a negation of a number"
+            { arguments = ""
+            , value = "-1"
+            , expectedType = "number"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a negation of a Float"
+            { arguments = ""
+            , value = "-1.0"
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
+        , noFixTest "when value is a negation of something unknown"
+            { arguments = ""
+            , value = "-someThing"
+            , topLevelDeclarations = ""
+            }
         , fixTest "when value is `True`"
             { arguments = ""
             , value = "False"

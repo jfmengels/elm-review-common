@@ -366,9 +366,8 @@ inferType context node =
             -- Never occurs
             Nothing
 
-        Expression.Negation _ ->
-            -- TODO Handle this case
-            Nothing
+        Expression.Negation expr ->
+            inferType context expr
 
         Expression.LetExpression _ ->
             -- TODO Handle this case
