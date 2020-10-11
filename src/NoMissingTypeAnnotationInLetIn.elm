@@ -75,7 +75,6 @@ rule =
 type alias Context =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
-    , knownTypes : Dict String Elm.Type.Type
     }
 
 
@@ -85,7 +84,6 @@ initialContext =
         (\lookupTable () ->
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = emptyTypeByNameLookup
-            , knownTypes = Dict.empty
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -275,7 +273,7 @@ inferType context node =
                     Just (Elm.Type.Type "Bool" [])
 
                 ( Just [], _ ) ->
-                    Dict.get name context.knownTypes
+                    lookupTypeByName context.typeByNameLookup name
 
                 _ ->
                     Nothing
@@ -374,7 +372,7 @@ inferType context node =
             Nothing
 
         Expression.RecordUpdateExpression name _ ->
-            Dict.get (Node.value name) context.knownTypes
+            lookupTypeByName context.typeByNameLookup (Node.value name)
 
         Expression.GLSLExpression _ ->
             -- TODO Handle this case
@@ -594,14 +592,14 @@ lookupTypeByName (TypeByNameLookup lookup) name =
 
 declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
 declarationListVisitor nodes context =
-    let
-        knownTypes : Dict String Elm.Type.Type
-        knownTypes =
-            nodes
-                |> List.concatMap typeOfDeclaration
-                |> Dict.fromList
-    in
-    ( [], { context | knownTypes = knownTypes } )
+    ( []
+    , { context
+        | typeByNameLookup =
+            addToTypeByNameLookup
+                (List.concatMap typeOfDeclaration nodes)
+                context.typeByNameLookup
+      }
+    )
 
 
 typeOfDeclaration : Node Declaration -> List ( String, Elm.Type.Type )
