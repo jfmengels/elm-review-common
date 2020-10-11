@@ -332,6 +332,12 @@ someValue = something"""
             , expectedType = "{ b | field : a } -> a"
             , topLevelDeclarations = ""
             }
+        , noFixTest "should not provide a fix (for now) when value is a record access function used on an expression"
+            -- TODO This should be supported when we infer type variables better
+            { arguments = ""
+            , value = ".field { field = 1.0 } "
+            , topLevelDeclarations = ""
+            }
         , fixTest "when value is a custom type variant without arguments"
             { arguments = ""
             , value = "A"
@@ -354,12 +360,6 @@ someValue = something"""
             , value = "B"
             , expectedType = "CustomType a"
             , topLevelDeclarations = "type CustomType a = A a | B"
-            }
-        , noFixTest "when value is a record access function used on an expression"
-            -- TODO This should be supported when we infer type variables better
-            { arguments = ""
-            , value = ".field { field = 1.0 } "
-            , topLevelDeclarations = ""
             }
         , Test.skip <|
             fixTest "when value is an operator function"
