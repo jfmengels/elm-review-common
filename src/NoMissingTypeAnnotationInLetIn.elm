@@ -563,6 +563,29 @@ typeAnnotationToElmType node =
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
 
 
+type TypeByNameLookup
+    = TypeByNameLookup (Dict String Elm.Type.Type)
+
+
+emptyTypeByNameLookup : TypeByNameLookup
+emptyTypeByNameLookup =
+    TypeByNameLookup Dict.empty
+
+
+addToTypeByNameLookup : List ( String, Elm.Type.Type ) -> TypeByNameLookup -> TypeByNameLookup
+addToTypeByNameLookup types (TypeByNameLookup lookup) =
+    TypeByNameLookup
+        (Dict.union
+            (Dict.fromList types)
+            lookup
+        )
+
+
+lookupTypeByName : TypeByNameLookup -> String -> Maybe Elm.Type.Type
+lookupTypeByName (TypeByNameLookup lookup) name =
+    Dict.get name lookup
+
+
 
 -- DECLARATION LIST VISITOR
 
