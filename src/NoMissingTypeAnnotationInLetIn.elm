@@ -344,16 +344,34 @@ inferType context node =
         Expression.IfBlock _ ifTrue ifFalse ->
             case inferType context ifTrue of
                 Just trueType_ ->
-                    if Set.isEmpty (findTypeVariables trueType_) then
+                    let
+                        trueExprTypeVariables : Set String
+                        trueExprTypeVariables =
+                            findTypeVariables trueType_
+                    in
+                    if Set.isEmpty trueExprTypeVariables then
                         Just trueType_
 
                     else
                         case inferType context ifFalse of
                             Just falseType_ ->
-                                Just (refineInferredType trueType_ falseType_)
+                                let
+                                    refinedType : Elm.Type.Type
+                                    refinedType =
+                                        refineInferredType trueType_ falseType_
+
+                                    typeVariables : Set String
+                                    typeVariables =
+                                        findTypeVariables refinedType
+                                in
+                                if Set.isEmpty typeVariables || trueExprTypeVariables == findTypeVariables falseType_ then
+                                    Just refinedType
+
+                                else
+                                    Nothing
 
                             Nothing ->
-                                Just trueType_
+                                Nothing
 
                 Nothing ->
                     inferType context ifFalse

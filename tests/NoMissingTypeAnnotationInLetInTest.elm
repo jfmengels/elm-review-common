@@ -437,9 +437,14 @@ someValue = something"""
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
-        , fixTest "when value is an if condition and first condition could be more precise but second is unknown"
+        , noFixTest "when value is an if condition and first condition could be more precise but second is unknown"
             { arguments = ""
             , value = """if condition then 1 else someThing """
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is an if condition and both conditions use the same type variables"
+            { arguments = ""
+            , value = """if condition then 1 else 1 """
             , expectedType = "number"
             , topLevelDeclarations = ""
             }
