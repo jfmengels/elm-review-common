@@ -330,8 +330,52 @@ inferType context node =
                     (Elm.Type.Record [ ( String.dropLeft 1 fieldName, Elm.Type.Var "a" ) ] (Just "b"))
                     (Elm.Type.Var "a")
 
-        _ ->
-            -- TODO Handle other cases
+        Expression.OperatorApplication _ _ _ _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.IfBlock _ _ _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.PrefixOperator _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.Operator _ ->
+            -- Never occurs
+            Nothing
+
+        Expression.Hex _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.Negation _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.CharLiteral _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.LetExpression _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.CaseExpression _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.LambdaExpression _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.RecordUpdateExpression _ _ ->
+            -- TODO Handle this case
+            Nothing
+
+        Expression.GLSLExpression _ ->
+            -- TODO Handle this case
             Nothing
 
 
@@ -381,7 +425,7 @@ inferTypeForNonEmptyList context nodes maybeCurrentlyInferredType =
                             newInferredType =
                                 case maybeCurrentlyInferredType of
                                     Just currentlyInferredType ->
-                                        Just (mergeTypeInferrals currentlyInferredType inferredType)
+                                        Just (refineInferredType currentlyInferredType inferredType)
 
                                     Nothing ->
                                         Just inferredType
@@ -392,8 +436,8 @@ inferTypeForNonEmptyList context nodes maybeCurrentlyInferredType =
                     inferTypeForNonEmptyList context tail maybeCurrentlyInferredType
 
 
-mergeTypeInferrals : Elm.Type.Type -> Elm.Type.Type -> Elm.Type.Type
-mergeTypeInferrals typeA typeB =
+refineInferredType : Elm.Type.Type -> Elm.Type.Type -> Elm.Type.Type
+refineInferredType typeA typeB =
     typeB
 
 
