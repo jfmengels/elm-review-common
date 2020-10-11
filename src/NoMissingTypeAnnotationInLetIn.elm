@@ -696,7 +696,6 @@ typeOfDeclaration node =
             [ ( Node.value name, typeAnnotationToElmType typeAnnotation ) ]
 
         Declaration.InfixDeclaration _ ->
-            -- TODO Handle
             []
 
         Declaration.Destructuring _ _ ->
