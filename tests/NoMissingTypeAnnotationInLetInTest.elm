@@ -525,6 +525,55 @@ a = let
     d
 """
             ]
+        , test "when value is a reference to a sibling's value" <|
+            \_ ->
+                """module A exposing (..)
+a = let
+      thing : Int
+      thing = 1
+      hasNoTypeAnnotation = thing
+    in
+    d
+"""
+                    |> Review.Test.runWithProjectData project rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                            , details = details
+                            , under = "hasNoTypeAnnotation"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a = let
+      thing : Int
+      thing = 1
+      hasNoTypeAnnotation : Int
+      hasNoTypeAnnotation = thing
+    in
+    d
+"""
+                        ]
+        , Test.skip <|
+            fixTestWithAdditionalErrors "when value is a let expression where the let expressions need to be inferred for the whole expression to be inferred too"
+                { arguments = ""
+                , value = """
+                                    let
+                                        list = thing
+                                        thing = 1.0
+                                    in list"""
+                , expectedType = "Float"
+                , topLevelDeclarations = ""
+                }
+                [ Review.Test.error
+                    { message = "Missing type annotation for `list`"
+                    , details = details
+                    , under = "list"
+                    }
+                , Review.Test.error
+                    { message = "Missing type annotation for `thing`"
+                    , details = details
+                    , under = "thing"
+                    }
+                ]
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""
