@@ -245,6 +245,10 @@ inferType context node =
             -- TODO Re-add "String." but remove it at stringification time
             Just (Elm.Type.Type "String" [])
 
+        Expression.CharLiteral _ ->
+            -- TODO Re-add "Char." but remove it at stringification time
+            Just (Elm.Type.Type "Char" [])
+
         Expression.Integer _ ->
             Just (Elm.Type.Var "number")
 
@@ -363,10 +367,6 @@ inferType context node =
             Nothing
 
         Expression.Negation _ ->
-            -- TODO Handle this case
-            Nothing
-
-        Expression.CharLiteral _ ->
             -- TODO Handle this case
             Nothing
 

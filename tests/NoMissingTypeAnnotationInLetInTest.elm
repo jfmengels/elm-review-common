@@ -94,6 +94,12 @@ fixTests =
             , expectedType = "String"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a literal char"
+            { arguments = ""
+            , value = "'c'"
+            , expectedType = "Char"
+            , topLevelDeclarations = ""
+            }
         , fixTest "when value is a literal integer"
             { arguments = ""
             , value = "1"
