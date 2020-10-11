@@ -360,9 +360,8 @@ inferType context node =
         Expression.Negation expr ->
             inferType context expr
 
-        Expression.LetExpression _ ->
-            -- TODO Handle this case
-            Nothing
+        Expression.LetExpression { expression } ->
+            inferType context expression
 
         Expression.CaseExpression _ ->
             -- TODO Handle this case

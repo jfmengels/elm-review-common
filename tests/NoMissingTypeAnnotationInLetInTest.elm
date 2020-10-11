@@ -474,6 +474,42 @@ person = someThing"""
             , topLevelDeclarations = """person : Person
 person = someThing"""
             }
+        , fixTest "when value is a let expression"
+            { arguments = ""
+            , value = "let _ = 1 in 1.0"
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
+        , fixTestWithAdditionalErrors "when value is a let expression that uses something it declared but we don't need it for inferring"
+            { arguments = ""
+            , value = "let list = someThing       in someValue list"
+            , expectedType = "Float"
+            , topLevelDeclarations = """someValue : a -> Float
+someValue = something"""
+            }
+            [ Review.Test.error
+                { message = "Missing type annotation for `list`"
+                , details = details
+                , under = "list"
+                }
+                |> Review.Test.atExactly { start = { row = 5, column = 34 }, end = { row = 5, column = 38 } }
+            ]
+        , fixTest "when value is a let expression that uses something it declared whose type which we can re-use"
+            { arguments = ""
+            , value = """
+                    let
+                        list : Float
+                        list = 1.0
+                    in list"""
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a let expression that uses something it declared whose type we need to infer"
+            { arguments = ""
+            , value = "let list = 1.0       in list"
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""
@@ -523,6 +559,37 @@ a = let
     d
 """)
                     ]
+
+
+fixTestWithAdditionalErrors : String -> { arguments : String, value : String, expectedType : String, topLevelDeclarations : String } -> List Review.Test.ExpectedError -> Test
+fixTestWithAdditionalErrors title { arguments, value, expectedType, topLevelDeclarations } additionalErrors =
+    test title <|
+        \_ ->
+            ("""module A exposing (..)
+""" ++ topLevelDeclarations ++ """
+a = let
+      hasNoTypeAnnotation """ ++ arguments ++ """ = """ ++ value ++ """
+    in
+    d
+""")
+                |> Review.Test.runWithProjectData project rule
+                |> Review.Test.expectErrors
+                    ((Review.Test.error
+                        { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                        , details = details
+                        , under = "hasNoTypeAnnotation"
+                        }
+                        |> Review.Test.whenFixed ("""module A exposing (..)
+""" ++ topLevelDeclarations ++ """
+a = let
+      hasNoTypeAnnotation : """ ++ expectedType ++ """
+      hasNoTypeAnnotation """ ++ arguments ++ """ = """ ++ value ++ """
+    in
+    d
+""")
+                     )
+                        :: additionalErrors
+                    )
 
 
 noFixTest : String -> { arguments : String, value : String, topLevelDeclarations : String } -> Test
