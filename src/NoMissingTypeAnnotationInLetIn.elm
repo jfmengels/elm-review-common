@@ -10,6 +10,7 @@ import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
+import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
 import Review.Fix as Fix exposing (Fix)
@@ -394,6 +395,61 @@ inferType context node =
         Expression.GLSLExpression _ ->
             -- TODO Handle this case
             Nothing
+
+
+addTypeFromPatternToContext : Node Pattern -> Context -> Context
+addTypeFromPatternToContext pattern context =
+    case Node.value pattern of
+        Pattern.AllPattern ->
+            context
+
+        Pattern.UnitPattern ->
+            context
+
+        Pattern.CharPattern _ ->
+            context
+
+        Pattern.StringPattern _ ->
+            context
+
+        Pattern.IntPattern _ ->
+            context
+
+        Pattern.HexPattern _ ->
+            context
+
+        Pattern.FloatPattern _ ->
+            context
+
+        Pattern.TuplePattern patterns ->
+            --List.foldl addTypeFromPatternToContext context patterns
+            context
+
+        Pattern.RecordPattern _ ->
+            context
+
+        Pattern.UnConsPattern _ _ ->
+            context
+
+        Pattern.ListPattern _ ->
+            context
+
+        Pattern.VarPattern _ ->
+            context
+
+        Pattern.NamedPattern { name } _ ->
+            case ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable pattern of
+                Just moduleName ->
+                    context
+
+                Nothing ->
+                    context
+
+        Pattern.AsPattern _ _ ->
+            context
+
+        Pattern.ParenthesizedPattern _ ->
+            context
 
 
 inferTypeFromCombinationOf : Context -> List (Node Expression) -> Maybe Elm.Type.Type
