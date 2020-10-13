@@ -344,6 +344,7 @@ inferType context node =
 
         Expression.OperatorApplication _ _ _ _ ->
             -- TODO Handle this case
+            -- Needs lookup to prefix operator
             Nothing
 
         Expression.IfBlock _ ifTrue ifFalse ->
@@ -351,6 +352,7 @@ inferType context node =
 
         Expression.PrefixOperator _ ->
             -- TODO Handle this case
+            -- Needs access to other dependencies information
             Nothing
 
         Expression.Operator _ ->
@@ -384,6 +386,7 @@ inferType context node =
 
         Expression.LambdaExpression _ ->
             -- TODO Handle this case
+            -- Needs inferring of arguments
             Nothing
 
         Expression.RecordUpdateExpression name _ ->
