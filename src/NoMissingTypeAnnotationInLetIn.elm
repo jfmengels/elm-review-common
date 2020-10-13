@@ -380,9 +380,8 @@ inferType context node =
                     in
                     inferType newContext expression
 
-        Expression.CaseExpression _ ->
-            -- TODO Handle this case
-            Nothing
+        Expression.CaseExpression { cases } ->
+            inferTypeFromCombinationOf context (List.map Tuple.second cases)
 
         Expression.LambdaExpression _ ->
             -- TODO Handle this case

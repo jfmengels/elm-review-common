@@ -575,6 +575,55 @@ a = let
                     , under = "thing"
                     }
                 ]
+        , fixTest "when value is a case expression with a single case"
+            { arguments = ""
+            , value = """
+                    case foo of
+                      _ -> "abc"
+                    """
+            , expectedType = "String"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a case expression with multiple cases"
+            { arguments = ""
+            , value = """
+                    case foo of
+                      Foo -> "abc"
+                      Bar -> "def"
+                    """
+            , expectedType = "String"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a case expression with multiple cases, where we can refine"
+            { arguments = ""
+            , value = """
+                    case foo of
+                      Foo -> 1
+                      Bar -> 1.0
+                    """
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
+        , noFixTest "when value is a case expression with multiple cases, where one can be refined further and another is unknown"
+            { arguments = ""
+            , value = """
+                     case foo of
+                       Foo -> 1
+                       Bar -> someThing
+                     """
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is a case expression with multiple cases, where one can be refined further and another is unknown, and a final is very precise"
+            { arguments = ""
+            , value = """
+                      case foo of
+                        Foo -> 1
+                        Bar -> someThing
+                        Baz -> 1.0
+                      """
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""
