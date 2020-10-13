@@ -624,6 +624,15 @@ a = let
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value what is contained inside the custom type constructor"
+            { arguments = ""
+            , value = """
+                      case foo of
+                        A value -> value
+                      """
+            , expectedType = "()"
+            , topLevelDeclarations = "type Thing = A ()"
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""
