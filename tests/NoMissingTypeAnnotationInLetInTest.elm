@@ -525,9 +525,10 @@ a = let
     d
 """
             ]
-        , test "when value is a reference to a sibling's value" <|
-            \_ ->
-                """module A exposing (..)
+        , Test.skip <|
+            test "when value is a reference to a sibling's value" <|
+                \_ ->
+                    """module A exposing (..)
 a = let
       thing : Int
       thing = 1
@@ -535,14 +536,14 @@ a = let
     in
     d
 """
-                    |> Review.Test.runWithProjectData project rule
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Missing type annotation for `hasNoTypeAnnotation`"
-                            , details = details
-                            , under = "hasNoTypeAnnotation"
-                            }
-                            |> Review.Test.whenFixed """module A exposing (..)
+                        |> Review.Test.runWithProjectData project rule
+                        |> Review.Test.expectErrors
+                            [ Review.Test.error
+                                { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                                , details = details
+                                , under = "hasNoTypeAnnotation"
+                                }
+                                |> Review.Test.whenFixed """module A exposing (..)
 a = let
       thing : Int
       thing = 1
@@ -551,7 +552,7 @@ a = let
     in
     d
 """
-                        ]
+                            ]
         , Test.skip <|
             fixTestWithAdditionalErrors "when value is a let expression where the let expressions need to be inferred for the whole expression to be inferred too"
                 { arguments = ""
