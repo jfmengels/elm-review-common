@@ -382,6 +382,14 @@ inferType context node =
                     inferType newContext expression
 
         Expression.CaseExpression { cases } ->
+            let
+                _ =
+                    List.map
+                        (\( pattern, expression ) ->
+                            addTypeFromPatternToContext pattern context
+                        )
+                        cases
+            in
             inferTypeFromCombinationOf context (List.map Tuple.second cases)
 
         Expression.LambdaExpression _ ->
@@ -437,7 +445,20 @@ addTypeFromPatternToContext pattern context =
         Pattern.VarPattern _ ->
             context
 
-        Pattern.NamedPattern { name } _ ->
+        Pattern.NamedPattern { name } argumentPatterns ->
+            let
+                _ =
+                    Debug.log "assignedTypedToPatterns" <|
+                        case
+                            lookupTypeByName context.typeByNameLookup name
+                                |> Debug.log ("lookupTypeByName " ++ name)
+                        of
+                            Just type_ ->
+                                assignTypesToPatterns type_ argumentPatterns
+
+                            Nothing ->
+                                []
+            in
             case ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable pattern of
                 Just moduleName ->
                     context
@@ -450,6 +471,29 @@ addTypeFromPatternToContext pattern context =
 
         Pattern.ParenthesizedPattern _ ->
             context
+
+
+assignTypesToPatterns : Elm.Type.Type -> List (Node Pattern) -> List a
+assignTypesToPatterns type_ patterns =
+    case patterns of
+        [] ->
+            []
+
+        head :: rest ->
+            case type_ of
+                Elm.Type.Lambda input output ->
+                    assignTypeToPattern input head
+                        ++ assignTypesToPatterns output rest
+
+                _ ->
+                    []
+
+
+assignTypeToPattern : Elm.Type.Type -> Node Pattern -> List a
+assignTypeToPattern type_ node =
+    case ( type_, node ) of
+        _ ->
+            []
 
 
 inferTypeFromCombinationOf : Context -> List (Node Expression) -> Maybe Elm.Type.Type
