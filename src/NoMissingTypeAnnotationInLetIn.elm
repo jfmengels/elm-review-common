@@ -509,6 +509,9 @@ assignTypeToPattern type_ node =
                 subPatterns
                 |> List.concat
 
+        ( Pattern.RecordPattern patternFields, Elm.Type.Record typeFields _ ) ->
+            []
+
         _ ->
             []
 
