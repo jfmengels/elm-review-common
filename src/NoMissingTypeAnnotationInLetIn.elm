@@ -509,8 +509,18 @@ assignTypeToPattern type_ node =
                 subPatterns
                 |> List.concat
 
-        ( Pattern.RecordPattern patternFields, Elm.Type.Record typeFields _ ) ->
-            []
+        ( Pattern.RecordPattern patternFieldNames, Elm.Type.Record typeFields _ ) ->
+            List.filterMap
+                (Node.value
+                    >> (\patternFieldName ->
+                            find
+                                (\( typeFieldName, _ ) ->
+                                    typeFieldName == patternFieldName
+                                )
+                                typeFields
+                       )
+                )
+                patternFieldNames
 
         _ ->
             []
