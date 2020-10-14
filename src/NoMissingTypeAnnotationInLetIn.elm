@@ -446,22 +446,12 @@ addTypeFromPatternToContext pattern context =
             context
 
         Pattern.NamedPattern { name } argumentPatterns ->
-            let
-                _ =
-                    Debug.log "assignedTypedToPatterns" <|
-                        case
-                            lookupTypeByName context.typeByNameLookup name
-                                |> Debug.log ("lookupTypeByName " ++ name)
-                        of
-                            Just type_ ->
-                                assignTypesToPatterns type_ argumentPatterns
-
-                            Nothing ->
-                                []
-            in
-            case ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable pattern of
-                Just moduleName ->
-                    context
+            case lookupTypeByName context.typeByNameLookup name of
+                Just type_ ->
+                    { context
+                        | typeByNameLookup =
+                            addToTypeByNameLookup (assignTypesToPatterns type_ argumentPatterns) context.typeByNameLookup
+                    }
 
                 Nothing ->
                     context
