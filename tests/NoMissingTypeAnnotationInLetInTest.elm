@@ -678,6 +678,14 @@ a = let
             , expectedType = "compappendable"
             , topLevelDeclarations = "type Thing = A compappendable"
             }
+        , noFixTest "when value is contained inside the custom type constructor but is a generic contained in the type itself"
+            { arguments = ""
+            , value = """
+                       case foo of
+                         A value -> value
+                       """
+            , topLevelDeclarations = "type Thing a = A a"
+            }
         , Test.skip <|
             fixTest "when value is an operator function"
                 { arguments = ""
