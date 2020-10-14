@@ -453,9 +453,14 @@ addTypeFromPatternToContext pattern context =
         Pattern.NamedPattern { name } argumentPatterns ->
             case lookupTypeByName context.typeByNameLookup name of
                 Just type_ ->
+                    let
+                        typeVariablesInType : Set String
+                        typeVariablesInType =
+                            findTypeVariables type_
+                    in
                     { context
                         | typeByNameLookup =
-                            addToTypeByNameLookup (assignTypesToPatterns type_ argumentPatterns) context.typeByNameLookup
+                            addToTypeByNameLookup (assignTypesToPatterns typeVariablesInType type_ argumentPatterns) context.typeByNameLookup
                     }
 
                 Nothing ->
@@ -468,8 +473,8 @@ addTypeFromPatternToContext pattern context =
             context
 
 
-assignTypesToPatterns : Elm.Type.Type -> List (Node Pattern) -> List ( String, Elm.Type.Type )
-assignTypesToPatterns type_ patterns =
+assignTypesToPatterns : Set String -> Elm.Type.Type -> List (Node Pattern) -> List ( String, Elm.Type.Type )
+assignTypesToPatterns typeVariables type_ patterns =
     case patterns of
         [] ->
             []
@@ -478,7 +483,7 @@ assignTypesToPatterns type_ patterns =
             case type_ of
                 Elm.Type.Lambda input output ->
                     assignTypeToPattern input head
-                        ++ assignTypesToPatterns output rest
+                        ++ assignTypesToPatterns typeVariables output rest
 
                 _ ->
                     []
@@ -495,9 +500,7 @@ assignTypeToPattern type_ node =
             -- We should probably just try to resolve the module name.
             [ ( name, type_ ) ]
 
-        ( Pattern.VarPattern name, Elm.Type.Var var ) ->
-            -- TODO Should be String.String
-            -- We should probably just try to resolve the module name.
+        ( Pattern.VarPattern name, Elm.Type.Var _ ) ->
             [ ( name, type_ ) ]
 
         _ ->
