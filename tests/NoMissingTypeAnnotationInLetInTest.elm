@@ -624,7 +624,7 @@ a = let
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
-        , fixTest "when value what is contained inside the custom type constructor (tuple)"
+        , fixTest "when value is contained inside the custom type constructor (tuple)"
             { arguments = ""
             , value = """
                       case foo of
@@ -633,7 +633,7 @@ a = let
             , expectedType = "()"
             , topLevelDeclarations = "type Thing = A ()"
             }
-        , fixTest "when value what is contained inside the custom type constructor (string)"
+        , fixTest "when value is contained inside the custom type constructor (string)"
             { arguments = ""
             , value = """
                       case foo of
@@ -641,6 +641,42 @@ a = let
                       """
             , expectedType = "String"
             , topLevelDeclarations = "type Thing = A String"
+            }
+        , fixTest "when value is contained inside the custom type constructor (generic: number)"
+            { arguments = ""
+            , value = """
+                       case foo of
+                         A value -> value
+                       """
+            , expectedType = "number"
+            , topLevelDeclarations = "type Thing = A number"
+            }
+        , fixTest "when value is contained inside the custom type constructor (generic: comparable)"
+            { arguments = ""
+            , value = """
+                       case foo of
+                         A value -> value
+                       """
+            , expectedType = "comparable"
+            , topLevelDeclarations = "type Thing = A comparable"
+            }
+        , fixTest "when value is contained inside the custom type constructor (generic: appendable)"
+            { arguments = ""
+            , value = """
+                       case foo of
+                         A value -> value
+                       """
+            , expectedType = "appendable"
+            , topLevelDeclarations = "type Thing = A appendable"
+            }
+        , fixTest "when value is contained inside the custom type constructor (generic: compappendable)"
+            { arguments = ""
+            , value = """
+                       case foo of
+                         A value -> value
+                       """
+            , expectedType = "compappendable"
+            , topLevelDeclarations = "type Thing = A compappendable"
             }
         , Test.skip <|
             fixTest "when value is an operator function"
