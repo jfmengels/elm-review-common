@@ -482,7 +482,15 @@ assignTypesToPatterns typeVariables type_ patterns =
         head :: rest ->
             case type_ of
                 Elm.Type.Lambda input output ->
-                    assignTypeToPattern input head
+                    (assignTypeToPattern input head
+                        |> List.filter
+                            (\( _, typeForPattern ) ->
+                                Set.isEmpty <|
+                                    Set.intersect
+                                        typeVariables
+                                        (findTypeVariables typeForPattern)
+                            )
+                    )
                         ++ assignTypesToPatterns typeVariables output rest
 
                 _ ->
