@@ -642,7 +642,7 @@ a = let
             , expectedType = "String"
             , topLevelDeclarations = "type Thing = A String"
             }
-        , fixTest "when value is contained inside the custom type constructor (tuple literal)"
+        , fixTest "when value is contained inside the custom type constructor (tuple literal destructuring)"
             { arguments = ""
             , value = """
                       case foo of
@@ -650,6 +650,15 @@ a = let
                       """
             , expectedType = "( String, Float )"
             , topLevelDeclarations = "type Thing = A ( String, Float )"
+            }
+        , fixTest "when value is contained inside the custom type constructor (record literal destructuring)"
+            { arguments = ""
+            , value = """
+                      case foo of
+                        A { a, b } -> { thing = a, otherThing = b }
+                      """
+            , expectedType = "{ thing : A, otherThing : B }"
+            , topLevelDeclarations = "type Thing = A { a : A, b : B }"
             }
         , noFixTest "when value is contained inside the custom type constructor (generic: number)"
             { arguments = ""
