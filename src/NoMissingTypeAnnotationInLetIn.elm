@@ -305,7 +305,7 @@ inferType context node =
                 Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
 
             else
-                inferTypeFromCombinationOf context nodes
+                inferTypeFromCombinationOf (List.map (\nodeInList () -> ( context, nodeInList )) nodes)
                     |> Maybe.map (\type_ -> Elm.Type.Type "List" [ type_ ])
 
         Expression.RecordExpr fields ->
@@ -349,7 +349,7 @@ inferType context node =
             Nothing
 
         Expression.IfBlock _ ifTrue ifFalse ->
-            inferTypeFromCombinationOf context [ ifTrue, ifFalse ]
+            inferTypeFromCombinationOf (List.map (\branchNode () -> ( context, branchNode )) [ ifTrue, ifFalse ])
 
         Expression.PrefixOperator _ ->
             -- TODO Handle this case
@@ -390,7 +390,12 @@ inferType context node =
                         )
                         cases
             in
-            inferTypeFromCombinationOf context (List.map Tuple.second cases)
+            cases
+                |> List.map
+                    (\( pattern, expression ) () ->
+                        ( addTypeFromPatternToContext pattern context, expression )
+                    )
+                |> inferTypeFromCombinationOf
 
         Expression.LambdaExpression _ ->
             -- TODO Handle this case
@@ -481,7 +486,7 @@ assignTypesToPatterns type_ patterns =
 
 assignTypeToPattern : Elm.Type.Type -> Node Pattern -> List ( String, Elm.Type.Type )
 assignTypeToPattern type_ node =
-    case Debug.log "pattern+type" ( Node.value node, type_ ) of
+    case ( Node.value node, type_ ) of
         ( Pattern.VarPattern name, Elm.Type.Tuple [] ) ->
             [ ( name, type_ ) ]
 
@@ -489,24 +494,21 @@ assignTypeToPattern type_ node =
             []
 
 
-inferTypeFromCombinationOf : Context -> List (Node Expression) -> Maybe Elm.Type.Type
-inferTypeFromCombinationOf context expressions =
+inferTypeFromCombinationOf : List (() -> ( Context, Node Expression )) -> Maybe Elm.Type.Type
+inferTypeFromCombinationOf expressions =
     inferTypeFromCombinationOfInternal
-        context
         { hasUnknowns = False, maybeInferred = Nothing, typeVariablesList = [] }
         expressions
 
 
 inferTypeFromCombinationOfInternal :
-    Context
-    ->
-        { hasUnknowns : Bool
-        , maybeInferred : Maybe Elm.Type.Type
-        , typeVariablesList : List (Set String)
-        }
-    -> List (Node Expression)
+    { hasUnknowns : Bool
+    , maybeInferred : Maybe Elm.Type.Type
+    , typeVariablesList : List (Set String)
+    }
+    -> List (() -> ( Context, Node Expression ))
     -> Maybe Elm.Type.Type
-inferTypeFromCombinationOfInternal context previousItemsResult expressions =
+inferTypeFromCombinationOfInternal previousItemsResult expressions =
     case expressions of
         [] ->
             if previousItemsResult.hasUnknowns then
@@ -526,7 +528,11 @@ inferTypeFromCombinationOfInternal context previousItemsResult expressions =
                             Nothing
 
         head :: tail ->
-            case inferType context head of
+            let
+                ( context, node ) =
+                    head ()
+            in
+            case inferType context node of
                 Just inferredType ->
                     let
                         typeVariables : Set String
@@ -547,7 +553,6 @@ inferTypeFromCombinationOfInternal context previousItemsResult expressions =
 
                     else
                         inferTypeFromCombinationOfInternal
-                            context
                             { previousItemsResult
                                 | maybeInferred = Just refinedType_
                                 , typeVariablesList = typeVariables :: previousItemsResult.typeVariablesList
@@ -556,7 +561,6 @@ inferTypeFromCombinationOfInternal context previousItemsResult expressions =
 
                 Nothing ->
                     inferTypeFromCombinationOfInternal
-                        context
                         { previousItemsResult | hasUnknowns = True }
                         tail
 
