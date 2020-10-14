@@ -660,6 +660,32 @@ a = let
             , expectedType = "{ thing : A, otherThing : B }"
             , topLevelDeclarations = "type Thing = A { a : A, b : B }"
             }
+        , fixTest "when value is destructuring an alias inside a case expression"
+            { arguments = ""
+            , value = """
+                      case foo of
+                        (str, float) -> (str, float)
+                      """
+            , expectedType = "( String, Float )"
+            , topLevelDeclarations = """
+type alias Thing = ( String, Float )
+foo : Thing
+foo = ( "abc", "float" )
+"""
+            }
+        , Test.skip <|
+            fixTest "when value is contained inside the custom type constructor (tuple destructuring of reference)"
+                { arguments = ""
+                , value = """
+                      case foo of
+                        A (str, float) -> (str, float)
+                      """
+                , expectedType = "( String, Float )"
+                , topLevelDeclarations = """
+type alias Thing = ( String, Float )
+type Thing = A TupleAlias
+"""
+                }
         , noFixTest "when value is contained inside the custom type constructor (generic: number)"
             { arguments = ""
             , value = """
