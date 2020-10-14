@@ -490,6 +490,11 @@ assignTypeToPattern type_ node =
         ( Pattern.VarPattern name, Elm.Type.Tuple [] ) ->
             [ ( name, type_ ) ]
 
+        ( Pattern.VarPattern name, Elm.Type.Type "String" [] ) ->
+            -- TODO Should be String.String
+            -- We should probably just try to resolve the module name.
+            [ ( name, type_ ) ]
+
         _ ->
             []
 
