@@ -500,15 +500,7 @@ assignTypesToPatterns typeVariables type_ patterns =
 assignTypeToPattern : Elm.Type.Type -> Node Pattern -> List ( String, Elm.Type.Type )
 assignTypeToPattern type_ node =
     case ( Node.value node, type_ ) of
-        ( Pattern.VarPattern name, Elm.Type.Tuple [] ) ->
-            [ ( name, type_ ) ]
-
-        ( Pattern.VarPattern name, Elm.Type.Type "String" [] ) ->
-            -- TODO Should be String.String
-            -- We should probably just try to resolve the module name.
-            [ ( name, type_ ) ]
-
-        ( Pattern.VarPattern name, Elm.Type.Var _ ) ->
+        ( Pattern.VarPattern name, _ ) ->
             [ ( name, type_ ) ]
 
         _ ->
