@@ -503,6 +503,12 @@ assignTypeToPattern type_ node =
         ( Pattern.VarPattern name, _ ) ->
             [ ( name, type_ ) ]
 
+        ( Pattern.TuplePattern subPatterns, Elm.Type.Tuple tuples ) ->
+            List.map2 assignTypeToPattern
+                tuples
+                subPatterns
+                |> List.concat
+
         _ ->
             []
 

@@ -642,6 +642,15 @@ a = let
             , expectedType = "String"
             , topLevelDeclarations = "type Thing = A String"
             }
+        , fixTest "when value is contained inside the custom type constructor (tuple literal)"
+            { arguments = ""
+            , value = """
+                      case foo of
+                        A (str, float) -> (str, float)
+                      """
+            , expectedType = "( String, Float )"
+            , topLevelDeclarations = "type Thing = A ( String, Float )"
+            }
         , noFixTest "when value is contained inside the custom type constructor (generic: number)"
             { arguments = ""
             , value = """
