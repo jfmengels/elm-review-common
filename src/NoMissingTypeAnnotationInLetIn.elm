@@ -473,7 +473,7 @@ addTypeFromPatternToContext pattern context =
             context
 
 
-assignTypesToPatterns : Elm.Type.Type -> List (Node Pattern) -> List a
+assignTypesToPatterns : Elm.Type.Type -> List (Node Pattern) -> List ( String, Elm.Type.Type )
 assignTypesToPatterns type_ patterns =
     case patterns of
         [] ->
@@ -489,9 +489,12 @@ assignTypesToPatterns type_ patterns =
                     []
 
 
-assignTypeToPattern : Elm.Type.Type -> Node Pattern -> List a
+assignTypeToPattern : Elm.Type.Type -> Node Pattern -> List ( String, Elm.Type.Type )
 assignTypeToPattern type_ node =
-    case ( type_, node ) of
+    case Debug.log "pattern+type" ( Node.value node, type_ ) of
+        ( Pattern.VarPattern name, Elm.Type.Tuple [] ) ->
+            [ ( name, type_ ) ]
+
         _ ->
             []
 
