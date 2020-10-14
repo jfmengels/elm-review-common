@@ -382,14 +382,6 @@ inferType context node =
                     inferType newContext expression
 
         Expression.CaseExpression { cases } ->
-            let
-                _ =
-                    List.map
-                        (\( pattern, expression ) ->
-                            addTypeFromPatternToContext pattern context
-                        )
-                        cases
-            in
             cases
                 |> List.map
                     (\( pattern, expression ) () ->
