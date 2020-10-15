@@ -382,10 +382,31 @@ inferType context node =
                     inferType newContext expression
 
         Expression.CaseExpression { expression, cases } ->
+            let
+                inferredTypeForEvaluatedExpression : Maybe Elm.Type.Type
+                inferredTypeForEvaluatedExpression =
+                    inferType context expression
+            in
             cases
                 |> List.map
                     (\( pattern, expr ) () ->
-                        ( addTypeFromPatternToContext pattern context, expr )
+                        let
+                            typeByNameLookup : TypeByNameLookup
+                            typeByNameLookup =
+                                case inferredTypeForEvaluatedExpression of
+                                    Just inferred ->
+                                        addToTypeByNameLookup (assignTypeToPattern inferred pattern) context.typeByNameLookup
+
+                                    Nothing ->
+                                        context.typeByNameLookup
+
+                            contextToUse : Context
+                            contextToUse =
+                                { context | typeByNameLookup = typeByNameLookup }
+                        in
+                        ( addTypeFromPatternToContext pattern contextToUse
+                        , expr
+                        )
                     )
                 |> inferTypeFromCombinationOf
 

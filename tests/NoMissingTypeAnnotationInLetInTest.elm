@@ -669,19 +669,18 @@ a = let
             , expectedType = "( Float, String )"
             , topLevelDeclarations = ""
             }
-        , Test.skip <|
-            fixTest "when value is destructuring a tuple inside a case expression"
-                { arguments = ""
-                , value = """
+        , fixTest "when value is destructuring a tuple inside a case expression"
+            { arguments = ""
+            , value = """
                       case foo of
                         (str, float) -> (float, str)
                       """
-                , expectedType = "( Float, String )"
-                , topLevelDeclarations = """
+            , expectedType = "( Float, String )"
+            , topLevelDeclarations = """
 foo : ( String, Float )
 foo = ( "abc", "float" )
 """
-                }
+            }
         , Test.skip <|
             fixTest "when value is destructuring an alias inside a case expression"
                 { arguments = ""
