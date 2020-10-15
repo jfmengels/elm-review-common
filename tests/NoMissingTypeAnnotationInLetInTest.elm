@@ -681,6 +681,16 @@ foo : ( String, Float )
 foo = ( "abc", "float" )
 """
             }
+        , fixTest "when value is returning the type itself which we have already inferred"
+            { arguments = ""
+            , value = """
+                      case foo of
+                        "" -> foo
+                        _ -> foo
+                      """
+            , expectedType = "String"
+            , topLevelDeclarations = ""
+            }
         , Test.skip <|
             fixTest "when value is destructuring an alias inside a case expression"
                 { arguments = ""
