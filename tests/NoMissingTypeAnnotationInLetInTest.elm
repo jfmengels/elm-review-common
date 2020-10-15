@@ -660,18 +660,28 @@ a = let
             , expectedType = "{ thing : A, otherThing : B }"
             , topLevelDeclarations = "type Thing = A { a : A, b : B }"
             }
-        , fixTest "when value is destructuring a tuple inside a case expression"
+        , fixTest "when value is destructuring a literal tuple inside a case expression"
             { arguments = ""
             , value = """
-                      case foo of
+                      case ("abc", 1.0) of
                         (str, float) -> (float, str)
                       """
             , expectedType = "( Float, String )"
-            , topLevelDeclarations = """
+            , topLevelDeclarations = ""
+            }
+        , Test.skip <|
+            fixTest "when value is destructuring a tuple inside a case expression"
+                { arguments = ""
+                , value = """
+                      case foo of
+                        (str, float) -> (float, str)
+                      """
+                , expectedType = "( Float, String )"
+                , topLevelDeclarations = """
 foo : ( String, Float )
 foo = ( "abc", "float" )
 """
-            }
+                }
         , Test.skip <|
             fixTest "when value is destructuring an alias inside a case expression"
                 { arguments = ""
