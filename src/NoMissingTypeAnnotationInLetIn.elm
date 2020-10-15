@@ -391,10 +391,6 @@ inferType context node =
                 |> List.map
                     (\( pattern, expr ) () ->
                         let
-                            _ =
-                                inferTypeFromPattern pattern
-                                    |> Debug.log "inferred from pattern"
-
                             typeByNameLookup : TypeByNameLookup
                             typeByNameLookup =
                                 case inferredTypeForEvaluatedExpression of
@@ -402,7 +398,12 @@ inferType context node =
                                         addToTypeByNameLookup (assignTypeToPattern inferred pattern) context.typeByNameLookup
 
                                     Nothing ->
-                                        context.typeByNameLookup
+                                        case ( Node.value expression, inferTypeFromPattern pattern ) of
+                                            ( Expression.FunctionOrValue [] name, Just inferred ) ->
+                                                addToTypeByNameLookup [ ( name, inferred ) ] context.typeByNameLookup
+
+                                            _ ->
+                                                context.typeByNameLookup
 
                             contextToUse : Context
                             contextToUse =
