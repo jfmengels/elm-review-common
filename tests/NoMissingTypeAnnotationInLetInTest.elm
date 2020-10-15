@@ -690,6 +690,17 @@ foo = ( "abc", "float" )
             , expectedType = "()"
             , topLevelDeclarations = ""
             }
+        , Test.skip <|
+            fixTest "when value is returning the type itself which we have already inferred through a different pattern"
+                { arguments = ""
+                , value = """
+                      case foo of
+                        () -> someThing
+                        _ -> foo
+                      """
+                , expectedType = "()"
+                , topLevelDeclarations = ""
+                }
         , fixTest "when value is returning the type itself which we have already inferred (string)"
             { arguments = ""
             , value = """
