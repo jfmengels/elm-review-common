@@ -391,6 +391,10 @@ inferType context node =
                 |> List.map
                     (\( pattern, expr ) () ->
                         let
+                            _ =
+                                inferTypeFromPattern pattern
+                                    |> Debug.log "inferred from pattern"
+
                             typeByNameLookup : TypeByNameLookup
                             typeByNameLookup =
                                 case inferredTypeForEvaluatedExpression of
@@ -549,7 +553,7 @@ inferTypeFromPattern node =
             Nothing
 
         Pattern.UnitPattern ->
-            Nothing
+            Just (Elm.Type.Tuple [])
 
         Pattern.CharPattern _ ->
             Nothing
