@@ -681,7 +681,16 @@ foo : ( String, Float )
 foo = ( "abc", "float" )
 """
             }
-        , fixTest "when value is returning the type itself which we have already inferred"
+        , fixTest "when value is returning the type itself which we have already inferred (unit)"
+            { arguments = ""
+            , value = """
+                      case foo of
+                        () -> foo
+                      """
+            , expectedType = "()"
+            , topLevelDeclarations = ""
+            }
+        , fixTest "when value is returning the type itself which we have already inferred (string)"
             { arguments = ""
             , value = """
                       case foo of

@@ -539,6 +539,55 @@ assignTypeToPattern type_ node =
             []
 
 
+inferTypeFromPattern : Node Pattern -> Maybe Elm.Type.Type
+inferTypeFromPattern node =
+    case Node.value node of
+        Pattern.VarPattern _ ->
+            Nothing
+
+        Pattern.AllPattern ->
+            Nothing
+
+        Pattern.UnitPattern ->
+            Nothing
+
+        Pattern.CharPattern _ ->
+            Nothing
+
+        Pattern.StringPattern _ ->
+            Nothing
+
+        Pattern.IntPattern _ ->
+            Nothing
+
+        Pattern.HexPattern _ ->
+            Nothing
+
+        Pattern.FloatPattern _ ->
+            Nothing
+
+        Pattern.TuplePattern _ ->
+            Nothing
+
+        Pattern.RecordPattern _ ->
+            Nothing
+
+        Pattern.UnConsPattern _ _ ->
+            Nothing
+
+        Pattern.ListPattern _ ->
+            Nothing
+
+        Pattern.NamedPattern _ _ ->
+            Nothing
+
+        Pattern.AsPattern _ _ ->
+            Nothing
+
+        Pattern.ParenthesizedPattern _ ->
+            Nothing
+
+
 inferTypeFromCombinationOf : List (() -> ( Context, Node Expression )) -> Maybe Elm.Type.Type
 inferTypeFromCombinationOf expressions =
     inferTypeFromCombinationOfInternal
