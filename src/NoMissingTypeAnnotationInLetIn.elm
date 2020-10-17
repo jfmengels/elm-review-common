@@ -6,7 +6,6 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 
 -}
 
-import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
@@ -17,6 +16,7 @@ import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 import Set exposing (Set)
+import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
 
 {-| Reports `let in` declarations that do not have a type annotation.
@@ -84,7 +84,7 @@ initialContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { moduleNameLookupTable = lookupTable
-            , typeByNameLookup = emptyTypeByNameLookup
+            , typeByNameLookup = TypeByNameLookup.emptyTypeByNameLookup
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -274,7 +274,7 @@ inferType context node =
                     Just (Elm.Type.Type "Bool" [])
 
                 ( Just [], _ ) ->
-                    lookupTypeByName context.typeByNameLookup name
+                    TypeByNameLookup.lookupTypeByName context.typeByNameLookup name
 
                 _ ->
                     Nothing
@@ -375,8 +375,8 @@ inferType context node =
                             { context
                                 | typeByNameLookup =
                                     context.typeByNameLookup
-                                        |> addNewScope
-                                        |> addToTypeByNameLookup (List.concatMap (typeOfLetDeclaration context) declarations)
+                                        |> TypeByNameLookup.addNewScope
+                                        |> TypeByNameLookup.addToTypeByNameLookup (List.concatMap (typeOfLetDeclaration context) declarations)
                             }
                     in
                     inferType newContext expression
@@ -395,12 +395,12 @@ inferType context node =
                             typeByNameLookup =
                                 case inferredTypeForEvaluatedExpression of
                                     Just inferred ->
-                                        addToTypeByNameLookup (assignTypeToPattern inferred pattern) context.typeByNameLookup
+                                        TypeByNameLookup.addToTypeByNameLookup (assignTypeToPattern inferred pattern) context.typeByNameLookup
 
                                     Nothing ->
                                         case ( Node.value expression, inferTypeFromPattern pattern ) of
                                             ( Expression.FunctionOrValue [] name, Just inferred ) ->
-                                                addToTypeByNameLookup [ ( name, inferred ) ] context.typeByNameLookup
+                                                TypeByNameLookup.addToTypeByNameLookup [ ( name, inferred ) ] context.typeByNameLookup
 
                                             _ ->
                                                 context.typeByNameLookup
@@ -421,7 +421,7 @@ inferType context node =
             Nothing
 
         Expression.RecordUpdateExpression name _ ->
-            lookupTypeByName context.typeByNameLookup (Node.value name)
+            TypeByNameLookup.lookupTypeByName context.typeByNameLookup (Node.value name)
 
         Expression.GLSLExpression _ ->
             -- TODO Handle this case
@@ -469,7 +469,7 @@ addTypeFromPatternToContext pattern context =
             context
 
         Pattern.NamedPattern { name } argumentPatterns ->
-            case lookupTypeByName context.typeByNameLookup name of
+            case TypeByNameLookup.lookupTypeByName context.typeByNameLookup name of
                 Just type_ ->
                     let
                         typeVariablesInType : Set String
@@ -478,7 +478,7 @@ addTypeFromPatternToContext pattern context =
                     in
                     { context
                         | typeByNameLookup =
-                            addToTypeByNameLookup (assignTypesToPatterns typeVariablesInType type_ argumentPatterns) context.typeByNameLookup
+                            TypeByNameLookup.addToTypeByNameLookup (assignTypesToPatterns typeVariablesInType type_ argumentPatterns) context.typeByNameLookup
                     }
 
                 Nothing ->
@@ -786,62 +786,6 @@ typeAnnotationToElmType node =
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
 
 
-type TypeByNameLookup
-    = TypeByNameLookup (Dict String Elm.Type.Type) (List (Dict String Elm.Type.Type))
-
-
-emptyTypeByNameLookup : TypeByNameLookup
-emptyTypeByNameLookup =
-    TypeByNameLookup Dict.empty []
-
-
-addToTypeByNameLookup : List ( String, Elm.Type.Type ) -> TypeByNameLookup -> TypeByNameLookup
-addToTypeByNameLookup types (TypeByNameLookup lookup higherLevelLookups) =
-    TypeByNameLookup
-        (Dict.union
-            (Dict.fromList types)
-            lookup
-        )
-        higherLevelLookups
-
-
-addNewScope : TypeByNameLookup -> TypeByNameLookup
-addNewScope (TypeByNameLookup lookup higherLevelLookups) =
-    TypeByNameLookup
-        Dict.empty
-        (lookup :: higherLevelLookups)
-
-
-popScope : TypeByNameLookup -> TypeByNameLookup
-popScope ((TypeByNameLookup _ higherLevelLookups) as originalLookupTable) =
-    case higherLevelLookups of
-        head :: rest ->
-            TypeByNameLookup head rest
-
-        [] ->
-            originalLookupTable
-
-
-lookupTypeByName : TypeByNameLookup -> String -> Maybe Elm.Type.Type
-lookupTypeByName (TypeByNameLookup lookup higherLevelLookups) name =
-    lookupTypeByNameInternal name (lookup :: higherLevelLookups)
-
-
-lookupTypeByNameInternal : String -> List (Dict String Elm.Type.Type) -> Maybe Elm.Type.Type
-lookupTypeByNameInternal name lookupTables =
-    case lookupTables of
-        [] ->
-            Nothing
-
-        lookupTable :: restOfLookupTables ->
-            case Dict.get name lookupTable of
-                Just type_ ->
-                    Just type_
-
-                Nothing ->
-                    lookupTypeByNameInternal name restOfLookupTables
-
-
 
 -- DECLARATION LIST VISITOR
 
@@ -851,7 +795,7 @@ declarationListVisitor nodes context =
     ( []
     , { context
         | typeByNameLookup =
-            addToTypeByNameLookup
+            TypeByNameLookup.addToTypeByNameLookup
                 (List.concatMap typeOfDeclaration nodes)
                 context.typeByNameLookup
       }
