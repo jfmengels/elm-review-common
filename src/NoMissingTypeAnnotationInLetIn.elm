@@ -735,10 +735,20 @@ findTypeVariables type_ =
                 |> List.map findTypeVariables
                 |> List.foldl Set.union Set.empty
 
-        Elm.Type.Record fields _ ->
+        Elm.Type.Record fields maybeGeneric ->
+            let
+                startSet : Set String
+                startSet =
+                    case maybeGeneric of
+                        Just generic ->
+                            Set.singleton generic
+
+                        Nothing ->
+                            Set.empty
+            in
             fields
                 |> List.map (Tuple.second >> findTypeVariables)
-                |> List.foldl Set.union Set.empty
+                |> List.foldl Set.union startSet
 
 
 typeAnnotationToElmType : Node TypeAnnotation -> Elm.Type.Type

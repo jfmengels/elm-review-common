@@ -335,6 +335,15 @@ someValue = something"""
             , value = "{ a = someThing, b = 1.0 }"
             , topLevelDeclarations = ""
             }
+        , noFixTest "should not provide a fix when value is a function with extensible records as both input and output"
+            -- TODO This should be supported when we infer type variables better
+            { arguments = ""
+            , value = """func { name = "abc" }"""
+            , topLevelDeclarations = """
+func : { a | name : String } -> { a | name : String }
+func value = value
+"""
+            }
         , fixTest "when value is a parenthesized expression"
             { arguments = ""
             , value = """("abc")"""
