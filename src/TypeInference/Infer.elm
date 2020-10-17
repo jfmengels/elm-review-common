@@ -10,13 +10,14 @@ import Set exposing (Set)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
 
-type alias Context =
-    { moduleNameLookupTable : ModuleNameLookupTable
-    , typeByNameLookup : TypeByNameLookup
+type alias Context a =
+    { a
+        | moduleNameLookupTable : ModuleNameLookupTable
+        , typeByNameLookup : TypeByNameLookup
     }
 
 
-inferType : Context -> Node Expression -> Maybe Elm.Type.Type
+inferType : Context a -> Node Expression -> Maybe Elm.Type.Type
 inferType context node =
     case Node.value node of
         Expression.ParenthesizedExpression expr ->
@@ -150,7 +151,7 @@ inferType context node =
 
                 Nothing ->
                     let
-                        newContext : Context
+                        newContext : Context a
                         newContext =
                             { context
                                 | typeByNameLookup =
@@ -185,7 +186,7 @@ inferType context node =
                                             _ ->
                                                 context.typeByNameLookup
 
-                            contextToUse : Context
+                            contextToUse : Context a
                             contextToUse =
                                 { context | typeByNameLookup = typeByNameLookup }
                         in
@@ -208,7 +209,7 @@ inferType context node =
             Nothing
 
 
-addTypeFromPatternToContext : Node Pattern -> Context -> Context
+addTypeFromPatternToContext : Node Pattern -> Context a -> Context a
 addTypeFromPatternToContext pattern context =
     case Node.value pattern of
         Pattern.AllPattern ->
@@ -373,7 +374,7 @@ inferTypeFromPattern node =
             Nothing
 
 
-inferTypeFromCombinationOf : List (() -> ( Context, Node Expression )) -> Maybe Elm.Type.Type
+inferTypeFromCombinationOf : List (() -> ( Context a, Node Expression )) -> Maybe Elm.Type.Type
 inferTypeFromCombinationOf expressions =
     inferTypeFromCombinationOfInternal
         { hasUnknowns = False, maybeInferred = Nothing, typeVariablesList = [] }
@@ -385,7 +386,7 @@ inferTypeFromCombinationOfInternal :
     , maybeInferred : Maybe Elm.Type.Type
     , typeVariablesList : List (Set String)
     }
-    -> List (() -> ( Context, Node Expression ))
+    -> List (() -> ( Context a, Node Expression ))
     -> Maybe Elm.Type.Type
 inferTypeFromCombinationOfInternal previousItemsResult expressions =
     case expressions of
@@ -463,12 +464,12 @@ refineInferredType _ typeB =
     typeB
 
 
-applyArguments : Context -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArguments : Context a -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
 applyArguments context arguments type_ =
     applyArgumentsInternal context arguments Set.empty type_
 
 
-applyArgumentsInternal : Context -> List (Node Expression) -> Set String -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArgumentsInternal : Context a -> List (Node Expression) -> Set String -> Elm.Type.Type -> Maybe Elm.Type.Type
 applyArgumentsInternal context arguments previousTypeVariables type_ =
     case arguments of
         [] ->
@@ -570,7 +571,7 @@ typeAnnotationToElmType node =
 -- DECLARATION LIST VISITOR
 
 
-typeOfLetDeclaration : Context -> Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
+typeOfLetDeclaration : Context a -> Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
 typeOfLetDeclaration context node =
     case Node.value node of
         Expression.LetFunction function ->
@@ -580,7 +581,7 @@ typeOfLetDeclaration context node =
             []
 
 
-typeOfFunctionDeclaration : Context -> Expression.Function -> List ( String, Elm.Type.Type )
+typeOfFunctionDeclaration : Context a -> Expression.Function -> List ( String, Elm.Type.Type )
 typeOfFunctionDeclaration context function =
     let
         functionName : String
