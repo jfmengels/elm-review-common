@@ -6,7 +6,6 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 
 -}
 
-import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
@@ -67,7 +66,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeA
 rule : Rule
 rule =
     Rule.newModuleRuleSchemaUsingContextCreator "NoMissingTypeAnnotationInLetIn" initialContext
-        |> Rule.withDeclarationListVisitor declarationListVisitor
+        |> TypeInference.Infer.addProjectVisitors
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
@@ -268,104 +267,3 @@ typeAnnotationToElmType node =
 
         TypeAnnotation.FunctionTypeAnnotation input output ->
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
-
-
-
--- DECLARATION LIST VISITOR
-
-
-declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
-declarationListVisitor nodes context =
-    ( []
-    , { context
-        | typeByNameLookup =
-            TypeByNameLookup.addType
-                (List.concatMap typeOfDeclaration nodes)
-                context.typeByNameLookup
-      }
-    )
-
-
-typeOfDeclaration : Node Declaration -> List ( String, Elm.Type.Type )
-typeOfDeclaration node =
-    case Node.value node of
-        Declaration.FunctionDeclaration function ->
-            let
-                functionName : String
-                functionName =
-                    function.declaration
-                        |> Node.value
-                        |> .name
-                        |> Node.value
-            in
-            case function.signature of
-                Just signature ->
-                    [ ( functionName
-                      , signature
-                            |> Node.value
-                            |> .typeAnnotation
-                            |> typeAnnotationToElmType
-                      )
-                    ]
-
-                Nothing ->
-                    []
-
-        Declaration.CustomTypeDeclaration type_ ->
-            let
-                customTypeType : Elm.Type.Type
-                customTypeType =
-                    Elm.Type.Type
-                        (Node.value type_.name)
-                        (List.map (Node.value >> Elm.Type.Var) type_.generics)
-            in
-            List.map
-                (\(Node _ { name, arguments }) ->
-                    let
-                        functionType : Elm.Type.Type
-                        functionType =
-                            List.foldr
-                                (\input output ->
-                                    Elm.Type.Lambda
-                                        (typeAnnotationToElmType input)
-                                        output
-                                )
-                                customTypeType
-                                arguments
-                    in
-                    ( Node.value name, functionType )
-                )
-                type_.constructors
-
-        Declaration.AliasDeclaration typeAlias ->
-            let
-                aliasType : Elm.Type.Type
-                aliasType =
-                    Elm.Type.Type
-                        (Node.value typeAlias.name)
-                        (List.map (Node.value >> Elm.Type.Var) typeAlias.generics)
-            in
-            case typeAnnotationToElmType typeAlias.typeAnnotation of
-                Elm.Type.Record fields _ ->
-                    let
-                        functionType : Elm.Type.Type
-                        functionType =
-                            List.foldr
-                                (\( _, type_ ) output -> Elm.Type.Lambda type_ output)
-                                aliasType
-                                fields
-                    in
-                    [ ( Node.value typeAlias.name, functionType ) ]
-
-                _ ->
-                    []
-
-        Declaration.PortDeclaration { name, typeAnnotation } ->
-            [ ( Node.value name, typeAnnotationToElmType typeAnnotation ) ]
-
-        Declaration.InfixDeclaration _ ->
-            []
-
-        Declaration.Destructuring _ _ ->
-            -- Can't occur
-            []
