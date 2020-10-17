@@ -1,11 +1,5 @@
 module TypeInference.Infer exposing (inferType)
 
-{-|
-
-@docs rule
-
--}
-
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
@@ -20,80 +14,6 @@ type alias Context =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
     }
-
-
-typeAsString : Elm.Type.Type -> String
-typeAsString type_ =
-    (typeAsStringWithParensMaybe type_).value
-
-
-typeAsStringWithParensMaybe : Elm.Type.Type -> { value : String, mayNeedParens : Bool }
-typeAsStringWithParensMaybe type_ =
-    case type_ of
-        Elm.Type.Var string ->
-            { value = string
-            , mayNeedParens = False
-            }
-
-        Elm.Type.Lambda input output ->
-            { value = typeAsStringWrappedInParens input ++ " -> " ++ typeAsString output
-            , mayNeedParens = True
-            }
-
-        Elm.Type.Tuple types ->
-            { value =
-                if List.isEmpty types then
-                    "()"
-
-                else
-                    "( " ++ String.join ", " (List.map typeAsString types) ++ " )"
-            , mayNeedParens = False
-            }
-
-        Elm.Type.Type string types ->
-            -- TODO Handle aliasing correctly
-            -- TODO Add imports if necessary
-            { value = String.join " " (string :: List.map typeAsStringWrappedInParens types)
-            , mayNeedParens = not (List.isEmpty types)
-            }
-
-        Elm.Type.Record fields maybeExtensibleValue ->
-            let
-                extensibleValueAsString : String
-                extensibleValueAsString =
-                    case maybeExtensibleValue of
-                        Just extensibleValue ->
-                            extensibleValue ++ " | "
-
-                        Nothing ->
-                            ""
-            in
-            { value =
-                if List.isEmpty fields then
-                    "{}"
-
-                else
-                    "{ " ++ extensibleValueAsString ++ String.join ", " (List.map recordFieldAsString fields) ++ " }"
-            , mayNeedParens = False
-            }
-
-
-typeAsStringWrappedInParens : Elm.Type.Type -> String
-typeAsStringWrappedInParens type_ =
-    let
-        { value, mayNeedParens } =
-            typeAsStringWithParensMaybe type_
-    in
-    if mayNeedParens then
-        "(" ++ value ++ ")"
-
-    else
-        value
-
-
-recordFieldAsString : ( String, Elm.Type.Type ) -> String
-recordFieldAsString ( fieldName, fieldType ) =
-    fieldName ++ " : " ++ typeAsString fieldType
 
 
 inferType : Context -> Node Expression -> Maybe Elm.Type.Type
