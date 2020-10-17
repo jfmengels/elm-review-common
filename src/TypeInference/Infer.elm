@@ -6,160 +6,20 @@ module TypeInference.Infer exposing (inferType)
 
 -}
 
-import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
-import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
-import Review.Rule as Rule exposing (Error, Rule)
 import Set exposing (Set)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
-
-
-{-| Reports `let in` declarations that do not have a type annotation.
-
-Type annotations help you understand what happens in the code, and it will help the compiler give better error messages.
-
-    config =
-        [ NoMissingTypeAnnotationInLetIn.rule
-        ]
-
-This rule does not report top-level declarations without a type annotation inside a `let in`.
-For that, enable [`NoMissingTypeAnnotation`](./NoMissingTypeAnnotation).
-
-
-## Fail
-
-    a : number
-    a =
-        let
-            -- Missing annotation
-            b =
-                2
-        in
-        b
-
-
-## Success
-
-    -- Top-level annotation is not necessary, but good to have!
-    a : number
-    a =
-        let
-            b : number
-            b =
-                2
-        in
-        b
-
-
-## Try it out
-
-You can try this rule out by running the following command:
-
-```bash
-elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeAnnotationInLetIn
-```
-
--}
-rule : Rule
-rule =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoMissingTypeAnnotationInLetIn" initialContext
-        |> Rule.withDeclarationListVisitor declarationListVisitor
-        |> Rule.withExpressionEnterVisitor expressionVisitor
-        |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
     }
-
-
-initialContext : Rule.ContextCreator () Context
-initialContext =
-    Rule.initContextCreator
-        (\lookupTable () ->
-            { moduleNameLookupTable = lookupTable
-            , typeByNameLookup = TypeByNameLookup.empty
-            }
-        )
-        |> Rule.withModuleNameLookupTable
-
-
-expressionVisitor : Node Expression -> Context -> ( List (Error {}), Context )
-expressionVisitor expression context =
-    case Node.value expression of
-        Expression.LetExpression { declarations } ->
-            ( List.filterMap
-                (\declaration ->
-                    case Node.value declaration of
-                        Expression.LetFunction function ->
-                            reportFunctionWithoutSignature context function
-
-                        _ ->
-                            Nothing
-                )
-                declarations
-            , context
-            )
-
-        _ ->
-            ( [], context )
-
-
-reportFunctionWithoutSignature : Context -> Expression.Function -> Maybe (Error {})
-reportFunctionWithoutSignature context function =
-    case function.signature of
-        Just _ ->
-            Nothing
-
-        Nothing ->
-            let
-                declaration : Expression.FunctionImplementation
-                declaration =
-                    Node.value function.declaration
-
-                maybeType : Maybe String
-                maybeType =
-                    if List.isEmpty declaration.arguments then
-                        inferType context declaration.expression
-                            |> Maybe.map typeAsString
-
-                    else
-                        Nothing
-            in
-            Rule.errorWithFix
-                { message = "Missing type annotation for `" ++ Node.value declaration.name ++ "`"
-                , details =
-                    [ "Type annotations help you understand what happens in the code, and it will help the compiler give better error messages."
-                    ]
-                }
-                (Node.range declaration.name)
-                (createFix declaration.name maybeType)
-                |> Just
-
-
-createFix : Node String -> Maybe String -> List Fix
-createFix functionNameNode maybeInferredType =
-    case maybeInferredType of
-        Nothing ->
-            []
-
-        Just inferredType ->
-            let
-                functionName : String
-                functionName =
-                    Node.value functionNameNode
-
-                position : { row : Int, column : Int }
-                position =
-                    (Node.range functionNameNode).start
-            in
-            [ Fix.insertAt position (functionName ++ " : " ++ inferredType ++ "\n" ++ String.repeat (position.column - 1) " ") ]
 
 
 typeAsString : Elm.Type.Type -> String
@@ -452,7 +312,7 @@ addTypeFromPatternToContext pattern context =
         Pattern.FloatPattern _ ->
             context
 
-        Pattern.TuplePattern patterns ->
+        Pattern.TuplePattern _ ->
             --List.foldl addTypeFromPatternToContext context patterns
             context
 
@@ -790,18 +650,6 @@ typeAnnotationToElmType node =
 -- DECLARATION LIST VISITOR
 
 
-declarationListVisitor : List (Node Declaration) -> Context -> ( List nothing, Context )
-declarationListVisitor nodes context =
-    ( []
-    , { context
-        | typeByNameLookup =
-            TypeByNameLookup.addType
-                (List.concatMap typeOfDeclaration nodes)
-                context.typeByNameLookup
-      }
-    )
-
-
 typeOfLetDeclaration : Context -> Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
 typeOfLetDeclaration context node =
     case Node.value node of
@@ -839,88 +687,3 @@ typeOfFunctionDeclaration context function =
 
                 Nothing ->
                     []
-
-
-typeOfDeclaration : Node Declaration -> List ( String, Elm.Type.Type )
-typeOfDeclaration node =
-    case Node.value node of
-        Declaration.FunctionDeclaration function ->
-            let
-                functionName : String
-                functionName =
-                    function.declaration
-                        |> Node.value
-                        |> .name
-                        |> Node.value
-            in
-            case function.signature of
-                Just signature ->
-                    [ ( functionName
-                      , signature
-                            |> Node.value
-                            |> .typeAnnotation
-                            |> typeAnnotationToElmType
-                      )
-                    ]
-
-                Nothing ->
-                    []
-
-        Declaration.CustomTypeDeclaration type_ ->
-            let
-                customTypeType : Elm.Type.Type
-                customTypeType =
-                    Elm.Type.Type
-                        (Node.value type_.name)
-                        (List.map (Node.value >> Elm.Type.Var) type_.generics)
-            in
-            List.map
-                (\(Node _ { name, arguments }) ->
-                    let
-                        functionType : Elm.Type.Type
-                        functionType =
-                            List.foldr
-                                (\input output ->
-                                    Elm.Type.Lambda
-                                        (typeAnnotationToElmType input)
-                                        output
-                                )
-                                customTypeType
-                                arguments
-                    in
-                    ( Node.value name, functionType )
-                )
-                type_.constructors
-
-        Declaration.AliasDeclaration typeAlias ->
-            let
-                aliasType : Elm.Type.Type
-                aliasType =
-                    Elm.Type.Type
-                        (Node.value typeAlias.name)
-                        (List.map (Node.value >> Elm.Type.Var) typeAlias.generics)
-            in
-            case typeAnnotationToElmType typeAlias.typeAnnotation of
-                Elm.Type.Record fields _ ->
-                    let
-                        functionType : Elm.Type.Type
-                        functionType =
-                            List.foldr
-                                (\( _, type_ ) output -> Elm.Type.Lambda type_ output)
-                                aliasType
-                                fields
-                    in
-                    [ ( Node.value typeAlias.name, functionType ) ]
-
-                _ ->
-                    []
-
-        Declaration.PortDeclaration { name, typeAnnotation } ->
-            [ ( Node.value name, typeAnnotationToElmType typeAnnotation ) ]
-
-        Declaration.InfixDeclaration _ ->
-            []
-
-        Declaration.Destructuring _ _ ->
-            -- Can't occur
-            []
