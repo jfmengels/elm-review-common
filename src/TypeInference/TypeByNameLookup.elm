@@ -1,9 +1,9 @@
 module TypeInference.TypeByNameLookup exposing
     ( TypeByNameLookup
     , addNewScope
-    , addToTypeByNameLookup
-    , emptyTypeByNameLookup
-    , lookupTypeByName
+    , addType
+    , byName
+    , empty
     , popScope
     )
 
@@ -15,13 +15,13 @@ type TypeByNameLookup
     = TypeByNameLookup (Dict String Elm.Type.Type) (List (Dict String Elm.Type.Type))
 
 
-emptyTypeByNameLookup : TypeByNameLookup
-emptyTypeByNameLookup =
+empty : TypeByNameLookup
+empty =
     TypeByNameLookup Dict.empty []
 
 
-addToTypeByNameLookup : List ( String, Elm.Type.Type ) -> TypeByNameLookup -> TypeByNameLookup
-addToTypeByNameLookup types (TypeByNameLookup lookup higherLevelLookups) =
+addType : List ( String, Elm.Type.Type ) -> TypeByNameLookup -> TypeByNameLookup
+addType types (TypeByNameLookup lookup higherLevelLookups) =
     TypeByNameLookup
         (Dict.union
             (Dict.fromList types)
@@ -47,8 +47,8 @@ popScope ((TypeByNameLookup _ higherLevelLookups) as originalLookupTable) =
             originalLookupTable
 
 
-lookupTypeByName : TypeByNameLookup -> String -> Maybe Elm.Type.Type
-lookupTypeByName (TypeByNameLookup lookup higherLevelLookups) name =
+byName : TypeByNameLookup -> String -> Maybe Elm.Type.Type
+byName (TypeByNameLookup lookup higherLevelLookups) name =
     lookupTypeByNameInternal name (lookup :: higherLevelLookups)
 
 

@@ -84,7 +84,7 @@ initialContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { moduleNameLookupTable = lookupTable
-            , typeByNameLookup = TypeByNameLookup.emptyTypeByNameLookup
+            , typeByNameLookup = TypeByNameLookup.empty
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -274,7 +274,7 @@ inferType context node =
                     Just (Elm.Type.Type "Bool" [])
 
                 ( Just [], _ ) ->
-                    TypeByNameLookup.lookupTypeByName context.typeByNameLookup name
+                    TypeByNameLookup.byName context.typeByNameLookup name
 
                 _ ->
                     Nothing
@@ -376,7 +376,7 @@ inferType context node =
                                 | typeByNameLookup =
                                     context.typeByNameLookup
                                         |> TypeByNameLookup.addNewScope
-                                        |> TypeByNameLookup.addToTypeByNameLookup (List.concatMap (typeOfLetDeclaration context) declarations)
+                                        |> TypeByNameLookup.addType (List.concatMap (typeOfLetDeclaration context) declarations)
                             }
                     in
                     inferType newContext expression
@@ -395,12 +395,12 @@ inferType context node =
                             typeByNameLookup =
                                 case inferredTypeForEvaluatedExpression of
                                     Just inferred ->
-                                        TypeByNameLookup.addToTypeByNameLookup (assignTypeToPattern inferred pattern) context.typeByNameLookup
+                                        TypeByNameLookup.addType (assignTypeToPattern inferred pattern) context.typeByNameLookup
 
                                     Nothing ->
                                         case ( Node.value expression, inferTypeFromPattern pattern ) of
                                             ( Expression.FunctionOrValue [] name, Just inferred ) ->
-                                                TypeByNameLookup.addToTypeByNameLookup [ ( name, inferred ) ] context.typeByNameLookup
+                                                TypeByNameLookup.addType [ ( name, inferred ) ] context.typeByNameLookup
 
                                             _ ->
                                                 context.typeByNameLookup
@@ -421,7 +421,7 @@ inferType context node =
             Nothing
 
         Expression.RecordUpdateExpression name _ ->
-            TypeByNameLookup.lookupTypeByName context.typeByNameLookup (Node.value name)
+            TypeByNameLookup.byName context.typeByNameLookup (Node.value name)
 
         Expression.GLSLExpression _ ->
             -- TODO Handle this case
@@ -469,7 +469,7 @@ addTypeFromPatternToContext pattern context =
             context
 
         Pattern.NamedPattern { name } argumentPatterns ->
-            case TypeByNameLookup.lookupTypeByName context.typeByNameLookup name of
+            case TypeByNameLookup.byName context.typeByNameLookup name of
                 Just type_ ->
                     let
                         typeVariablesInType : Set String
@@ -478,7 +478,7 @@ addTypeFromPatternToContext pattern context =
                     in
                     { context
                         | typeByNameLookup =
-                            TypeByNameLookup.addToTypeByNameLookup (assignTypesToPatterns typeVariablesInType type_ argumentPatterns) context.typeByNameLookup
+                            TypeByNameLookup.addType (assignTypesToPatterns typeVariablesInType type_ argumentPatterns) context.typeByNameLookup
                     }
 
                 Nothing ->
@@ -795,7 +795,7 @@ declarationListVisitor nodes context =
     ( []
     , { context
         | typeByNameLookup =
-            TypeByNameLookup.addToTypeByNameLookup
+            TypeByNameLookup.addType
                 (List.concatMap typeOfDeclaration nodes)
                 context.typeByNameLookup
       }
