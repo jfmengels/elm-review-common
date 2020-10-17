@@ -39,6 +39,7 @@ addNewScope (TypeByNameLookup lookup higherLevelLookups) =
 
 popScope : TypeByNameLookup -> TypeByNameLookup
 popScope ((TypeByNameLookup _ higherLevelLookups) as originalLookupTable) =
+    -- TODO Not used. Should be used?
     case higherLevelLookups of
         head :: rest ->
             TypeByNameLookup head rest
