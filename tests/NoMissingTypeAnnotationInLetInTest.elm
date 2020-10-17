@@ -710,16 +710,17 @@ foo = ( "abc", "float" )
                 , expectedType = "()"
                 , topLevelDeclarations = ""
                 }
-        , fixTest "when value is returning the type itself which we have already inferred (string)"
-            { arguments = ""
-            , value = """
+        , Test.skip <|
+            fixTest "when value is returning the type itself which we have already inferred (string)"
+                { arguments = ""
+                , value = """
                       case foo of
                         "" -> foo
-                        _ -> foo
+                        _ -> someThing
                       """
-            , expectedType = "String"
-            , topLevelDeclarations = ""
-            }
+                , expectedType = "String"
+                , topLevelDeclarations = ""
+                }
         , Test.skip <|
             fixTest "when value is destructuring an alias inside a case expression"
                 { arguments = ""
