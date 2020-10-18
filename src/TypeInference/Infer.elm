@@ -8,6 +8,7 @@ module TypeInference.Infer exposing
 import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
@@ -42,7 +43,17 @@ initInternal =
 addProjectVisitors : Rule.ModuleRuleSchema schemaState (Context a) -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } (Context a)
 addProjectVisitors schema =
     schema
+        |> Rule.withImportVisitor importVisitor
         |> Rule.withDeclarationListVisitor declarationListVisitor
+
+
+
+-- IMPORT VISITOR
+
+
+importVisitor : Node Import -> Context a -> ( List nothing, Context a )
+importVisitor node context =
+    ( [], context )
 
 
 
