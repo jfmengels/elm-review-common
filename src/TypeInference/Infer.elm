@@ -53,7 +53,12 @@ addProjectVisitors schema =
 
 importVisitor : Node Import -> Context a -> ( List nothing, Context a )
 importVisitor node context =
-    ( [], context )
+    let
+        newContext : Context a
+        newContext =
+            context
+    in
+    ( [], newContext )
 
 
 
