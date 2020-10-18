@@ -74,6 +74,7 @@ rule =
 type alias Context =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
+    , inferInternal : TypeInference.Infer.InferInternal
     }
 
 
@@ -83,6 +84,7 @@ initialContext =
         (\lookupTable () ->
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = TypeByNameLookup.empty
+            , inferInternal = TypeInference.Infer.initInternal
             }
         )
         |> Rule.withModuleNameLookupTable

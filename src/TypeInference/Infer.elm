@@ -1,4 +1,9 @@
-module TypeInference.Infer exposing (addProjectVisitors, inferType)
+module TypeInference.Infer exposing
+    ( InferInternal
+    , addProjectVisitors
+    , inferType
+    , initInternal
+    )
 
 import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
@@ -17,6 +22,18 @@ type alias Context a =
     { a
         | moduleNameLookupTable : ModuleNameLookupTable
         , typeByNameLookup : TypeByNameLookup
+        , inferInternal : InferInternal
+    }
+
+
+type alias InferInternal =
+    { operatorsInScope : Dict String Elm.Type.Type
+    }
+
+
+initInternal : InferInternal
+initInternal =
+    { operatorsInScope = Dict.empty
     }
 
 
