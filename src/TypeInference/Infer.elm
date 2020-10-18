@@ -1,5 +1,6 @@
 module TypeInference.Infer exposing (addProjectVisitors, inferType)
 
+import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
@@ -244,9 +245,14 @@ inferType context node =
         Expression.IfBlock _ ifTrue ifFalse ->
             inferTypeFromCombinationOf (List.map (\branchNode () -> ( context, branchNode )) [ ifTrue, ifFalse ])
 
-        Expression.PrefixOperator _ ->
+        Expression.PrefixOperator operator ->
             -- TODO Needs access to other dependencies information
-            Just (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")))
+            let
+                dict : Dict String Elm.Type.Type
+                dict =
+                    Dict.singleton operator (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")))
+            in
+            Dict.get operator dict
 
         Expression.Operator _ ->
             -- Never occurs
