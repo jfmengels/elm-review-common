@@ -788,11 +788,24 @@ type Thing = A TupleAlias
                        """
             , topLevelDeclarations = "type Thing a = A a"
             }
+        , fixTest "when value is an operator function"
+            { arguments = ""
+            , value = "(+)"
+            , expectedType = "number -> number -> number"
+            , topLevelDeclarations = ""
+            }
         , Test.skip <|
-            fixTest "when value is an operator function"
+            fixTest "when value is a partially applied operator function"
                 { arguments = ""
-                , value = "(+)"
-                , expectedType = "number -> number -> number"
+                , value = "(/) 1"
+                , expectedType = "Float -> Float"
+                , topLevelDeclarations = ""
+                }
+        , Test.skip <|
+            fixTest "when value is a binary operation"
+                { arguments = ""
+                , value = "14 / 4"
+                , expectedType = "Float"
                 , topLevelDeclarations = ""
                 }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
