@@ -33,7 +33,9 @@ type alias InferInternal =
 
 initInternal : InferInternal
 initInternal =
-    { operatorsInScope = Dict.empty
+    { operatorsInScope =
+        -- TODO Needs access to other dependencies information
+        Dict.singleton "+" (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")))
     }
 
 
@@ -263,13 +265,7 @@ inferType context node =
             inferTypeFromCombinationOf (List.map (\branchNode () -> ( context, branchNode )) [ ifTrue, ifFalse ])
 
         Expression.PrefixOperator operator ->
-            -- TODO Needs access to other dependencies information
-            let
-                dict : Dict String Elm.Type.Type
-                dict =
-                    Dict.singleton operator (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")))
-            in
-            Dict.get operator dict
+            Dict.get operator context.inferInternal.operatorsInScope
 
         Expression.Operator _ ->
             -- Never occurs
