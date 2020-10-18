@@ -65,21 +65,21 @@ elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeA
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoMissingTypeAnnotationInLetIn" initialContext
+    Rule.newModuleRuleSchemaUsingContextCreator "NoMissingTypeAnnotationInLetIn" initialModuleContext
         |> TypeInference.Infer.addProjectVisitors
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
 
-type alias Context =
+type alias ModuleContext =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
     , inferInternal : TypeInference.Infer.InferInternal
     }
 
 
-initialContext : Rule.ContextCreator () Context
-initialContext =
+initialModuleContext : Rule.ContextCreator () ModuleContext
+initialModuleContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { moduleNameLookupTable = lookupTable
@@ -90,7 +90,7 @@ initialContext =
         |> Rule.withModuleNameLookupTable
 
 
-expressionVisitor : Node Expression -> Context -> ( List (Error {}), Context )
+expressionVisitor : Node Expression -> ModuleContext -> ( List (Error {}), ModuleContext )
 expressionVisitor expression context =
     case Node.value expression of
         Expression.LetExpression { declarations } ->
@@ -111,7 +111,7 @@ expressionVisitor expression context =
             ( [], context )
 
 
-reportFunctionWithoutSignature : Context -> Expression.Function -> Maybe (Error {})
+reportFunctionWithoutSignature : ModuleContext -> Expression.Function -> Maybe (Error {})
 reportFunctionWithoutSignature context function =
     case function.signature of
         Just _ ->
