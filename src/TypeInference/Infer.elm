@@ -245,9 +245,8 @@ inferType context node =
             inferTypeFromCombinationOf (List.map (\branchNode () -> ( context, branchNode )) [ ifTrue, ifFalse ])
 
         Expression.PrefixOperator _ ->
-            -- TODO Handle this case
-            -- Needs access to other dependencies information
-            Nothing
+            -- TODO Needs access to other dependencies information
+            Just (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")))
 
         Expression.Operator _ ->
             -- Never occurs
