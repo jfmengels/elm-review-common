@@ -54,14 +54,12 @@ fromProjectToModule : { projectContext | infer : ProjectContext } -> InferIntern
 fromProjectToModule { infer } =
     { dependencies = infer.dependencies
     , operatorsInScope =
-        List.foldl
-            (\import_ dict ->
-                dict
-             --|> registerImportAlias import_
-             --|> registerImportExposed import_
+        List.concatMap
+            (\import_ ->
+                [ ( "+", Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")) ) ]
             )
-            (Dict.singleton "+" (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number"))))
             elmCorePrelude
+            |> Dict.fromList
     }
 
 
