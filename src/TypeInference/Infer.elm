@@ -11,6 +11,7 @@ import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Import exposing (Import)
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
@@ -23,7 +24,7 @@ import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLo
 
 
 type alias ProjectContext =
-    { dependencies : Dict String Review.Project.Dependency.Dependency
+    { dependencies : Dict ModuleName Review.Project.Dependency.Dependency
     }
 
 
@@ -80,8 +81,22 @@ moduleVisitor schema =
 
 
 dependenciesVisitor : Dict String Review.Project.Dependency.Dependency -> { projectContext | infer : ProjectContext } -> ( List nothing, { projectContext | infer : ProjectContext } )
-dependenciesVisitor dependencies context =
-    ( [], context )
+dependenciesVisitor rawDependencies context =
+    let
+        infer : ProjectContext
+        infer =
+            context.infer
+
+        dependencies : Dict (List String) Review.Project.Dependency.Dependency
+        dependencies =
+            rawDependencies
+                |> Dict.toList
+                |> List.map (\( key, value ) -> ( String.split "." key, value ))
+                |> Dict.fromList
+    in
+    ( []
+    , { context | infer = { infer | dependencies = dependencies } }
+    )
 
 
 
