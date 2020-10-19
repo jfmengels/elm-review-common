@@ -40,11 +40,11 @@ initInternal =
     }
 
 
-addProjectVisitors : Rule.ModuleRuleSchema schemaState (Context a) -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } (Context a)
+addProjectVisitors : Rule.ProjectRuleSchema { canAddModuleVisitor : (), withModuleContext : Rule.Forbidden } projectContext (Context a) -> Rule.ProjectRuleSchema { canAddModuleVisitor : (), withModuleContext : Rule.Required } projectContext (Context a)
 addProjectVisitors schema =
-    schema
-        |> Rule.withImportVisitor importVisitor
-        |> Rule.withDeclarationListVisitor declarationListVisitor
+    Rule.withModuleVisitor
+        (Rule.withDeclarationListVisitor declarationListVisitor)
+        schema
 
 
 

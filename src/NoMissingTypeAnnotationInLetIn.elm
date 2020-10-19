@@ -65,10 +65,25 @@ elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeA
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoMissingTypeAnnotationInLetIn" initialModuleContext
+    Rule.newProjectRuleSchema "NoMissingTypeAnnotationInLetIn" initialProjectContext
         |> TypeInference.Infer.addProjectVisitors
+        |> Rule.withModuleVisitor moduleVisitor
+        |> Rule.withModuleContextUsingContextCreator
+            { fromProjectToModule = fromProjectToModule
+            , fromModuleToProject = fromModuleToProject
+            , foldProjectContexts = foldProjectContexts
+            }
+        |> Rule.fromProjectRuleSchema
+
+
+moduleVisitor : Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
+moduleVisitor schema =
+    schema
         |> Rule.withExpressionEnterVisitor expressionVisitor
-        |> Rule.fromModuleRuleSchema
+
+
+type alias ProjectContext =
+    {}
 
 
 type alias ModuleContext =
@@ -78,16 +93,31 @@ type alias ModuleContext =
     }
 
 
-initialModuleContext : Rule.ContextCreator () ModuleContext
-initialModuleContext =
+initialProjectContext : ProjectContext
+initialProjectContext =
+    {}
+
+
+fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
+fromProjectToModule =
     Rule.initContextCreator
-        (\lookupTable () ->
+        (\lookupTable projectContext ->
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = TypeByNameLookup.empty
             , inferInternal = TypeInference.Infer.initInternal
             }
         )
         |> Rule.withModuleNameLookupTable
+
+
+fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
+fromModuleToProject =
+    Rule.initContextCreator (\_ -> {})
+
+
+foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
+foldProjectContexts newContext previousContext =
+    previousContext
 
 
 expressionVisitor : Node Expression -> ModuleContext -> ( List (Error {}), ModuleContext )
