@@ -1,8 +1,10 @@
 module TypeInference.Infer exposing
     ( InferInternal
+    , ProjectContext
     , addProjectVisitors
     , inferType
     , initInternal
+    , initialProjectContext
     )
 
 import Dict exposing (Dict)
@@ -27,9 +29,18 @@ type alias Context a =
     }
 
 
+type alias ProjectContext =
+    {}
+
+
 type alias InferInternal =
     { operatorsInScope : Dict String Elm.Type.Type
     }
+
+
+initialProjectContext : ProjectContext
+initialProjectContext =
+    {}
 
 
 initInternal : InferInternal
@@ -40,7 +51,7 @@ initInternal =
     }
 
 
-addProjectVisitors : Rule.ProjectRuleSchema { canAddModuleVisitor : (), withModuleContext : Rule.Forbidden } projectContext (Context a) -> Rule.ProjectRuleSchema { canAddModuleVisitor : (), withModuleContext : Rule.Required } projectContext (Context a)
+addProjectVisitors : Rule.ProjectRuleSchema { canAddModuleVisitor : (), withModuleContext : Rule.Forbidden } { projectContext | infer : ProjectContext } (Context a) -> Rule.ProjectRuleSchema { canAddModuleVisitor : (), withModuleContext : Rule.Required } { projectContext | infer : ProjectContext } (Context a)
 addProjectVisitors schema =
     Rule.withModuleVisitor moduleVisitor schema
 
