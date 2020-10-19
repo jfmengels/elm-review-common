@@ -53,10 +53,15 @@ initialProjectContext =
 fromProjectToModule : { projectContext | infer : ProjectContext } -> InferInternal
 fromProjectToModule { infer } =
     { dependencies = infer.dependencies
-    , operatorsInScope = Dict.empty
-
-    -- TODO Needs access to other dependencies information
-    --Dict.singleton "+" (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")))
+    , operatorsInScope =
+        List.foldl
+            (\import_ dict ->
+                dict
+             --|> registerImportAlias import_
+             --|> registerImportExposed import_
+            )
+            (Dict.singleton "+" (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number"))))
+            elmCorePrelude
     }
 
 
@@ -212,14 +217,14 @@ createFakeImport { moduleName, moduleAlias, exposingList } =
 -- IMPORT VISITOR
 
 
-importVisitor : Node Import -> ModuleContext a -> ( List nothing, ModuleContext a )
+importVisitor : Node Import -> ModuleContext a -> ModuleContext a
 importVisitor node context =
     let
         newContext : ModuleContext a
         newContext =
             context
     in
-    ( [], newContext )
+    newContext
 
 
 
