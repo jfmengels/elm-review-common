@@ -16,6 +16,7 @@ import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
+import Review.Project.Dependency
 import Review.Rule as Rule
 import Set exposing (Set)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
@@ -30,7 +31,8 @@ type alias Context a =
 
 
 type alias ProjectContext =
-    {}
+    { dependencies : Dict String Review.Project.Dependency.Dependency
+    }
 
 
 type alias InferInternal =
@@ -40,7 +42,8 @@ type alias InferInternal =
 
 initialProjectContext : ProjectContext
 initialProjectContext =
-    {}
+    { dependencies = Dict.empty
+    }
 
 
 initInternal : InferInternal
