@@ -8,6 +8,7 @@ module TypeInference.Infer exposing
     )
 
 import Dict exposing (Dict)
+import Elm.Docs
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Exposing as Exposing exposing (Exposing)
 import Elm.Syntax.Expression as Expression exposing (Expression)
@@ -52,11 +53,22 @@ initialProjectContext =
 
 fromProjectToModule : { projectContext | infer : ProjectContext } -> InferInternal
 fromProjectToModule { infer } =
+    let
+        modules : Dict (List String) Elm.Docs.Module
+        modules =
+            infer.dependencies
+                |> Dict.values
+                |> List.concatMap Review.Project.Dependency.modules
+                |> List.map (\module_ -> ( String.split "." module_.name, module_ ))
+                |> Dict.fromList
+    in
     { dependencies = infer.dependencies
     , operatorsInScope =
         List.concatMap
             (\import_ ->
-                [ ( "+", Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")) ) ]
+                Dict.get (Node.value import_.moduleName) modules
+                    |> Maybe.map (\{ binops } -> List.map (\binop -> ( binop.name, binop.tipe )) binops)
+                    |> Maybe.withDefault []
             )
             elmCorePrelude
             |> Dict.fromList

@@ -794,13 +794,12 @@ type Thing = A TupleAlias
             , expectedType = "number -> number -> number"
             , topLevelDeclarations = ""
             }
-        , Test.skip <|
-            fixTest "when value is a partially applied operator function"
-                { arguments = ""
-                , value = "(/) 1"
-                , expectedType = "Float -> Float"
-                , topLevelDeclarations = ""
-                }
+        , fixTest "when value is a partially applied operator function"
+            { arguments = ""
+            , value = "(/) 1"
+            , expectedType = "Basics.Float -> Basics.Float"
+            , topLevelDeclarations = ""
+            }
         , Test.skip <|
             fixTest "when value is a binary operation"
                 { arguments = ""
