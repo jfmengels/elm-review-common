@@ -106,7 +106,7 @@ fromProjectToModule =
         (\lookupTable projectContext ->
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = TypeByNameLookup.empty
-            , inferInternal = TypeInference.Infer.initInternal
+            , inferInternal = TypeInference.Infer.fromProjectToModule projectContext
             }
         )
         |> Rule.withModuleNameLookupTable

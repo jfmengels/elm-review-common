@@ -2,8 +2,8 @@ module TypeInference.Infer exposing
     ( InferInternal
     , ProjectContext
     , addProjectVisitors
+    , fromProjectToModule
     , inferType
-    , initInternal
     , initialProjectContext
     )
 
@@ -37,7 +37,8 @@ type alias ModuleContext a =
 
 
 type alias InferInternal =
-    { operatorsInScope : Dict String Elm.Type.Type
+    { dependencies : Dict ModuleName Review.Project.Dependency.Dependency
+    , operatorsInScope : Dict String Elm.Type.Type
     }
 
 
@@ -47,9 +48,10 @@ initialProjectContext =
     }
 
 
-initInternal : InferInternal
-initInternal =
-    { operatorsInScope =
+fromProjectToModule : { projectContext | infer : ProjectContext } -> InferInternal
+fromProjectToModule { infer } =
+    { dependencies = infer.dependencies
+    , operatorsInScope =
         -- TODO Needs access to other dependencies information
         Dict.singleton "+" (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Lambda (Elm.Type.Var "number") (Elm.Type.Var "number")))
     }
