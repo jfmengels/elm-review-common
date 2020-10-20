@@ -45,7 +45,7 @@ wrapProject =
     ProjectContext
 
 
-type alias ModuleContext a =
+type alias OuterModuleContext a =
     { a
         | moduleNameLookupTable : ModuleNameLookupTable
         , typeByNameLookup : TypeByNameLookup
@@ -98,19 +98,19 @@ addProjectVisitors :
     Rule.ProjectRuleSchema
         { projectSchemaState | canAddModuleVisitor : () }
         { projectContext | infer : ProjectContext }
-        (ModuleContext a)
+        (OuterModuleContext a)
     ->
         Rule.ProjectRuleSchema
             { projectSchemaState | canAddModuleVisitor : (), hasAtLeastOneVisitor : (), withModuleContext : Rule.Required }
             { projectContext | infer : ProjectContext }
-            (ModuleContext a)
+            (OuterModuleContext a)
 addProjectVisitors schema =
     schema
         |> Rule.withDependenciesProjectVisitor dependenciesVisitor
         |> Rule.withModuleVisitor moduleVisitor
 
 
-moduleVisitor : Rule.ModuleRuleSchema schemaState (ModuleContext a) -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } (ModuleContext a)
+moduleVisitor : Rule.ModuleRuleSchema schemaState (OuterModuleContext a) -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } (OuterModuleContext a)
 moduleVisitor schema =
     schema |> Rule.withDeclarationListVisitor declarationListVisitor
 
@@ -246,10 +246,10 @@ createFakeImport { moduleName, moduleAlias, exposingList } =
 -- IMPORT VISITOR
 
 
-importVisitor : Node Import -> ModuleContext a -> ModuleContext a
+importVisitor : Node Import -> OuterModuleContext a -> OuterModuleContext a
 importVisitor node context =
     let
-        newContext : ModuleContext a
+        newContext : OuterModuleContext a
         newContext =
             context
     in
@@ -260,7 +260,7 @@ importVisitor node context =
 -- DECLARATION LIST VISITOR
 
 
-declarationListVisitor : List (Node Declaration) -> ModuleContext a -> ( List nothing, ModuleContext a )
+declarationListVisitor : List (Node Declaration) -> OuterModuleContext a -> ( List nothing, OuterModuleContext a )
 declarationListVisitor nodes context =
     ( []
     , { context
@@ -361,7 +361,7 @@ typeOfDeclaration node =
 -- TYPE INFERENCE
 
 
-inferType : ModuleContext a -> Node Expression -> Maybe Elm.Type.Type
+inferType : OuterModuleContext a -> Node Expression -> Maybe Elm.Type.Type
 inferType context node =
     case Node.value node of
         Expression.ParenthesizedExpression expr ->
@@ -493,7 +493,7 @@ inferType context node =
 
                 Nothing ->
                     let
-                        newContext : ModuleContext a
+                        newContext : OuterModuleContext a
                         newContext =
                             { context
                                 | typeByNameLookup =
@@ -528,7 +528,7 @@ inferType context node =
                                             _ ->
                                                 context.typeByNameLookup
 
-                            contextToUse : ModuleContext a
+                            contextToUse : OuterModuleContext a
                             contextToUse =
                                 { context | typeByNameLookup = typeByNameLookup }
                         in
@@ -551,7 +551,7 @@ inferType context node =
             Nothing
 
 
-addTypeFromPatternToContext : Node Pattern -> ModuleContext a -> ModuleContext a
+addTypeFromPatternToContext : Node Pattern -> OuterModuleContext a -> OuterModuleContext a
 addTypeFromPatternToContext pattern context =
     case Node.value pattern of
         Pattern.AllPattern ->
@@ -716,7 +716,7 @@ inferTypeFromPattern node =
             Nothing
 
 
-inferTypeFromCombinationOf : List (() -> ( ModuleContext a, Node Expression )) -> Maybe Elm.Type.Type
+inferTypeFromCombinationOf : List (() -> ( OuterModuleContext a, Node Expression )) -> Maybe Elm.Type.Type
 inferTypeFromCombinationOf expressions =
     inferTypeFromCombinationOfInternal
         { hasUnknowns = False, maybeInferred = Nothing, typeVariablesList = [] }
@@ -728,7 +728,7 @@ inferTypeFromCombinationOfInternal :
     , maybeInferred : Maybe Elm.Type.Type
     , typeVariablesList : List (Set String)
     }
-    -> List (() -> ( ModuleContext a, Node Expression ))
+    -> List (() -> ( OuterModuleContext a, Node Expression ))
     -> Maybe Elm.Type.Type
 inferTypeFromCombinationOfInternal previousItemsResult expressions =
     case expressions of
@@ -806,12 +806,12 @@ refineInferredType _ typeB =
     typeB
 
 
-applyArguments : ModuleContext a -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArguments : OuterModuleContext a -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
 applyArguments context arguments type_ =
     applyArgumentsInternal context arguments Set.empty type_
 
 
-applyArgumentsInternal : ModuleContext a -> List (Node Expression) -> Set String -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArgumentsInternal : OuterModuleContext a -> List (Node Expression) -> Set String -> Elm.Type.Type -> Maybe Elm.Type.Type
 applyArgumentsInternal context arguments previousTypeVariables type_ =
     case arguments of
         [] ->
@@ -913,7 +913,7 @@ typeAnnotationToElmType node =
 -- DECLARATION LIST VISITOR
 
 
-typeOfLetDeclaration : ModuleContext a -> Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
+typeOfLetDeclaration : OuterModuleContext a -> Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
 typeOfLetDeclaration context node =
     case Node.value node of
         Expression.LetFunction function ->
@@ -923,7 +923,7 @@ typeOfLetDeclaration context node =
             []
 
 
-typeOfFunctionDeclaration : ModuleContext a -> Expression.Function -> List ( String, Elm.Type.Type )
+typeOfFunctionDeclaration : OuterModuleContext a -> Expression.Function -> List ( String, Elm.Type.Type )
 typeOfFunctionDeclaration context function =
     let
         functionName : String
