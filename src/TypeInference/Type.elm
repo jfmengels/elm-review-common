@@ -39,8 +39,8 @@ fromMetadataType type_ =
                 [] ->
                     Type [] name types
 
-                functionName :: reversedModuleName ->
-                    Type (List.reverse reversedModuleName) functionName types
+                typeName :: reversedModuleName ->
+                    Type (List.reverse reversedModuleName) typeName types
 
         Elm.Type.Record originalFields generic ->
             Record
@@ -76,10 +76,10 @@ toMetadataType type_ =
                 Nothing ->
                     Nothing
 
-        Type moduleName functionName types ->
+        Type moduleName typeName types ->
             case listOfMaybeToMaybeList types of
                 Just argumentTypes ->
-                    Just (Elm.Type.Type (String.join "." (moduleName ++ [ functionName ])) argumentTypes)
+                    Just (Elm.Type.Type (String.join "." (moduleName ++ [ typeName ])) argumentTypes)
 
                 Nothing ->
                     Nothing

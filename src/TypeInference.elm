@@ -292,7 +292,6 @@ typeOfDeclaration node =
                             |> Node.value
                             |> .typeAnnotation
                             |> typeAnnotationToElmType
-                            |> Type.fromMetadataType
                       )
                     ]
 
@@ -301,55 +300,56 @@ typeOfDeclaration node =
 
         Declaration.CustomTypeDeclaration type_ ->
             let
-                customTypeType : Elm.Type.Type
+                customTypeType : Type
                 customTypeType =
-                    Elm.Type.Type
+                    Type.Type
+                        []
                         (Node.value type_.name)
-                        (List.map (Node.value >> Elm.Type.Var) type_.generics)
+                        (List.map (Node.value >> Type.Generic) type_.generics)
             in
             List.map
                 (\(Node _ { name, arguments }) ->
                     let
-                        functionType : Elm.Type.Type
+                        functionType : Type
                         functionType =
                             List.foldr
                                 (\input output ->
-                                    Elm.Type.Lambda
+                                    Type.Function
                                         (typeAnnotationToElmType input)
                                         output
                                 )
                                 customTypeType
                                 arguments
                     in
-                    ( Node.value name, Type.fromMetadataType functionType )
+                    ( Node.value name, functionType )
                 )
                 type_.constructors
 
         Declaration.AliasDeclaration typeAlias ->
             let
-                aliasType : Elm.Type.Type
+                aliasType : Type
                 aliasType =
-                    Elm.Type.Type
+                    Type.Type []
                         (Node.value typeAlias.name)
-                        (List.map (Node.value >> Elm.Type.Var) typeAlias.generics)
+                        (List.map (Node.value >> Type.Generic) typeAlias.generics)
             in
             case typeAnnotationToElmType typeAlias.typeAnnotation of
-                Elm.Type.Record fields _ ->
+                Type.Record { fields } ->
                     let
-                        functionType : Elm.Type.Type
+                        functionType : Type
                         functionType =
                             List.foldr
-                                (\( _, type_ ) output -> Elm.Type.Lambda type_ output)
+                                (\( _, type_ ) output -> Type.Function type_ output)
                                 aliasType
                                 fields
                     in
-                    [ ( Node.value typeAlias.name, Type.fromMetadataType functionType ) ]
+                    [ ( Node.value typeAlias.name, functionType ) ]
 
                 _ ->
                     []
 
         Declaration.PortDeclaration { name, typeAnnotation } ->
-            [ ( Node.value name, Type.fromMetadataType <| typeAnnotationToElmType typeAnnotation ) ]
+            [ ( Node.value name, typeAnnotationToElmType typeAnnotation ) ]
 
         Declaration.InfixDeclaration _ ->
             []
@@ -888,39 +888,45 @@ findTypeVariables type_ =
                 |> List.foldl Set.union startSet
 
 
-typeAnnotationToElmType : Node TypeAnnotation -> Elm.Type.Type
+typeAnnotationToElmType : Node TypeAnnotation -> Type
 typeAnnotationToElmType node =
     case Node.value node of
         TypeAnnotation.GenericType var ->
-            Elm.Type.Var var
+            Type.Generic var
 
         TypeAnnotation.Typed (Node _ ( moduleName, name )) nodes ->
-            Elm.Type.Type (String.join "." (moduleName ++ [ name ])) (List.map typeAnnotationToElmType nodes)
+            Type.Type moduleName name (List.map typeAnnotationToElmType nodes)
 
         TypeAnnotation.Unit ->
-            Elm.Type.Tuple []
+            Type.Tuple []
 
         TypeAnnotation.Tupled nodes ->
-            Elm.Type.Tuple (List.map typeAnnotationToElmType nodes)
+            Type.Tuple (List.map typeAnnotationToElmType nodes)
 
         TypeAnnotation.Record recordDefinition ->
-            Elm.Type.Record
-                (List.map
-                    (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
-                    recordDefinition
-                )
-                Nothing
+            Type.Record
+                { fields =
+                    List.map
+                        (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
+                        recordDefinition
+                , generic = Nothing
+                , canHaveMoreFields = False
+                }
 
         TypeAnnotation.GenericRecord genericVar recordDefinition ->
-            Elm.Type.Record
-                (List.map
-                    (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
-                    (Node.value recordDefinition)
-                )
-                (Just (Node.value genericVar))
+            Type.Record
+                { fields =
+                    List.map
+                        (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
+                        (Node.value recordDefinition)
+                , generic = Just (Node.value genericVar)
+                , canHaveMoreFields = False
+                }
 
         TypeAnnotation.FunctionTypeAnnotation input output ->
-            Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
+            Type.Function
+                (typeAnnotationToElmType input)
+                (typeAnnotationToElmType output)
 
 
 
@@ -954,7 +960,6 @@ typeOfFunctionDeclaration context function =
                     |> Node.value
                     |> .typeAnnotation
                     |> typeAnnotationToElmType
-                    |> Type.fromMetadataType
               )
             ]
 
