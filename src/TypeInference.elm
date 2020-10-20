@@ -370,40 +370,30 @@ inferType context node =
             inferType context expr
 
         Expression.Literal _ ->
-            -- TODO Re-add "String." but remove it at stringification time
-            Just (Elm.Type.Type "String" [])
-                |> Maybe.map Type.fromMetadataType
+            Just (Type.Type [ "Basics" ] "String" [])
 
         Expression.CharLiteral _ ->
-            -- TODO Re-add "Char." but remove it at stringification time
-            Just (Elm.Type.Type "Char" [])
-                |> Maybe.map Type.fromMetadataType
+            Just (Type.Type [ "Basics" ] "Char" [])
 
         Expression.Integer _ ->
-            Just (Elm.Type.Var "number")
-                |> Maybe.map Type.fromMetadataType
+            Just (Type.Generic "number")
 
         Expression.Hex _ ->
-            Just (Elm.Type.Var "number")
-                |> Maybe.map Type.fromMetadataType
+            Just (Type.Generic "number")
 
         Expression.Floatable _ ->
-            Just (Elm.Type.Type "Basics.Float" [])
-                |> Maybe.map Type.fromMetadataType
+            Just (Type.Type [ "Basics" ] "Float" [])
 
         Expression.UnitExpr ->
-            Just (Elm.Type.Tuple [])
-                |> Maybe.map Type.fromMetadataType
+            Just (Type.Tuple [])
 
         Expression.FunctionOrValue _ name ->
             case ( ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable node, name ) of
                 ( Just [ "Basics" ], "True" ) ->
-                    Just (Elm.Type.Type "Basics.Bool" [])
-                        |> Maybe.map Type.fromMetadataType
+                    Just (Type.Type [ "Basics" ] "Bool" [])
 
                 ( Just [ "Basics" ], "False" ) ->
-                    Just (Elm.Type.Type "Basics.Bool" [])
-                        |> Maybe.map Type.fromMetadataType
+                    Just (Type.Type [ "Basics" ] "Bool" [])
 
                 ( Just [], _ ) ->
                     TypeByNameLookup.byName context.typeByNameLookup name
@@ -434,8 +424,7 @@ inferType context node =
 
         Expression.ListExpr nodes ->
             if List.isEmpty nodes then
-                Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
-                    |> Maybe.map Type.fromMetadataType
+                Just (Type.Type [ "Basics" ] "List" [ Type.Generic "nothing" ])
 
             else
                 inferTypeFromCombinationOf (List.map (\nodeInList () -> ( context, nodeInList )) nodes)
@@ -471,10 +460,16 @@ inferType context node =
                     Nothing
 
         Expression.RecordAccessFunction fieldName ->
-            Elm.Type.Lambda
-                (Elm.Type.Record [ ( String.dropLeft 1 fieldName, Elm.Type.Var "a" ) ] (Just "b"))
-                (Elm.Type.Var "a")
-                |> Type.fromMetadataType
+            Type.Function
+                (Type.Record
+                    { fields =
+                        [ ( String.dropLeft 1 fieldName, Type.Generic "a" )
+                        ]
+                    , generic = Just "b"
+                    , canHaveMoreFields = False
+                    }
+                )
+                (Type.Generic "a")
                 |> Just
 
         Expression.OperatorApplication _ _ _ _ ->
