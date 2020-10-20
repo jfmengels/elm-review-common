@@ -472,10 +472,9 @@ inferType context node =
                 (Type.Generic "a")
                 |> Just
 
-        Expression.OperatorApplication _ _ _ _ ->
-            -- TODO Handle this case
-            -- Needs lookup to prefix operator
-            Nothing
+        Expression.OperatorApplication operator _ left right ->
+            Dict.get operator context.typeInference.operatorsInScope
+                |> Maybe.andThen (\function -> applyArguments context [ left, right ] function)
 
         Expression.IfBlock _ ifTrue ifFalse ->
             inferTypeFromCombinationOf (List.map (\branchNode () -> ( context, branchNode )) [ ifTrue, ifFalse ])

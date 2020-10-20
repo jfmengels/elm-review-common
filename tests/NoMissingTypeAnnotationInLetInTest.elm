@@ -800,13 +800,12 @@ type Thing = A TupleAlias
             , expectedType = "Float -> Float"
             , topLevelDeclarations = ""
             }
-        , Test.skip <|
-            fixTest "when value is a binary operation"
-                { arguments = ""
-                , value = "14 / 4"
-                , expectedType = "Float"
-                , topLevelDeclarations = ""
-                }
+        , fixTest "when value is a binary operation"
+            { arguments = ""
+            , value = "14 / 4"
+            , expectedType = "Float"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
