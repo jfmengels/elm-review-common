@@ -3,6 +3,7 @@ module TypeInference.Binop exposing
     , Binop
     , associativity
     , comment
+    , fromMetadata
     , name
     , precedence
     , tipe

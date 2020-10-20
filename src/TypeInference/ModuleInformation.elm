@@ -7,6 +7,7 @@ module TypeInference.ModuleInformation exposing
 import Dict exposing (Dict)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Review.Project.Dependency
+import TypeInference.Binop as Binop exposing (Binop)
 import TypeInference.Type as Type
 
 
@@ -19,9 +20,23 @@ fromDependencies dependencies =
     dependencies
         |> Dict.values
         |> List.concatMap Review.Project.Dependency.modules
-        |> List.map (\module_ -> ( String.split "." module_.name, ModuleInformation ))
+        |> List.map
+            (\module_ ->
+                ( String.split "." module_.name
+                , ModuleInformation
+                    { binops = dictByName Binop.fromMetadata module_.binops
+                    }
+                )
+            )
         |> Dict.fromList
         |> ModuleInformationDict
+
+
+dictByName : ({ a | name : String } -> b) -> List { a | name : String } -> Dict String b
+dictByName function list =
+    list
+        |> List.map (\element -> ( element.name, function element ))
+        |> Dict.fromList
 
 
 empty : ModuleInformationDict
@@ -31,8 +46,10 @@ empty =
 
 type ModuleInformation
     = ModuleInformation
+        { binops : Dict String Binop
+        }
 
 
-binops : ModuleInformation -> Dict String Type.Type
-binops moduleInformation =
-    Dict.empty
+binops : ModuleInformation -> Dict String Binop
+binops (ModuleInformation moduleInformation) =
+    moduleInformation.binops
