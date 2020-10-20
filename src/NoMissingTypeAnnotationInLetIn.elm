@@ -14,7 +14,7 @@ import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 import TypeInference exposing (inferType)
-import TypeInference.Type
+import TypeInference.Type as Type exposing (Type)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
 
@@ -164,7 +164,8 @@ reportFunctionWithoutSignature context function =
                 maybeType =
                     if List.isEmpty declaration.arguments then
                         inferType context declaration.expression
-                            |> Maybe.andThen TypeInference.Type.toMetadataType
+                            |> Maybe.map updateAliases
+                            |> Maybe.andThen Type.toMetadataType
                             |> Maybe.map typeAsString
 
                     else
@@ -307,3 +308,29 @@ typeAnnotationToElmType node =
 
         TypeAnnotation.FunctionTypeAnnotation input output ->
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
+
+
+updateAliases : Type -> Type
+updateAliases type_ =
+    case type_ of
+        Type.Unknown ->
+            type_
+
+        Type.Generic _ ->
+            type_
+
+        Type.Function input output ->
+            Type.Function (updateAliases input) (updateAliases output)
+
+        Type.Tuple types ->
+            Type.Tuple (List.map updateAliases types)
+
+        Type.Type moduleName string types ->
+            if moduleName == [ "Basics" ] then
+                Type.Type [] string (List.map updateAliases types)
+
+            else
+                Type.Type moduleName string (List.map updateAliases types)
+
+        Type.Record record ->
+            Type.Record { record | fields = List.map (Tuple.mapSecond updateAliases) record.fields }

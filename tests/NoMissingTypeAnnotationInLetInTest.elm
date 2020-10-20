@@ -797,7 +797,7 @@ type Thing = A TupleAlias
         , fixTest "when value is a partially applied operator function"
             { arguments = ""
             , value = "(/) 1"
-            , expectedType = "Basics.Float -> Basics.Float"
+            , expectedType = "Float -> Float"
             , topLevelDeclarations = ""
             }
         , Test.skip <|

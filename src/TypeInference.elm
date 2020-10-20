@@ -388,8 +388,7 @@ inferType context node =
                 |> Maybe.map Type.fromMetadataType
 
         Expression.Floatable _ ->
-            -- TODO Re-add "Basics." but remove it at stringification time
-            Just (Elm.Type.Type "Float" [])
+            Just (Elm.Type.Type "Basics.Float" [])
                 |> Maybe.map Type.fromMetadataType
 
         Expression.UnitExpr ->
@@ -399,13 +398,11 @@ inferType context node =
         Expression.FunctionOrValue _ name ->
             case ( ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable node, name ) of
                 ( Just [ "Basics" ], "True" ) ->
-                    -- TODO Re-add "Basics." but remove it at stringification time
-                    Just (Elm.Type.Type "Bool" [])
+                    Just (Elm.Type.Type "Basics.Bool" [])
                         |> Maybe.map Type.fromMetadataType
 
                 ( Just [ "Basics" ], "False" ) ->
-                    -- TODO Re-add "Basics." but remove it at stringification time
-                    Just (Elm.Type.Type "Bool" [])
+                    Just (Elm.Type.Type "Basics.Bool" [])
                         |> Maybe.map Type.fromMetadataType
 
                 ( Just [], _ ) ->
@@ -442,7 +439,7 @@ inferType context node =
 
             else
                 inferTypeFromCombinationOf (List.map (\nodeInList () -> ( context, nodeInList )) nodes)
-                    |> Maybe.map (\type_ -> Type.Type [] "List" [ type_ ])
+                    |> Maybe.map (\type_ -> Type.Type [ "Basics" ] "List" [ type_ ])
 
         Expression.RecordExpr fields ->
             let
