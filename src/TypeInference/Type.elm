@@ -6,7 +6,7 @@ import Elm.Type
 
 type Type
     = Unknown
-    | Var String
+    | Generic String
     | Function Type Type
     | Tuple (List Type)
     | Type ModuleName String (List Type)
@@ -21,7 +21,7 @@ fromMetadataType : Elm.Type.Type -> Type
 fromMetadataType type_ =
     case type_ of
         Elm.Type.Var string ->
-            Var string
+            Generic string
 
         Elm.Type.Lambda input output ->
             Function (fromMetadataType input) (fromMetadataType output)

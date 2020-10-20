@@ -13,12 +13,12 @@ suite =
             \() ->
                 Elm.Type.Var "a"
                     |> Type.fromMetadataType
-                    |> Expect.equal (Type.Var "a")
+                    |> Expect.equal (Type.Generic "a")
         , Test.test "Function" <|
             \() ->
                 Elm.Type.Lambda (Elm.Type.Var "a") (Elm.Type.Var "b")
                     |> Type.fromMetadataType
-                    |> Expect.equal (Type.Function (Type.Var "a") (Type.Var "b"))
+                    |> Expect.equal (Type.Function (Type.Generic "a") (Type.Generic "b"))
         , Test.test "Function with multiple arguments" <|
             \() ->
                 Elm.Type.Lambda
@@ -27,8 +27,8 @@ suite =
                     |> Type.fromMetadataType
                     |> Expect.equal
                         (Type.Function
-                            (Type.Var "a")
-                            (Type.Function (Type.Var "b") (Type.Var "c"))
+                            (Type.Generic "a")
+                            (Type.Function (Type.Generic "b") (Type.Generic "c"))
                         )
         , Test.test "Unit" <|
             \() ->
@@ -39,12 +39,12 @@ suite =
             \() ->
                 Elm.Type.Tuple [ Elm.Type.Var "b", Elm.Type.Var "c" ]
                     |> Type.fromMetadataType
-                    |> Expect.equal (Type.Tuple [ Type.Var "b", Type.Var "c" ])
+                    |> Expect.equal (Type.Tuple [ Type.Generic "b", Type.Generic "c" ])
         , Test.test "Tuple with 3 elements" <|
             \() ->
                 Elm.Type.Tuple [ Elm.Type.Var "b", Elm.Type.Var "c", Elm.Type.Var "d" ]
                     |> Type.fromMetadataType
-                    |> Expect.equal (Type.Tuple [ Type.Var "b", Type.Var "c", Type.Var "d" ])
+                    |> Expect.equal (Type.Tuple [ Type.Generic "b", Type.Generic "c", Type.Generic "d" ])
         , Test.test "Type with an empty module name" <|
             \() ->
                 Elm.Type.Type "Int" []
