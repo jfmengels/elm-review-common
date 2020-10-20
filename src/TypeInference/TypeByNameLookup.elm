@@ -12,45 +12,50 @@ import Elm.Type
 
 
 type TypeByNameLookup
-    = TypeByNameLookup (Dict String Elm.Type.Type) (List (Dict String Elm.Type.Type))
+    = TypeByNameLookup
+        { typeDict : Dict String Elm.Type.Type
+        , scopes : List (Dict String Elm.Type.Type)
+        }
 
 
 empty : TypeByNameLookup
 empty =
-    TypeByNameLookup Dict.empty []
+    TypeByNameLookup { typeDict = Dict.empty, scopes = [] }
 
 
 addType : List ( String, Elm.Type.Type ) -> TypeByNameLookup -> TypeByNameLookup
-addType types (TypeByNameLookup lookup higherLevelLookups) =
+addType types (TypeByNameLookup lookup) =
     TypeByNameLookup
-        (Dict.union
-            (Dict.fromList types)
-            lookup
-        )
-        higherLevelLookups
+        { lookup
+            | typeDict =
+                Dict.union
+                    (Dict.fromList types)
+                    lookup.typeDict
+        }
 
 
 addNewScope : TypeByNameLookup -> TypeByNameLookup
-addNewScope (TypeByNameLookup lookup higherLevelLookups) =
+addNewScope (TypeByNameLookup lookup) =
     TypeByNameLookup
-        Dict.empty
-        (lookup :: higherLevelLookups)
+        { typeDict = Dict.empty
+        , scopes = lookup.typeDict :: lookup.scopes
+        }
 
 
 popScope : TypeByNameLookup -> TypeByNameLookup
-popScope ((TypeByNameLookup _ higherLevelLookups) as originalLookupTable) =
+popScope ((TypeByNameLookup { scopes }) as originalLookupTable) =
     -- TODO Not used. Should be used?
-    case higherLevelLookups of
+    case scopes of
         head :: rest ->
-            TypeByNameLookup head rest
+            TypeByNameLookup { typeDict = head, scopes = rest }
 
         [] ->
             originalLookupTable
 
 
 byName : TypeByNameLookup -> String -> Maybe Elm.Type.Type
-byName (TypeByNameLookup lookup higherLevelLookups) name =
-    lookupTypeByNameInternal name (lookup :: higherLevelLookups)
+byName (TypeByNameLookup lookup) name =
+    lookupTypeByNameInternal name (lookup.typeDict :: lookup.scopes)
 
 
 lookupTypeByNameInternal : String -> List (Dict String Elm.Type.Type) -> Maybe Elm.Type.Type
