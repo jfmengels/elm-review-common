@@ -66,12 +66,12 @@ initialProjectContext =
         }
 
 
-fromProjectToModule : { projectContext | infer : ProjectContext } -> ModuleContext
-fromProjectToModule { infer } =
+fromProjectToModule : { projectContext | typeInference : ProjectContext } -> ModuleContext
+fromProjectToModule { typeInference } =
     let
         projectContext : InternalProjectContext
         projectContext =
-            unwrapProject infer
+            unwrapProject typeInference
 
         modules : Dict (List String) Elm.Docs.Module
         modules =
@@ -97,12 +97,12 @@ fromProjectToModule { infer } =
 addProjectVisitors :
     Rule.ProjectRuleSchema
         { projectSchemaState | canAddModuleVisitor : () }
-        { projectContext | infer : ProjectContext }
+        { projectContext | typeInference : ProjectContext }
         (OuterModuleContext a)
     ->
         Rule.ProjectRuleSchema
             { projectSchemaState | canAddModuleVisitor : (), hasAtLeastOneVisitor : (), withModuleContext : Rule.Required }
-            { projectContext | infer : ProjectContext }
+            { projectContext | typeInference : ProjectContext }
             (OuterModuleContext a)
 addProjectVisitors schema =
     schema
@@ -119,12 +119,12 @@ moduleVisitor schema =
 -- DEPENDENCIES VISITOR
 
 
-dependenciesVisitor : Dict String Review.Project.Dependency.Dependency -> { projectContext | infer : ProjectContext } -> ( List nothing, { projectContext | infer : ProjectContext } )
+dependenciesVisitor : Dict String Review.Project.Dependency.Dependency -> { projectContext | typeInference : ProjectContext } -> ( List nothing, { projectContext | typeInference : ProjectContext } )
 dependenciesVisitor rawDependencies context =
     let
         projectContext : InternalProjectContext
         projectContext =
-            unwrapProject context.infer
+            unwrapProject context.typeInference
 
         dependencies : Dict (List String) Review.Project.Dependency.Dependency
         dependencies =
@@ -134,7 +134,7 @@ dependenciesVisitor rawDependencies context =
                 |> Dict.fromList
     in
     ( []
-    , { context | infer = ProjectContext { projectContext | dependencies = dependencies } }
+    , { context | typeInference = ProjectContext { projectContext | dependencies = dependencies } }
     )
 
 

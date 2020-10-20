@@ -83,7 +83,7 @@ moduleVisitor schema =
 
 
 type alias ProjectContext =
-    { infer : TypeInference.Infer.ProjectContext
+    { typeInference : TypeInference.Infer.ProjectContext
     }
 
 
@@ -96,7 +96,7 @@ type alias ModuleContext =
 
 initialProjectContext : ProjectContext
 initialProjectContext =
-    { infer = TypeInference.Infer.initialProjectContext
+    { typeInference = TypeInference.Infer.initialProjectContext
     }
 
 
@@ -116,7 +116,7 @@ fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
         (\_ ->
-            { infer = TypeInference.Infer.initialProjectContext
+            { typeInference = TypeInference.Infer.initialProjectContext
             }
         )
 
