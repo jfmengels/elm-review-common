@@ -56,7 +56,7 @@ type alias OuterModuleContext a =
 
 type alias ModuleContext =
     { dependencies : Dict ModuleName Review.Project.Dependency.Dependency
-    , operatorsInScope : Dict String Elm.Type.Type
+    , operatorsInScope : Dict String Type
     }
 
 
@@ -87,7 +87,7 @@ fromProjectToModule { typeInference } =
         List.concatMap
             (\import_ ->
                 Dict.get (Node.value import_.moduleName) modules
-                    |> Maybe.map (\{ binops } -> List.map (\binop -> ( binop.name, binop.tipe )) binops)
+                    |> Maybe.map (\{ binops } -> List.map (\binop -> ( binop.name, Type.fromMetadataType binop.tipe )) binops)
                     |> Maybe.withDefault []
             )
             elmCorePrelude
@@ -482,7 +482,6 @@ inferType context node =
 
         Expression.PrefixOperator operator ->
             Dict.get operator context.typeInference.operatorsInScope
-                |> Maybe.map Type.fromMetadataType
 
         Expression.Operator _ ->
             -- Never occurs
