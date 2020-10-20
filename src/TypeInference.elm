@@ -23,6 +23,7 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Project.Dependency
 import Review.Rule as Rule
 import Set exposing (Set)
+import TypeInference.Binop as Binop
 import TypeInference.ModuleInformation as ModuleInformation exposing (ModuleInformationDict)
 import TypeInference.Type as Type exposing (Type)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
@@ -77,22 +78,14 @@ fromProjectToModule { typeInference } =
         projectContext : InternalProjectContext
         projectContext =
             unwrapProject typeInference
-
-        modules : Dict (List String) Elm.Docs.Module
-        modules =
-            projectContext.dependencies
-                |> Dict.values
-                |> List.concatMap Review.Project.Dependency.modules
-                |> List.map (\module_ -> ( String.split "." module_.name, module_ ))
-                |> Dict.fromList
     in
     { dependencies = projectContext.dependencies
     , moduleInformationDict = projectContext.moduleInformationDict
     , operatorsInScope =
         List.concatMap
             (\import_ ->
-                Dict.get (Node.value import_.moduleName) modules
-                    |> Maybe.map (\{ binops } -> List.map (\binop -> ( binop.name, Type.fromMetadataType binop.tipe )) binops)
+                ModuleInformation.forModule (Node.value import_.moduleName) projectContext.moduleInformationDict
+                    |> Maybe.map (ModuleInformation.binops >> Dict.values >> List.map (\binop -> ( Binop.name binop, Binop.tipe binop )))
                     |> Maybe.withDefault []
             )
             elmCorePrelude

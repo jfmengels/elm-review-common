@@ -1,7 +1,9 @@
 module TypeInference.ModuleInformation exposing
     ( ModuleInformation
     , ModuleInformationDict
+    , binops
     , empty
+    , forModule
     , fromDependencies
     )
 
@@ -42,6 +44,11 @@ dictByName function list =
 empty : ModuleInformationDict
 empty =
     ModuleInformationDict Dict.empty
+
+
+forModule : ModuleName -> ModuleInformationDict -> Maybe ModuleInformation
+forModule moduleName (ModuleInformationDict moduleInformationDict) =
+    Dict.get moduleName moduleInformationDict
 
 
 type ModuleInformation
