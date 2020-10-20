@@ -58,6 +58,7 @@ type alias OuterModuleContext a =
 
 type alias ModuleContext =
     { dependencies : Dict ModuleName Review.Project.Dependency.Dependency
+    , moduleInformationDict : ModuleInformationDict
     , operatorsInScope : Dict String Type
     }
 
@@ -86,6 +87,7 @@ fromProjectToModule { typeInference } =
                 |> Dict.fromList
     in
     { dependencies = projectContext.dependencies
+    , moduleInformationDict = projectContext.moduleInformationDict
     , operatorsInScope =
         List.concatMap
             (\import_ ->
