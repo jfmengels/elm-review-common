@@ -1,4 +1,4 @@
-module TypeInference.Infer exposing
+module TypeInference exposing
     ( ModuleContext
     , ProjectContext
     , addProjectVisitors

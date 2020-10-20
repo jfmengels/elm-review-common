@@ -13,7 +13,7 @@ import Elm.Type
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
-import TypeInference.Infer exposing (inferType)
+import TypeInference exposing (inferType)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
 
@@ -66,7 +66,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoMissingTypeA
 rule : Rule
 rule =
     Rule.newProjectRuleSchema "NoMissingTypeAnnotationInLetIn" initialProjectContext
-        |> TypeInference.Infer.addProjectVisitors
+        |> TypeInference.addProjectVisitors
         |> Rule.withModuleVisitor moduleVisitor
         |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModule
@@ -83,20 +83,20 @@ moduleVisitor schema =
 
 
 type alias ProjectContext =
-    { typeInference : TypeInference.Infer.ProjectContext
+    { typeInference : TypeInference.ProjectContext
     }
 
 
 type alias ModuleContext =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
-    , typeInference : TypeInference.Infer.ModuleContext
+    , typeInference : TypeInference.ModuleContext
     }
 
 
 initialProjectContext : ProjectContext
 initialProjectContext =
-    { typeInference = TypeInference.Infer.initialProjectContext
+    { typeInference = TypeInference.initialProjectContext
     }
 
 
@@ -106,7 +106,7 @@ fromProjectToModule =
         (\lookupTable projectContext ->
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = TypeByNameLookup.empty
-            , typeInference = TypeInference.Infer.fromProjectToModule projectContext
+            , typeInference = TypeInference.fromProjectToModule projectContext
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -116,7 +116,7 @@ fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
         (\_ ->
-            { typeInference = TypeInference.Infer.initialProjectContext
+            { typeInference = TypeInference.initialProjectContext
             }
         )
 
