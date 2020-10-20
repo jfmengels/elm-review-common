@@ -90,7 +90,7 @@ type alias ProjectContext =
 type alias ModuleContext =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
-    , inferInternal : TypeInference.Infer.InferInternal
+    , inferInternal : TypeInference.Infer.ModuleContext
     }
 
 

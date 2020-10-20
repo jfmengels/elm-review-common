@@ -1,5 +1,5 @@
 module TypeInference.Infer exposing
-    ( InferInternal
+    ( ModuleContext
     , ProjectContext
     , addProjectVisitors
     , fromProjectToModule
@@ -49,11 +49,11 @@ type alias OuterModuleContext a =
     { a
         | moduleNameLookupTable : ModuleNameLookupTable
         , typeByNameLookup : TypeByNameLookup
-        , inferInternal : InferInternal
+        , inferInternal : ModuleContext
     }
 
 
-type alias InferInternal =
+type alias ModuleContext =
     { dependencies : Dict ModuleName Review.Project.Dependency.Dependency
     , operatorsInScope : Dict String Elm.Type.Type
     }
@@ -66,7 +66,7 @@ initialProjectContext =
         }
 
 
-fromProjectToModule : { projectContext | infer : ProjectContext } -> InferInternal
+fromProjectToModule : { projectContext | infer : ProjectContext } -> ModuleContext
 fromProjectToModule { infer } =
     let
         projectContext : InternalProjectContext
