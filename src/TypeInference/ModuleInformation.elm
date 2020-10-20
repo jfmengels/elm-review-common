@@ -2,13 +2,13 @@ module TypeInference.ModuleInformation exposing
     ( ModuleInformation
     , ModuleInformationDict
     , empty
+    , fromDependencies
     )
 
 import Dict exposing (Dict)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Review.Project.Dependency
 import TypeInference.Binop as Binop exposing (Binop)
-import TypeInference.Type as Type
 
 
 type ModuleInformationDict

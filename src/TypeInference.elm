@@ -23,6 +23,7 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Project.Dependency
 import Review.Rule as Rule
 import Set exposing (Set)
+import TypeInference.ModuleInformation as ModuleInformation exposing (ModuleInformationDict)
 import TypeInference.Type as Type exposing (Type)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
@@ -33,6 +34,7 @@ type ProjectContext
 
 type alias InternalProjectContext =
     { dependencies : Dict ModuleName Review.Project.Dependency.Dependency
+    , moduleInformationDict : ModuleInformationDict
     }
 
 
@@ -64,6 +66,7 @@ initialProjectContext : ProjectContext
 initialProjectContext =
     ProjectContext
         { dependencies = Dict.empty
+        , moduleInformationDict = ModuleInformation.empty
         }
 
 
@@ -135,7 +138,14 @@ dependenciesVisitor rawDependencies context =
                 |> Dict.fromList
     in
     ( []
-    , { context | typeInference = ProjectContext { projectContext | dependencies = dependencies } }
+    , { context
+        | typeInference =
+            ProjectContext
+                { projectContext
+                    | dependencies = dependencies
+                    , moduleInformationDict = ModuleInformation.fromDependencies rawDependencies
+                }
+      }
     )
 
 
