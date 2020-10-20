@@ -26,9 +26,23 @@ import Set exposing (Set)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
 
-type alias ProjectContext =
+type ProjectContext
+    = ProjectContext InternalProjectContext
+
+
+type alias InternalProjectContext =
     { dependencies : Dict ModuleName Review.Project.Dependency.Dependency
     }
+
+
+unwrapProject : ProjectContext -> InternalProjectContext
+unwrapProject (ProjectContext p) =
+    p
+
+
+wrapProject : InternalProjectContext -> ProjectContext
+wrapProject =
+    ProjectContext
 
 
 type alias ModuleContext a =
@@ -47,22 +61,27 @@ type alias InferInternal =
 
 initialProjectContext : ProjectContext
 initialProjectContext =
-    { dependencies = Dict.empty
-    }
+    ProjectContext
+        { dependencies = Dict.empty
+        }
 
 
 fromProjectToModule : { projectContext | infer : ProjectContext } -> InferInternal
 fromProjectToModule { infer } =
     let
+        projectContext : InternalProjectContext
+        projectContext =
+            unwrapProject infer
+
         modules : Dict (List String) Elm.Docs.Module
         modules =
-            infer.dependencies
+            projectContext.dependencies
                 |> Dict.values
                 |> List.concatMap Review.Project.Dependency.modules
                 |> List.map (\module_ -> ( String.split "." module_.name, module_ ))
                 |> Dict.fromList
     in
-    { dependencies = infer.dependencies
+    { dependencies = projectContext.dependencies
     , operatorsInScope =
         List.concatMap
             (\import_ ->
@@ -103,9 +122,9 @@ moduleVisitor schema =
 dependenciesVisitor : Dict String Review.Project.Dependency.Dependency -> { projectContext | infer : ProjectContext } -> ( List nothing, { projectContext | infer : ProjectContext } )
 dependenciesVisitor rawDependencies context =
     let
-        infer : ProjectContext
-        infer =
-            context.infer
+        projectContext : InternalProjectContext
+        projectContext =
+            unwrapProject context.infer
 
         dependencies : Dict (List String) Review.Project.Dependency.Dependency
         dependencies =
@@ -115,7 +134,7 @@ dependenciesVisitor rawDependencies context =
                 |> Dict.fromList
     in
     ( []
-    , { context | infer = { infer | dependencies = dependencies } }
+    , { context | infer = ProjectContext { projectContext | dependencies = dependencies } }
     )
 
 
