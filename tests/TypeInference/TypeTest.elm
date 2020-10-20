@@ -8,6 +8,14 @@ import TypeInference.Type as Type
 
 suite : Test
 suite =
+    Test.describe "TypeInference.Type"
+        [ fromMetadataType
+        , toMetadataType
+        ]
+
+
+fromMetadataType : Test
+fromMetadataType =
     Test.describe "TypeInference.Type.fromMetadataType"
         [ Test.test "generic variable" <|
             \() ->
@@ -93,4 +101,115 @@ suite =
                             , canHaveMoreFields = False
                             }
                         )
+        ]
+
+
+toMetadataType : Test
+toMetadataType =
+    Test.describe "fromMetadataType"
+        [ Test.test "Unknown" <|
+            \() ->
+                Type.Unknown
+                    |> Type.toMetadataType
+                    |> Expect.equal Nothing
+        , Test.test "generic variable" <|
+            \() ->
+                Type.Generic "a"
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Var "a"))
+        , Test.test "Unit" <|
+            \() ->
+                Type.Tuple []
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Tuple []))
+        , Test.test "Tuple with only known elements" <|
+            \() ->
+                Type.Tuple [ Type.Generic "a", Type.Generic "b" ]
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Tuple [ Elm.Type.Var "a", Elm.Type.Var "b" ]))
+        , Test.test "Tuple with unknown elements" <|
+            \() ->
+                Type.Tuple [ Type.Generic "a", Type.Unknown, Type.Generic "b" ]
+                    |> Type.toMetadataType
+                    |> Expect.equal Nothing
+        , Test.test "Function with only known elements" <|
+            \() ->
+                Type.Function (Type.Generic "a") (Type.Generic "b")
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Lambda (Elm.Type.Var "a") (Elm.Type.Var "b")))
+        , Test.test "Function with multiple arguments" <|
+            \() ->
+                Type.Function (Type.Generic "a") (Type.Function (Type.Generic "b") (Type.Generic "c"))
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Lambda (Elm.Type.Var "a") (Elm.Type.Lambda (Elm.Type.Var "b") (Elm.Type.Var "c"))))
+        , Test.test "Function with unknown elements" <|
+            \() ->
+                Type.Function (Type.Generic "a") (Type.Function Type.Unknown (Type.Generic "c"))
+                    |> Type.toMetadataType
+                    |> Expect.equal Nothing
+        , Test.test "Type with an empty module name" <|
+            \() ->
+                Type.Type [] "functionName" []
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Type "functionName" []))
+        , Test.test "Type with a module name" <|
+            \() ->
+                Type.Type [ "Some", "Thing" ] "functionName" []
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Type "Some.Thing.functionName" []))
+        , Test.test "Type with an argument" <|
+            \() ->
+                Type.Type [ "Some", "Thing" ] "functionName" [ Type.Generic "a" ]
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Type "Some.Thing.functionName" [ Elm.Type.Var "a" ]))
+        , Test.test "Type with an unknown argument" <|
+            \() ->
+                Type.Type [ "Some", "Thing" ] "functionName" [ Type.Unknown ]
+                    |> Type.toMetadataType
+                    |> Expect.equal Nothing
+        , Test.test "Empty record" <|
+            \() ->
+                Type.Record
+                    { fields = []
+                    , generic = Nothing
+                    , canHaveMoreFields = False
+                    }
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Record [] Nothing))
+        , Test.test "Record with some fields" <|
+            \() ->
+                Type.Record
+                    { fields = [ ( "name", Type.Type [] "String" [] ) ]
+                    , generic = Nothing
+                    , canHaveMoreFields = False
+                    }
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Record [ ( "name", Elm.Type.Type "String" [] ) ] Nothing))
+        , Test.test "Record with unknown fields" <|
+            \() ->
+                Type.Record
+                    { fields = [ ( "name", Type.Unknown ) ]
+                    , generic = Nothing
+                    , canHaveMoreFields = False
+                    }
+                    |> Type.toMetadataType
+                    |> Expect.equal Nothing
+        , Test.test "Record with generic" <|
+            \() ->
+                Type.Record
+                    { fields = [ ( "name", Type.Type [] "String" [] ) ]
+                    , generic = Just "a"
+                    , canHaveMoreFields = False
+                    }
+                    |> Type.toMetadataType
+                    |> Expect.equal (Just (Elm.Type.Record [ ( "name", Elm.Type.Type "String" [] ) ] (Just "a")))
+        , Test.test "Record with potentially more fields" <|
+            \() ->
+                Type.Record
+                    { fields = [ ( "name", Type.Type [] "String" [] ) ]
+                    , generic = Just "a"
+                    , canHaveMoreFields = True
+                    }
+                    |> Type.toMetadataType
+                    |> Expect.equal Nothing
         ]
