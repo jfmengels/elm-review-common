@@ -90,7 +90,7 @@ type alias ProjectContext =
 type alias ModuleContext =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
-    , inferInternal : TypeInference.Infer.ModuleContext
+    , typeInference : TypeInference.Infer.ModuleContext
     }
 
 
@@ -106,7 +106,7 @@ fromProjectToModule =
         (\lookupTable projectContext ->
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = TypeByNameLookup.empty
-            , inferInternal = TypeInference.Infer.fromProjectToModule projectContext
+            , typeInference = TypeInference.Infer.fromProjectToModule projectContext
             }
         )
         |> Rule.withModuleNameLookupTable

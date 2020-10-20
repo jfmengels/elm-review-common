@@ -49,7 +49,7 @@ type alias OuterModuleContext a =
     { a
         | moduleNameLookupTable : ModuleNameLookupTable
         , typeByNameLookup : TypeByNameLookup
-        , inferInternal : ModuleContext
+        , typeInference : ModuleContext
     }
 
 
@@ -477,7 +477,7 @@ inferType context node =
             inferTypeFromCombinationOf (List.map (\branchNode () -> ( context, branchNode )) [ ifTrue, ifFalse ])
 
         Expression.PrefixOperator operator ->
-            Dict.get operator context.inferInternal.operatorsInScope
+            Dict.get operator context.typeInference.operatorsInScope
 
         Expression.Operator _ ->
             -- Never occurs
