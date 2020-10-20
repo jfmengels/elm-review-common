@@ -14,6 +14,7 @@ import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 import TypeInference exposing (inferType)
+import TypeInference.Type
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
 
@@ -163,6 +164,7 @@ reportFunctionWithoutSignature context function =
                 maybeType =
                     if List.isEmpty declaration.arguments then
                         inferType context declaration.expression
+                            |> Maybe.andThen TypeInference.Type.toMetadataType
                             |> Maybe.map typeAsString
 
                     else

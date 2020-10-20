@@ -9,12 +9,13 @@ module TypeInference.TypeByNameLookup exposing
 
 import Dict exposing (Dict)
 import Elm.Type
+import TypeInference.Type exposing (Type)
 
 
 type TypeByNameLookup
     = TypeByNameLookup
-        { typeDict : Dict String Elm.Type.Type
-        , scopes : List (Dict String Elm.Type.Type)
+        { typeDict : Dict String Type
+        , scopes : List (Dict String Type)
         }
 
 
@@ -23,7 +24,7 @@ empty =
     TypeByNameLookup { typeDict = Dict.empty, scopes = [] }
 
 
-addType : List ( String, Elm.Type.Type ) -> TypeByNameLookup -> TypeByNameLookup
+addType : List ( String, Type ) -> TypeByNameLookup -> TypeByNameLookup
 addType types (TypeByNameLookup lookup) =
     TypeByNameLookup
         { lookup
@@ -53,12 +54,12 @@ popScope ((TypeByNameLookup { scopes }) as originalLookupTable) =
             originalLookupTable
 
 
-byName : TypeByNameLookup -> String -> Maybe Elm.Type.Type
+byName : TypeByNameLookup -> String -> Maybe Type
 byName (TypeByNameLookup lookup) name =
     lookupTypeByNameInternal name (lookup.typeDict :: lookup.scopes)
 
 
-lookupTypeByNameInternal : String -> List (Dict String Elm.Type.Type) -> Maybe Elm.Type.Type
+lookupTypeByNameInternal : String -> List (Dict String Type) -> Maybe Type
 lookupTypeByNameInternal name lookupTables =
     case lookupTables of
         [] ->

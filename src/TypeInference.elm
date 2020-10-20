@@ -23,6 +23,7 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Project.Dependency
 import Review.Rule as Rule
 import Set exposing (Set)
+import TypeInference.Type as Type exposing (Type)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
 
 
@@ -272,7 +273,7 @@ declarationListVisitor nodes context =
     )
 
 
-typeOfDeclaration : Node Declaration -> List ( String, Elm.Type.Type )
+typeOfDeclaration : Node Declaration -> List ( String, Type )
 typeOfDeclaration node =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
@@ -291,6 +292,7 @@ typeOfDeclaration node =
                             |> Node.value
                             |> .typeAnnotation
                             |> typeAnnotationToElmType
+                            |> Type.fromMetadataType
                       )
                     ]
 
@@ -319,7 +321,7 @@ typeOfDeclaration node =
                                 customTypeType
                                 arguments
                     in
-                    ( Node.value name, functionType )
+                    ( Node.value name, Type.fromMetadataType functionType )
                 )
                 type_.constructors
 
@@ -341,13 +343,13 @@ typeOfDeclaration node =
                                 aliasType
                                 fields
                     in
-                    [ ( Node.value typeAlias.name, functionType ) ]
+                    [ ( Node.value typeAlias.name, Type.fromMetadataType functionType ) ]
 
                 _ ->
                     []
 
         Declaration.PortDeclaration { name, typeAnnotation } ->
-            [ ( Node.value name, typeAnnotationToElmType typeAnnotation ) ]
+            [ ( Node.value name, Type.fromMetadataType <| typeAnnotationToElmType typeAnnotation ) ]
 
         Declaration.InfixDeclaration _ ->
             []
@@ -361,7 +363,7 @@ typeOfDeclaration node =
 -- TYPE INFERENCE
 
 
-inferType : OuterModuleContext a -> Node Expression -> Maybe Elm.Type.Type
+inferType : OuterModuleContext a -> Node Expression -> Maybe Type
 inferType context node =
     case Node.value node of
         Expression.ParenthesizedExpression expr ->
@@ -370,33 +372,41 @@ inferType context node =
         Expression.Literal _ ->
             -- TODO Re-add "String." but remove it at stringification time
             Just (Elm.Type.Type "String" [])
+                |> Maybe.map Type.fromMetadataType
 
         Expression.CharLiteral _ ->
             -- TODO Re-add "Char." but remove it at stringification time
             Just (Elm.Type.Type "Char" [])
+                |> Maybe.map Type.fromMetadataType
 
         Expression.Integer _ ->
             Just (Elm.Type.Var "number")
+                |> Maybe.map Type.fromMetadataType
 
         Expression.Hex _ ->
             Just (Elm.Type.Var "number")
+                |> Maybe.map Type.fromMetadataType
 
         Expression.Floatable _ ->
             -- TODO Re-add "Basics." but remove it at stringification time
             Just (Elm.Type.Type "Float" [])
+                |> Maybe.map Type.fromMetadataType
 
         Expression.UnitExpr ->
             Just (Elm.Type.Tuple [])
+                |> Maybe.map Type.fromMetadataType
 
         Expression.FunctionOrValue _ name ->
             case ( ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable node, name ) of
                 ( Just [ "Basics" ], "True" ) ->
                     -- TODO Re-add "Basics." but remove it at stringification time
                     Just (Elm.Type.Type "Bool" [])
+                        |> Maybe.map Type.fromMetadataType
 
                 ( Just [ "Basics" ], "False" ) ->
                     -- TODO Re-add "Basics." but remove it at stringification time
                     Just (Elm.Type.Type "Bool" [])
+                        |> Maybe.map Type.fromMetadataType
 
                 ( Just [], _ ) ->
                     TypeByNameLookup.byName context.typeByNameLookup name
@@ -415,12 +425,12 @@ inferType context node =
 
         Expression.TupledExpression nodes ->
             let
-                inferredTypes : List Elm.Type.Type
+                inferredTypes : List Type
                 inferredTypes =
                     List.filterMap (inferType context) nodes
             in
             if List.length inferredTypes == List.length nodes then
-                Just (Elm.Type.Tuple inferredTypes)
+                Just (Type.Tuple inferredTypes)
 
             else
                 Nothing
@@ -428,14 +438,15 @@ inferType context node =
         Expression.ListExpr nodes ->
             if List.isEmpty nodes then
                 Just (Elm.Type.Type "List" [ Elm.Type.Var "nothing" ])
+                    |> Maybe.map Type.fromMetadataType
 
             else
                 inferTypeFromCombinationOf (List.map (\nodeInList () -> ( context, nodeInList )) nodes)
-                    |> Maybe.map (\type_ -> Elm.Type.Type "List" [ type_ ])
+                    |> Maybe.map (\type_ -> Type.Type [] "List" [ type_ ])
 
         Expression.RecordExpr fields ->
             let
-                inferredFields : List ( String, Elm.Type.Type )
+                inferredFields : List ( String, Type )
                 inferredFields =
                     List.filterMap
                         (Node.value
@@ -448,14 +459,14 @@ inferType context node =
                         fields
             in
             if List.length inferredFields == List.length fields then
-                Just (Elm.Type.Record inferredFields Nothing)
+                Just (Type.Record { fields = inferredFields, generic = Nothing, canHaveMoreFields = False })
 
             else
                 Nothing
 
         Expression.RecordAccess expression (Node _ fieldName) ->
             case inferType context expression of
-                Just (Elm.Type.Record fields _) ->
+                Just (Type.Record { fields }) ->
                     find (\( name, _ ) -> fieldName == name) fields
                         |> Maybe.map Tuple.second
 
@@ -463,10 +474,11 @@ inferType context node =
                     Nothing
 
         Expression.RecordAccessFunction fieldName ->
-            Just <|
-                Elm.Type.Lambda
-                    (Elm.Type.Record [ ( String.dropLeft 1 fieldName, Elm.Type.Var "a" ) ] (Just "b"))
-                    (Elm.Type.Var "a")
+            Elm.Type.Lambda
+                (Elm.Type.Record [ ( String.dropLeft 1 fieldName, Elm.Type.Var "a" ) ] (Just "b"))
+                (Elm.Type.Var "a")
+                |> Type.fromMetadataType
+                |> Just
 
         Expression.OperatorApplication _ _ _ _ ->
             -- TODO Handle this case
@@ -478,6 +490,7 @@ inferType context node =
 
         Expression.PrefixOperator operator ->
             Dict.get operator context.typeInference.operatorsInScope
+                |> Maybe.map Type.fromMetadataType
 
         Expression.Operator _ ->
             -- Never occurs
@@ -506,7 +519,7 @@ inferType context node =
 
         Expression.CaseExpression { expression, cases } ->
             let
-                inferredTypeForEvaluatedExpression : Maybe Elm.Type.Type
+                inferredTypeForEvaluatedExpression : Maybe Type
                 inferredTypeForEvaluatedExpression =
                     inferType context expression
             in
@@ -614,7 +627,7 @@ addTypeFromPatternToContext pattern context =
             context
 
 
-assignTypesToPatterns : Set String -> Elm.Type.Type -> List (Node Pattern) -> List ( String, Elm.Type.Type )
+assignTypesToPatterns : Set String -> Type -> List (Node Pattern) -> List ( String, Type )
 assignTypesToPatterns typeVariables type_ patterns =
     case patterns of
         [] ->
@@ -622,7 +635,7 @@ assignTypesToPatterns typeVariables type_ patterns =
 
         head :: rest ->
             case type_ of
-                Elm.Type.Lambda input output ->
+                Type.Function input output ->
                     (assignTypeToPattern input head
                         |> List.filter
                             (\( _, typeForPattern ) ->
@@ -638,19 +651,19 @@ assignTypesToPatterns typeVariables type_ patterns =
                     []
 
 
-assignTypeToPattern : Elm.Type.Type -> Node Pattern -> List ( String, Elm.Type.Type )
+assignTypeToPattern : Type -> Node Pattern -> List ( String, Type )
 assignTypeToPattern type_ node =
     case ( Node.value node, type_ ) of
         ( Pattern.VarPattern name, _ ) ->
             [ ( name, type_ ) ]
 
-        ( Pattern.TuplePattern subPatterns, Elm.Type.Tuple tuples ) ->
+        ( Pattern.TuplePattern subPatterns, Type.Tuple tuples ) ->
             List.map2 assignTypeToPattern
                 tuples
                 subPatterns
                 |> List.concat
 
-        ( Pattern.RecordPattern patternFieldNames, Elm.Type.Record typeFields _ ) ->
+        ( Pattern.RecordPattern patternFieldNames, Type.Record { fields } ) ->
             List.filterMap
                 (Node.value
                     >> (\patternFieldName ->
@@ -658,7 +671,7 @@ assignTypeToPattern type_ node =
                                 (\( typeFieldName, _ ) ->
                                     typeFieldName == patternFieldName
                                 )
-                                typeFields
+                                fields
                        )
                 )
                 patternFieldNames
@@ -667,7 +680,7 @@ assignTypeToPattern type_ node =
             []
 
 
-inferTypeFromPattern : Node Pattern -> Maybe Elm.Type.Type
+inferTypeFromPattern : Node Pattern -> Maybe Type
 inferTypeFromPattern node =
     case Node.value node of
         Pattern.VarPattern _ ->
@@ -677,7 +690,7 @@ inferTypeFromPattern node =
             Nothing
 
         Pattern.UnitPattern ->
-            Just (Elm.Type.Tuple [])
+            Just (Type.Tuple [])
 
         Pattern.CharPattern _ ->
             Nothing
@@ -716,7 +729,7 @@ inferTypeFromPattern node =
             Nothing
 
 
-inferTypeFromCombinationOf : List (() -> ( OuterModuleContext a, Node Expression )) -> Maybe Elm.Type.Type
+inferTypeFromCombinationOf : List (() -> ( OuterModuleContext a, Node Expression )) -> Maybe Type
 inferTypeFromCombinationOf expressions =
     inferTypeFromCombinationOfInternal
         { hasUnknowns = False, maybeInferred = Nothing, typeVariablesList = [] }
@@ -725,11 +738,11 @@ inferTypeFromCombinationOf expressions =
 
 inferTypeFromCombinationOfInternal :
     { hasUnknowns : Bool
-    , maybeInferred : Maybe Elm.Type.Type
+    , maybeInferred : Maybe Type
     , typeVariablesList : List (Set String)
     }
     -> List (() -> ( OuterModuleContext a, Node Expression ))
-    -> Maybe Elm.Type.Type
+    -> Maybe Type
 inferTypeFromCombinationOfInternal previousItemsResult expressions =
     case expressions of
         [] ->
@@ -761,7 +774,7 @@ inferTypeFromCombinationOfInternal previousItemsResult expressions =
                         typeVariables =
                             findTypeVariables inferredType
 
-                        refinedType_ : Elm.Type.Type
+                        refinedType_ : Type
                         refinedType_ =
                             case previousItemsResult.maybeInferred of
                                 Just previouslyInferred ->
@@ -801,17 +814,18 @@ find predicate list =
                 find predicate tail
 
 
-refineInferredType : Elm.Type.Type -> Elm.Type.Type -> Elm.Type.Type
+refineInferredType : Type -> Type -> Type
 refineInferredType _ typeB =
     typeB
 
 
-applyArguments : OuterModuleContext a -> List (Node Expression) -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArguments : OuterModuleContext a -> List (Node Expression) -> Type -> Maybe Type
 applyArguments context arguments type_ =
+    -- TODO Use Unknown where applicable
     applyArgumentsInternal context arguments Set.empty type_
 
 
-applyArgumentsInternal : OuterModuleContext a -> List (Node Expression) -> Set String -> Elm.Type.Type -> Maybe Elm.Type.Type
+applyArgumentsInternal : OuterModuleContext a -> List (Node Expression) -> Set String -> Type -> Maybe Type
 applyArgumentsInternal context arguments previousTypeVariables type_ =
     case arguments of
         [] ->
@@ -823,7 +837,7 @@ applyArgumentsInternal context arguments previousTypeVariables type_ =
 
         _ :: restOfArguments ->
             case type_ of
-                Elm.Type.Lambda input output ->
+                Type.Function input output ->
                     let
                         typeVariables : Set String
                         typeVariables =
@@ -837,39 +851,42 @@ applyArgumentsInternal context arguments previousTypeVariables type_ =
                     Nothing
 
 
-findTypeVariables : Elm.Type.Type -> Set String
+findTypeVariables : Type -> Set String
 findTypeVariables type_ =
     case type_ of
-        Elm.Type.Var string ->
+        Type.Unknown ->
+            Set.empty
+
+        Type.Generic string ->
             Set.singleton string
 
-        Elm.Type.Lambda input output ->
+        Type.Function input output ->
             Set.union
                 (findTypeVariables input)
                 (findTypeVariables output)
 
-        Elm.Type.Tuple types ->
+        Type.Tuple types ->
             types
                 |> List.map findTypeVariables
                 |> List.foldl Set.union Set.empty
 
-        Elm.Type.Type _ types ->
+        Type.Type _ _ types ->
             types
                 |> List.map findTypeVariables
                 |> List.foldl Set.union Set.empty
 
-        Elm.Type.Record fields maybeGeneric ->
+        Type.Record record ->
             let
                 startSet : Set String
                 startSet =
-                    case maybeGeneric of
+                    case record.generic of
                         Just generic ->
                             Set.singleton generic
 
                         Nothing ->
                             Set.empty
             in
-            fields
+            record.fields
                 |> List.map (Tuple.second >> findTypeVariables)
                 |> List.foldl Set.union startSet
 
@@ -913,7 +930,7 @@ typeAnnotationToElmType node =
 -- DECLARATION LIST VISITOR
 
 
-typeOfLetDeclaration : OuterModuleContext a -> Node Expression.LetDeclaration -> List ( String, Elm.Type.Type )
+typeOfLetDeclaration : OuterModuleContext a -> Node Expression.LetDeclaration -> List ( String, Type )
 typeOfLetDeclaration context node =
     case Node.value node of
         Expression.LetFunction function ->
@@ -923,7 +940,7 @@ typeOfLetDeclaration context node =
             []
 
 
-typeOfFunctionDeclaration : OuterModuleContext a -> Expression.Function -> List ( String, Elm.Type.Type )
+typeOfFunctionDeclaration : OuterModuleContext a -> Expression.Function -> List ( String, Type )
 typeOfFunctionDeclaration context function =
     let
         functionName : String
@@ -940,6 +957,7 @@ typeOfFunctionDeclaration context function =
                     |> Node.value
                     |> .typeAnnotation
                     |> typeAnnotationToElmType
+                    |> Type.fromMetadataType
               )
             ]
 
