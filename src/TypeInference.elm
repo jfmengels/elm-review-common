@@ -37,8 +37,8 @@ type alias InternalProjectContext =
 
 
 unwrapProject : ProjectContext -> InternalProjectContext
-unwrapProject (ProjectContext p) =
-    p
+unwrapProject (ProjectContext projectContext) =
+    projectContext
 
 
 wrapProject : InternalProjectContext -> ProjectContext

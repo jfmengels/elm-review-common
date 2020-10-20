@@ -806,6 +806,12 @@ type Thing = A TupleAlias
             , expectedType = "Float"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a function application from Basics"
+            { arguments = ""
+            , value = "not True"
+            , expectedType = "Bool"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
