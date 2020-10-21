@@ -397,9 +397,17 @@ takeValue : Node Declaration -> Maybe Value
 takeValue node =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
+            let
+                functionName : String
+                functionName =
+                    function.declaration
+                        |> Node.value
+                        |> .name
+                        |> Node.value
+            in
             Just
                 (Value.create
-                    { name = "someThing"
+                    { name = functionName
                     , comment = ""
                     , tipe = Type.Type [ "Basics" ] "Int" []
                     }
