@@ -2,6 +2,7 @@ module TypeInference exposing
     ( ModuleContext
     , ProjectContext
     , addProjectVisitors
+    , foldProjectContexts
     , fromModuleToProject
     , fromProjectToModule
     , inferType
@@ -98,6 +99,14 @@ fromModuleToProject moduleName moduleContext =
     ProjectContext
         { dependencies = Dict.empty
         , moduleInformationDict = ModuleInformation.singleton moduleName
+        }
+
+
+foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
+foldProjectContexts (ProjectContext newContext) (ProjectContext previousContext) =
+    ProjectContext
+        { dependencies = previousContext.dependencies
+        , moduleInformationDict = ModuleInformation.merge newContext.moduleInformationDict previousContext.moduleInformationDict
         }
 
 

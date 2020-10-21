@@ -128,7 +128,8 @@ fromModuleToProject =
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
-    previousContext
+    { typeInference = TypeInference.foldProjectContexts newContext.typeInference previousContext.typeInference
+    }
 
 
 expressionVisitor : Node Expression -> ModuleContext -> ( List (Error {}), ModuleContext )
