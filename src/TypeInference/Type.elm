@@ -1,4 +1,4 @@
-module TypeInference.Type exposing (Type(..), fromMetadataType, toMetadataType)
+module TypeInference.Type exposing (Type(..), fromMetadataType, relateToModule, toMetadataType)
 
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Type
@@ -108,6 +108,34 @@ toMetadataType type_ =
 
                 else
                     Nothing
+
+
+relateToModule : ModuleName -> Type -> Type
+relateToModule moduleName type_ =
+    case type_ of
+        Type originalModuleName string types ->
+            if originalModuleName == [] then
+                Type moduleName string types
+
+            else
+                type_
+
+        Unknown ->
+            type_
+
+        Generic _ ->
+            type_
+
+        Function input output ->
+            Function
+                (relateToModule moduleName input)
+                (relateToModule moduleName output)
+
+        Tuple types ->
+            Tuple (List.map (relateToModule moduleName) types)
+
+        Record record ->
+            Record { record | fields = List.map (Tuple.mapSecond (relateToModule moduleName)) record.fields }
 
 
 listOfMaybeToMaybeList : List Type -> Maybe (List Elm.Type.Type)

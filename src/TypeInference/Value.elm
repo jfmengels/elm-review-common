@@ -4,10 +4,12 @@ module TypeInference.Value exposing
     , create
     , fromMetadata
     , name
+    , relateToModule
     , tipe
     )
 
 import Elm.Docs
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import TypeInference.Type as Type
 
 
@@ -22,6 +24,11 @@ type Value
 create : { name : String, comment : String, tipe : Type.Type } -> Value
 create =
     Value
+
+
+relateToModule : ModuleName -> Value -> Value
+relateToModule moduleName (Value value) =
+    Value { value | tipe = Type.relateToModule moduleName value.tipe }
 
 
 fromMetadata : Elm.Docs.Value -> Value

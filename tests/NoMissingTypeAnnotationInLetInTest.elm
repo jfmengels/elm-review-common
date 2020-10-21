@@ -818,7 +818,7 @@ type Thing = A TupleAlias
             , expectedType = "Int"
             , topLevelDeclarations = ""
             }
-        , test "when value is a function application from a different local module" <|
+        , test "when value is a function from a different local module" <|
             \_ ->
                 [ """module A exposing (..)
 import B
@@ -842,6 +842,38 @@ someThing = 1
 import B
 a = let
       hasNoTypeAnnotation : Int
+      hasNoTypeAnnotation = B.someThing
+    in
+    d
+"""
+                            ]
+                          )
+                        ]
+        , test "when value is a type from a different local module" <|
+            \_ ->
+                [ """module A exposing (..)
+import B
+a = let
+      hasNoTypeAnnotation = B.someThing
+    in
+    d
+""", """module B exposing (..)
+type B_Type = B_Type
+someThing : B_Type
+someThing = B_Type
+""" ]
+                    |> Review.Test.runOnModulesWithProjectData project rule
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                                , details = details
+                                , under = "hasNoTypeAnnotation"
+                                }
+                                |> Review.Test.whenFixed """module A exposing (..)
+import B
+a = let
+      hasNoTypeAnnotation : B.B_Type
       hasNoTypeAnnotation = B.someThing
     in
     d
