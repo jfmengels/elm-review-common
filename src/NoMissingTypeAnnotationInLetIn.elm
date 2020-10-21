@@ -331,16 +331,33 @@ updateAliases type_ =
     let
         dict : Dict ModuleName ImportFoo
         dict =
-            Dict.singleton [ "Basics" ] (ImportFoo { alias = Nothing, exposed = Everything })
+            Dict.fromList
+                [ ( [ "Basics" ], ImportFoo { alias = Nothing, exposed = Everything } )
+                , ( [ "B" ], ImportFoo { alias = Just "Not_B", exposed = Only [] } )
+                ]
     in
     case type_ of
         Type.Type moduleName string types ->
-            case Dict.get moduleName dict of
-                Just _ ->
-                    Type.Type [] string (List.map updateAliases types)
+            let
+                moduleNameToUse =
+                    case Dict.get moduleName dict of
+                        Just (ImportFoo { alias, exposed }) ->
+                            case exposed of
+                                Everything ->
+                                    []
 
-                Nothing ->
-                    Type.Type moduleName string (List.map updateAliases types)
+                                Only _ ->
+                                    case alias of
+                                        Just alias_ ->
+                                            [ alias_ ]
+
+                                        Nothing ->
+                                            moduleName
+
+                        Nothing ->
+                            moduleName
+            in
+            Type.Type moduleNameToUse string (List.map updateAliases types)
 
         Type.Unknown ->
             type_
