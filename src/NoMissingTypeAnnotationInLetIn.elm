@@ -7,6 +7,7 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 -}
 
 import Dict exposing (Dict)
+import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.ModuleName exposing (ModuleName)
@@ -101,6 +102,15 @@ type alias ModuleContext =
     }
 
 
+type Imported
+    = Imported { alias : Maybe String, exposed : ExposedTypesFromModule }
+
+
+type ExposedTypesFromModule
+    = Everything
+    | Only (List String)
+
+
 initialProjectContext : ProjectContext
 initialProjectContext =
     { typeInference = TypeInference.initialProjectContext
@@ -152,11 +162,29 @@ importVisitor : Import -> ModuleContext -> ModuleContext
 importVisitor import_ context =
     { context
         | importedDict =
-            Dict.fromList
-                [ ( [ "Basics" ], Imported { alias = Nothing, exposed = Everything } )
-                , ( [ "B" ], Imported { alias = Just "Not_B", exposed = Only [] } )
-                ]
+            Dict.insert
+                (Node.value import_.moduleName)
+                (Imported
+                    { alias = Maybe.andThen (Node.value >> List.head) import_.moduleAlias
+                    , exposed =
+                        case Maybe.map Node.value import_.exposingList of
+                            Just (Exposing.All _) ->
+                                Everything
+
+                            Just (Exposing.Explicit topLevelExpose) ->
+                                Only (collectNamesOfExposedTypes topLevelExpose)
+
+                            Nothing ->
+                                Only []
+                    }
+                )
+                context.importedDict
     }
+
+
+collectNamesOfExposedTypes : List (Node Exposing.TopLevelExpose) -> List String
+collectNamesOfExposedTypes topLevelExpose =
+    []
 
 
 
@@ -344,15 +372,6 @@ typeAnnotationToElmType node =
 
         TypeAnnotation.FunctionTypeAnnotation input output ->
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
-
-
-type Imported
-    = Imported { alias : Maybe String, exposed : ExposedTypesFromModule }
-
-
-type ExposedTypesFromModule
-    = Everything
-    | Only (List String)
 
 
 updateAliases : Dict ModuleName Imported -> Type -> Type
