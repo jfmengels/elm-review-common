@@ -94,6 +94,7 @@ type alias ModuleContext =
     { moduleNameLookupTable : ModuleNameLookupTable
     , typeByNameLookup : TypeByNameLookup
     , typeInference : TypeInference.ModuleContext
+    , importedDict : Dict ModuleName Imported
     }
 
 
@@ -110,6 +111,11 @@ fromProjectToModule =
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = TypeByNameLookup.empty
             , typeInference = TypeInference.fromProjectToModule projectContext
+            , importedDict =
+                Dict.fromList
+                    [ ( [ "Basics" ], Imported { alias = Nothing, exposed = Everything } )
+                    , ( [ "B" ], Imported { alias = Just "Not_B", exposed = Only [] } )
+                    ]
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -163,14 +169,6 @@ reportFunctionWithoutSignature context function =
 
         Nothing ->
             let
-                importedDict : Dict ModuleName Imported
-                importedDict =
-                    Dict.fromList
-                        [ ( [ "Basics" ], Imported { alias = Nothing, exposed = Everything } )
-                        , ( [ "B" ], Imported { alias = Just "Not_B", exposed = Only [] } )
-                        ]
-            in
-            let
                 declaration : Expression.FunctionImplementation
                 declaration =
                     Node.value function.declaration
@@ -179,7 +177,7 @@ reportFunctionWithoutSignature context function =
                 maybeType =
                     if List.isEmpty declaration.arguments then
                         inferType context declaration.expression
-                            |> Maybe.map (updateAliases importedDict)
+                            |> Maybe.map (updateAliases context.importedDict)
                             |> Maybe.andThen Type.toMetadataType
                             |> Maybe.map typeAsString
 
