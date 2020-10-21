@@ -116,10 +116,14 @@ fromProjectToModule =
 fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
-        (\_ ->
-            { typeInference = TypeInference.initialProjectContext
+        (\metadata moduleContext ->
+            { typeInference =
+                TypeInference.fromModuleToProject
+                    (Rule.moduleNameFromMetadata metadata)
+                    moduleContext.typeInference
             }
         )
+        |> Rule.withMetadata
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext

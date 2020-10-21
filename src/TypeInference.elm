@@ -2,6 +2,7 @@ module TypeInference exposing
     ( ModuleContext
     , ProjectContext
     , addProjectVisitors
+    , fromModuleToProject
     , fromProjectToModule
     , inferType
     , initialProjectContext
@@ -92,6 +93,14 @@ fromProjectToModule { typeInference } =
     }
 
 
+fromModuleToProject : ModuleName -> ModuleContext -> ProjectContext
+fromModuleToProject moduleName moduleContext =
+    ProjectContext
+        { dependencies = Dict.empty
+        , moduleInformationDict = ModuleInformation.singleton moduleName
+        }
+
+
 addProjectVisitors :
     Rule.ProjectRuleSchema
         { projectSchemaState | canAddModuleVisitor : () }
@@ -106,6 +115,7 @@ addProjectVisitors schema =
     schema
         |> Rule.withDependenciesProjectVisitor dependenciesVisitor
         |> Rule.withModuleVisitor moduleVisitor
+        |> Rule.withContextFromImportedModules
 
 
 moduleVisitor : Rule.ModuleRuleSchema schemaState (OuterModuleContext a) -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } (OuterModuleContext a)

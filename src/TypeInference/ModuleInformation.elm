@@ -5,6 +5,7 @@ module TypeInference.ModuleInformation exposing
     , empty
     , forModule
     , fromDependencies
+    , singleton
     , values
     )
 
@@ -49,6 +50,18 @@ empty =
     ModuleInformationDict Dict.empty
 
 
+singleton : ModuleName -> ModuleInformationDict
+singleton moduleName =
+    ModuleInformationDict
+        (Dict.singleton moduleName
+            (ModuleInformation
+                { values = Dict.empty
+                , binops = Dict.empty
+                }
+            )
+        )
+
+
 forModule : ModuleName -> ModuleInformationDict -> Maybe ModuleInformation
 forModule moduleName (ModuleInformationDict moduleInformationDict) =
     Dict.get moduleName moduleInformationDict
@@ -61,11 +74,11 @@ type ModuleInformation
         }
 
 
-binops : ModuleInformation -> Dict String Binop
-binops (ModuleInformation moduleInformation) =
-    moduleInformation.binops
-
-
 values : ModuleInformation -> Dict String Value
 values (ModuleInformation moduleInformation) =
     moduleInformation.values
+
+
+binops : ModuleInformation -> Dict String Binop
+binops (ModuleInformation moduleInformation) =
+    moduleInformation.binops
