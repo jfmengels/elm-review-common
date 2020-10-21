@@ -401,6 +401,14 @@ inferType context node =
                 ( Just [], _ ) ->
                     TypeByNameLookup.byName context.typeByNameLookup name
 
+                ( Just moduleName, _ ) ->
+                    case ModuleInformation.forModule moduleName context.typeInference.moduleInformationDict of
+                        Just module_ ->
+                            Just (Type.Function (Type.Type [ "Basics" ] "Bool" []) (Type.Type [ "Basics" ] "Bool" []))
+
+                        Nothing ->
+                            Nothing
+
                 _ ->
                     Nothing
 
