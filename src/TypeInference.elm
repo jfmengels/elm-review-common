@@ -29,7 +29,7 @@ import TypeInference.Binop as Binop
 import TypeInference.ModuleInformation as ModuleInformation exposing (ModuleInformationDict)
 import TypeInference.Type as Type exposing (Type)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
-import TypeInference.Value as Value
+import TypeInference.Value as Value exposing (Value)
 
 
 type ProjectContext
@@ -63,7 +63,7 @@ type alias OuterModuleContext a =
 type alias ModuleContext =
     { moduleInformationDict : ModuleInformationDict
     , operatorsInScope : Dict String Type
-    , moduleValues : List { name : String, comment : String, tipe : Type.Type }
+    , moduleValues : List Value
     }
 
 
@@ -302,15 +302,7 @@ declarationListVisitor nodes context =
             TypeByNameLookup.addType
                 (List.concatMap (typeOfDeclaration >> List.map (\( name, type_ ) -> ( name, type_ ))) nodes)
                 context.typeByNameLookup
-        , typeInference =
-            { moduleContext
-                | moduleValues =
-                    [ { name = "someThing"
-                      , comment = ""
-                      , tipe = Type.Type [ "Basics" ] "Int" []
-                      }
-                    ]
-            }
+        , typeInference = { moduleContext | moduleValues = List.filterMap takeValue nodes }
       }
     )
 
@@ -399,6 +391,35 @@ typeOfDeclaration node =
         Declaration.Destructuring _ _ ->
             -- Can't occur
             []
+
+
+takeValue : Node Declaration -> Maybe Value
+takeValue node =
+    case Node.value node of
+        Declaration.FunctionDeclaration function ->
+            Just
+                (Value.create
+                    { name = "someThing"
+                    , comment = ""
+                    , tipe = Type.Type [ "Basics" ] "Int" []
+                    }
+                )
+
+        Declaration.CustomTypeDeclaration type_ ->
+            Nothing
+
+        Declaration.AliasDeclaration typeAlias ->
+            Nothing
+
+        Declaration.PortDeclaration { name, typeAnnotation } ->
+            Nothing
+
+        Declaration.InfixDeclaration _ ->
+            Nothing
+
+        Declaration.Destructuring _ _ ->
+            -- Can't occur
+            Nothing
 
 
 
