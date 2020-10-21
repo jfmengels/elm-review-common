@@ -408,7 +408,13 @@ takeValue node =
             Just
                 (Value.create
                     { name = functionName
-                    , comment = ""
+                    , comment =
+                        case function.documentation of
+                            Just documentation ->
+                                Node.value documentation
+
+                            Nothing ->
+                                ""
                     , tipe = Type.Type [ "Basics" ] "Int" []
                     }
                 )
