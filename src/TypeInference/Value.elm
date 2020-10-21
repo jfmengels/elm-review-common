@@ -16,12 +16,12 @@ import TypeInference.Type as Type
 type Value
     = Value
         { name : String
-        , comment : String
+        , documentation : String
         , tipe : Type.Type
         }
 
 
-create : { name : String, comment : String, tipe : Type.Type } -> Value
+create : { name : String, documentation : String, tipe : Type.Type } -> Value
 create =
     Value
 
@@ -35,7 +35,7 @@ fromMetadata : Elm.Docs.Value -> Value
 fromMetadata value =
     Value
         { name = value.name
-        , comment = value.comment
+        , documentation = value.comment
         , tipe = Type.fromMetadataType value.tipe
         }
 
@@ -47,7 +47,7 @@ name (Value value) =
 
 comment : Value -> String
 comment (Value value) =
-    value.comment
+    value.documentation
 
 
 tipe : Value -> Type.Type

@@ -408,7 +408,7 @@ takeValue moduleNameLookupTable node =
             Just
                 (Value.create
                     { name = functionName
-                    , comment =
+                    , documentation =
                         case function.documentation of
                             Just documentation ->
                                 Node.value documentation

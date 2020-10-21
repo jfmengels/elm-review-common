@@ -16,7 +16,7 @@ import TypeInference.Type as Type
 type Binop
     = Binop
         { name : String
-        , comment : String
+        , documentation : String
         , tipe : Type.Type
         , associativity : Associativity
         , precedence : Int
@@ -27,7 +27,7 @@ fromMetadata : Elm.Docs.Binop -> Binop
 fromMetadata binop =
     Binop
         { name = binop.name
-        , comment = binop.comment
+        , documentation = binop.comment
         , tipe = Type.fromMetadataType binop.tipe
         , associativity = fromAssociativity binop.associativity
         , precedence = binop.precedence
@@ -60,7 +60,7 @@ name (Binop binop) =
 
 comment : Binop -> String
 comment (Binop binop) =
-    binop.comment
+    binop.documentation
 
 
 tipe : Binop -> Type.Type
