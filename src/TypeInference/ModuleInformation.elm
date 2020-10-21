@@ -5,6 +5,7 @@ module TypeInference.ModuleInformation exposing
     , empty
     , forModule
     , fromDependencies
+    , merge
     , singleton
     , values
     )
@@ -65,6 +66,11 @@ singleton moduleName =
 forModule : ModuleName -> ModuleInformationDict -> Maybe ModuleInformation
 forModule moduleName (ModuleInformationDict moduleInformationDict) =
     Dict.get moduleName moduleInformationDict
+
+
+merge : ModuleInformationDict -> ModuleInformationDict -> ModuleInformationDict
+merge (ModuleInformationDict a) (ModuleInformationDict b) =
+    ModuleInformationDict (Dict.union a b)
 
 
 type ModuleInformation
