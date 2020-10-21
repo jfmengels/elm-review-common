@@ -52,19 +52,12 @@ empty =
     ModuleInformationDict Dict.empty
 
 
-singleton : ModuleName -> ModuleInformationDict
-singleton moduleName =
+singleton : ModuleName -> { values : List { name : String, comment : String, tipe : Type.Type } } -> ModuleInformationDict
+singleton moduleName moduleData =
     ModuleInformationDict
         (Dict.singleton moduleName
             (ModuleInformation
-                { values =
-                    Dict.singleton "someThing"
-                        (Value.create
-                            { name = "Something"
-                            , comment = ""
-                            , tipe = Type.Type [ "Basics" ] "Int" []
-                            }
-                        )
+                { values = dictByName Value.create moduleData.values
                 , binops = Dict.empty
                 }
             )

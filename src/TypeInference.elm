@@ -98,7 +98,15 @@ fromModuleToProject : ModuleName -> ModuleContext -> ProjectContext
 fromModuleToProject moduleName moduleContext =
     ProjectContext
         { dependencies = Dict.empty
-        , moduleInformationDict = ModuleInformation.singleton moduleName
+        , moduleInformationDict =
+            ModuleInformation.singleton moduleName
+                { values =
+                    [ { name = "someThing"
+                      , comment = ""
+                      , tipe = Type.Type [ "Basics" ] "Int" []
+                      }
+                    ]
+                }
         }
 
 
