@@ -27,6 +27,7 @@ import TypeInference.Binop as Binop
 import TypeInference.ModuleInformation as ModuleInformation exposing (ModuleInformationDict)
 import TypeInference.Type as Type exposing (Type)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
+import TypeInference.Value as Value
 
 
 type ProjectContext
@@ -404,7 +405,9 @@ inferType context node =
                 ( Just moduleName, _ ) ->
                     case ModuleInformation.forModule moduleName context.typeInference.moduleInformationDict of
                         Just module_ ->
-                            Just (Type.Function (Type.Type [ "Basics" ] "Bool" []) (Type.Type [ "Basics" ] "Bool" []))
+                            ModuleInformation.values module_
+                                |> Dict.get name
+                                |> Maybe.map Value.tipe
 
                         Nothing ->
                             Nothing

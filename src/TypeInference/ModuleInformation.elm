@@ -5,12 +5,14 @@ module TypeInference.ModuleInformation exposing
     , empty
     , forModule
     , fromDependencies
+    , values
     )
 
 import Dict exposing (Dict)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Review.Project.Dependency
 import TypeInference.Binop as Binop exposing (Binop)
+import TypeInference.Value as Value exposing (Value)
 
 
 type ModuleInformationDict
@@ -26,7 +28,8 @@ fromDependencies dependencies =
             (\module_ ->
                 ( String.split "." module_.name
                 , ModuleInformation
-                    { binops = dictByName Binop.fromMetadata module_.binops
+                    { values = dictByName Value.fromMetadata module_.values
+                    , binops = dictByName Binop.fromMetadata module_.binops
                     }
                 )
             )
@@ -53,10 +56,16 @@ forModule moduleName (ModuleInformationDict moduleInformationDict) =
 
 type ModuleInformation
     = ModuleInformation
-        { binops : Dict String Binop
+        { values : Dict String Value
+        , binops : Dict String Binop
         }
 
 
 binops : ModuleInformation -> Dict String Binop
 binops (ModuleInformation moduleInformation) =
     moduleInformation.binops
+
+
+values : ModuleInformation -> Dict String Value
+values (ModuleInformation moduleInformation) =
+    moduleInformation.values
