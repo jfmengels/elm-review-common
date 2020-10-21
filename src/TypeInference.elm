@@ -300,7 +300,7 @@ declarationListVisitor nodes context =
     , { context
         | typeByNameLookup =
             TypeByNameLookup.addType
-                (List.concatMap typeOfDeclaration nodes)
+                (List.concatMap (typeOfDeclaration >> List.map (\( name, type_ ) -> ( name, type_ ))) nodes)
                 context.typeByNameLookup
         , typeInference =
             { moduleContext
