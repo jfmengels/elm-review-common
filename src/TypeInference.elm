@@ -300,15 +300,15 @@ declarationListVisitor nodes context =
     , { context
         | typeByNameLookup =
             TypeByNameLookup.addType
-                (List.concatMap (typeOfDeclaration >> List.map (\( name, type_ ) -> ( name, type_ ))) nodes)
+                (List.concatMap (typeOfDeclaration context.moduleNameLookupTable) nodes)
                 context.typeByNameLookup
-        , typeInference = { moduleContext | moduleValues = List.filterMap takeValue nodes }
+        , typeInference = { moduleContext | moduleValues = List.filterMap (takeValue context.moduleNameLookupTable) nodes }
       }
     )
 
 
-typeOfDeclaration : Node Declaration -> List ( String, Type )
-typeOfDeclaration node =
+typeOfDeclaration : ModuleNameLookupTable -> Node Declaration -> List ( String, Type )
+typeOfDeclaration moduleNameLookupTable node =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
             let
@@ -325,7 +325,7 @@ typeOfDeclaration node =
                       , signature
                             |> Node.value
                             |> .typeAnnotation
-                            |> typeAnnotationToElmType
+                            |> typeAnnotationToElmType moduleNameLookupTable
                       )
                     ]
 
@@ -349,7 +349,7 @@ typeOfDeclaration node =
                             List.foldr
                                 (\input output ->
                                     Type.Function
-                                        (typeAnnotationToElmType input)
+                                        (typeAnnotationToElmType moduleNameLookupTable input)
                                         output
                                 )
                                 customTypeType
@@ -367,7 +367,7 @@ typeOfDeclaration node =
                         (Node.value typeAlias.name)
                         (List.map (Node.value >> Type.Generic) typeAlias.generics)
             in
-            case typeAnnotationToElmType typeAlias.typeAnnotation of
+            case typeAnnotationToElmType moduleNameLookupTable typeAlias.typeAnnotation of
                 Type.Record { fields } ->
                     let
                         functionType : Type
@@ -383,7 +383,7 @@ typeOfDeclaration node =
                     []
 
         Declaration.PortDeclaration { name, typeAnnotation } ->
-            [ ( Node.value name, typeAnnotationToElmType typeAnnotation ) ]
+            [ ( Node.value name, typeAnnotationToElmType moduleNameLookupTable typeAnnotation ) ]
 
         Declaration.InfixDeclaration _ ->
             []
@@ -393,8 +393,8 @@ typeOfDeclaration node =
             []
 
 
-takeValue : Node Declaration -> Maybe Value
-takeValue node =
+takeValue : ModuleNameLookupTable -> Node Declaration -> Maybe Value
+takeValue moduleNameLookupTable node =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
             let
@@ -421,7 +421,7 @@ takeValue node =
                                 signature
                                     |> Node.value
                                     |> .typeAnnotation
-                                    |> typeAnnotationToElmType
+                                    |> typeAnnotationToElmType moduleNameLookupTable
 
                             Nothing ->
                                 Type.Unknown
@@ -977,26 +977,32 @@ findTypeVariables type_ =
                 |> List.foldl Set.union startSet
 
 
-typeAnnotationToElmType : Node TypeAnnotation -> Type
-typeAnnotationToElmType node =
+typeAnnotationToElmType : ModuleNameLookupTable -> Node TypeAnnotation -> Type
+typeAnnotationToElmType moduleNameLookupTable node =
     case Node.value node of
         TypeAnnotation.GenericType var ->
             Type.Generic var
 
-        TypeAnnotation.Typed (Node _ ( moduleName, name )) nodes ->
-            Type.Type moduleName name (List.map typeAnnotationToElmType nodes)
+        TypeAnnotation.Typed (Node _ ( rawModuleName, name )) nodes ->
+            let
+                moduleName : ModuleName
+                moduleName =
+                    ModuleNameLookupTable.moduleNameFor moduleNameLookupTable node
+                        |> Maybe.withDefault rawModuleName
+            in
+            Type.Type moduleName name (List.map (typeAnnotationToElmType moduleNameLookupTable) nodes)
 
         TypeAnnotation.Unit ->
             Type.Tuple []
 
         TypeAnnotation.Tupled nodes ->
-            Type.Tuple (List.map typeAnnotationToElmType nodes)
+            Type.Tuple (List.map (typeAnnotationToElmType moduleNameLookupTable) nodes)
 
         TypeAnnotation.Record recordDefinition ->
             Type.Record
                 { fields =
                     List.map
-                        (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
+                        (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType moduleNameLookupTable fieldType )))
                         recordDefinition
                 , generic = Nothing
                 , canHaveMoreFields = False
@@ -1006,7 +1012,7 @@ typeAnnotationToElmType node =
             Type.Record
                 { fields =
                     List.map
-                        (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType fieldType )))
+                        (Node.value >> (\( fieldName, fieldType ) -> ( Node.value fieldName, typeAnnotationToElmType moduleNameLookupTable fieldType )))
                         (Node.value recordDefinition)
                 , generic = Just (Node.value genericVar)
                 , canHaveMoreFields = False
@@ -1014,8 +1020,8 @@ typeAnnotationToElmType node =
 
         TypeAnnotation.FunctionTypeAnnotation input output ->
             Type.Function
-                (typeAnnotationToElmType input)
-                (typeAnnotationToElmType output)
+                (typeAnnotationToElmType moduleNameLookupTable input)
+                (typeAnnotationToElmType moduleNameLookupTable output)
 
 
 
@@ -1048,7 +1054,7 @@ typeOfFunctionDeclaration context function =
               , signature
                     |> Node.value
                     |> .typeAnnotation
-                    |> typeAnnotationToElmType
+                    |> typeAnnotationToElmType context.moduleNameLookupTable
               )
             ]
 
