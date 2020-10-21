@@ -13,6 +13,7 @@ import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
+import ElmCorePrelude
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
@@ -83,7 +84,7 @@ rule =
 moduleVisitor : Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
 moduleVisitor schema =
     schema
-        |> Rule.withImportVisitor importVisitor
+        |> Rule.withImportVisitor (\import_ context -> ( [], importVisitor (Node.value import_) context ))
         |> Rule.withExpressionEnterVisitor expressionVisitor
 
 
@@ -110,11 +111,16 @@ fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
 fromProjectToModule =
     Rule.initContextCreator
         (\lookupTable projectContext ->
-            { moduleNameLookupTable = lookupTable
-            , typeByNameLookup = TypeByNameLookup.empty
-            , typeInference = TypeInference.fromProjectToModule projectContext
-            , importedDict = Dict.empty
-            }
+            let
+                initialContext : ModuleContext
+                initialContext =
+                    { moduleNameLookupTable = lookupTable
+                    , typeByNameLookup = TypeByNameLookup.empty
+                    , typeInference = TypeInference.fromProjectToModule projectContext
+                    , importedDict = Dict.empty
+                    }
+            in
+            List.foldl importVisitor initialContext ElmCorePrelude.elmCorePrelude
         )
         |> Rule.withModuleNameLookupTable
 
@@ -142,17 +148,15 @@ foldProjectContexts newContext previousContext =
 -- IMPORT VISITOR
 
 
-importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
+importVisitor : Import -> ModuleContext -> ModuleContext
 importVisitor import_ context =
-    ( []
-    , { context
+    { context
         | importedDict =
             Dict.fromList
                 [ ( [ "Basics" ], Imported { alias = Nothing, exposed = Everything } )
                 , ( [ "B" ], Imported { alias = Just "Not_B", exposed = Only [] } )
                 ]
-      }
-    )
+    }
 
 
 
