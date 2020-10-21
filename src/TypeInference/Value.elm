@@ -1,6 +1,7 @@
 module TypeInference.Value exposing
     ( Value
     , comment
+    , create
     , fromMetadata
     , name
     , tipe
@@ -16,6 +17,11 @@ type Value
         , comment : String
         , tipe : Type.Type
         }
+
+
+create : { name : String, comment : String, tipe : Type.Type } -> Value
+create =
+    Value
 
 
 fromMetadata : Elm.Docs.Value -> Value

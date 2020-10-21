@@ -14,6 +14,7 @@ import Dict exposing (Dict)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Review.Project.Dependency
 import TypeInference.Binop as Binop exposing (Binop)
+import TypeInference.Type as Type
 import TypeInference.Value as Value exposing (Value)
 
 
@@ -56,7 +57,14 @@ singleton moduleName =
     ModuleInformationDict
         (Dict.singleton moduleName
             (ModuleInformation
-                { values = Dict.empty
+                { values =
+                    Dict.singleton "someThing"
+                        (Value.create
+                            { name = "Something"
+                            , comment = ""
+                            , tipe = Type.Type [ "Basics" ] "Int" []
+                            }
+                        )
                 , binops = Dict.empty
                 }
             )
