@@ -6,7 +6,9 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 
 -}
 
+import Dict exposing (Dict)
 import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
@@ -315,9 +317,31 @@ typeAnnotationToElmType node =
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
 
 
+type ImportFoo
+    = ImportFoo { alias : Maybe String, exposed : ExposedTypesFromModule }
+
+
+type ExposedTypesFromModule
+    = Everything
+    | Only (List String)
+
+
 updateAliases : Type -> Type
 updateAliases type_ =
+    let
+        dict : Dict ModuleName ImportFoo
+        dict =
+            Dict.singleton [ "Basics" ] (ImportFoo { alias = Nothing, exposed = Everything })
+    in
     case type_ of
+        Type.Type moduleName string types ->
+            case Dict.get moduleName dict of
+                Just _ ->
+                    Type.Type [] string (List.map updateAliases types)
+
+                Nothing ->
+                    Type.Type moduleName string (List.map updateAliases types)
+
         Type.Unknown ->
             type_
 
@@ -329,13 +353,6 @@ updateAliases type_ =
 
         Type.Tuple types ->
             Type.Tuple (List.map updateAliases types)
-
-        Type.Type moduleName string types ->
-            if moduleName == [ "Basics" ] then
-                Type.Type [] string (List.map updateAliases types)
-
-            else
-                Type.Type moduleName string (List.map updateAliases types)
 
         Type.Record record ->
             Type.Record { record | fields = List.map (Tuple.mapSecond updateAliases) record.fields }
