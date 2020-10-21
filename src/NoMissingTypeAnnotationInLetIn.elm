@@ -18,6 +18,7 @@ import ElmCorePrelude
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
+import Set exposing (Set)
 import TypeInference exposing (inferType)
 import TypeInference.Type as Type exposing (Type)
 import TypeInference.TypeByNameLookup as TypeByNameLookup exposing (TypeByNameLookup)
@@ -108,7 +109,7 @@ type Imported
 
 type ExposedTypesFromModule
     = Everything
-    | Only (List String)
+    | Only (Set String)
 
 
 initialProjectContext : ProjectContext
@@ -175,16 +176,33 @@ importVisitor import_ context =
                                 Only (collectNamesOfExposedTypes topLevelExpose)
 
                             Nothing ->
-                                Only []
+                                Only Set.empty
                     }
                 )
                 context.importedDict
     }
 
 
-collectNamesOfExposedTypes : List (Node Exposing.TopLevelExpose) -> List String
-collectNamesOfExposedTypes topLevelExpose =
-    []
+collectNamesOfExposedTypes : List (Node Exposing.TopLevelExpose) -> Set String
+collectNamesOfExposedTypes topLevelExposed =
+    List.filterMap namesOfExposedType topLevelExposed
+        |> Set.fromList
+
+
+namesOfExposedType : Node Exposing.TopLevelExpose -> Maybe String
+namesOfExposedType topLevelExposed =
+    case Node.value topLevelExposed of
+        Exposing.TypeOrAliasExpose name ->
+            Just name
+
+        Exposing.TypeExpose exposedType ->
+            Just exposedType.name
+
+        Exposing.InfixExpose _ ->
+            Nothing
+
+        Exposing.FunctionExpose _ ->
+            Nothing
 
 
 
@@ -377,8 +395,9 @@ typeAnnotationToElmType node =
 updateAliases : Dict ModuleName Imported -> Type -> Type
 updateAliases importedDict type_ =
     case type_ of
-        Type.Type moduleName string types ->
+        Type.Type moduleName name types ->
             let
+                moduleNameToUse : ModuleName
                 moduleNameToUse =
                     case Dict.get moduleName importedDict of
                         Just (Imported { alias, exposed }) ->
@@ -386,18 +405,22 @@ updateAliases importedDict type_ =
                                 Everything ->
                                     []
 
-                                Only _ ->
-                                    case alias of
-                                        Just alias_ ->
-                                            [ alias_ ]
+                                Only importedTypes ->
+                                    if Set.member name importedTypes then
+                                        []
 
-                                        Nothing ->
-                                            moduleName
+                                    else
+                                        case alias of
+                                            Just alias_ ->
+                                                [ alias_ ]
+
+                                            Nothing ->
+                                                moduleName
 
                         Nothing ->
                             moduleName
             in
-            Type.Type moduleNameToUse string (List.map (updateAliases importedDict) types)
+            Type.Type moduleNameToUse name (List.map (updateAliases importedDict) types)
 
         Type.Unknown ->
             type_

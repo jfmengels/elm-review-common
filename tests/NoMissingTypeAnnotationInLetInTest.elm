@@ -913,6 +913,38 @@ a = let
                             ]
                           )
                         ]
+        , test "when value is a type from a different local module, when type is exposed explicitly" <|
+            \_ ->
+                [ """module A exposing (..)
+import B exposing (B_Type)
+a = let
+      hasNoTypeAnnotation = B.someThing
+    in
+    d
+""", """module B exposing (..)
+type B_Type = B_Type
+someThing : B_Type
+someThing = B_Type
+""" ]
+                    |> Review.Test.runOnModulesWithProjectData project rule
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                                , details = details
+                                , under = "hasNoTypeAnnotation"
+                                }
+                                |> Review.Test.whenFixed """module A exposing (..)
+import B exposing (B_Type)
+a = let
+      hasNoTypeAnnotation : B_Type
+      hasNoTypeAnnotation = B.someThing
+    in
+    d
+"""
+                            ]
+                          )
+                        ]
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
