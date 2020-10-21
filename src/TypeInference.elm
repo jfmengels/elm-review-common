@@ -415,7 +415,16 @@ takeValue node =
 
                             Nothing ->
                                 ""
-                    , tipe = Type.Type [ "Basics" ] "Int" []
+                    , tipe =
+                        case function.signature of
+                            Just signature ->
+                                signature
+                                    |> Node.value
+                                    |> .typeAnnotation
+                                    |> typeAnnotationToElmType
+
+                            Nothing ->
+                                Type.Unknown
                     }
                 )
 
