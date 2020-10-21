@@ -8,6 +8,7 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
@@ -82,6 +83,7 @@ rule =
 moduleVisitor : Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
 moduleVisitor schema =
     schema
+        |> Rule.withImportVisitor importVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
 
 
@@ -111,11 +113,7 @@ fromProjectToModule =
             { moduleNameLookupTable = lookupTable
             , typeByNameLookup = TypeByNameLookup.empty
             , typeInference = TypeInference.fromProjectToModule projectContext
-            , importedDict =
-                Dict.fromList
-                    [ ( [ "Basics" ], Imported { alias = Nothing, exposed = Everything } )
-                    , ( [ "B" ], Imported { alias = Just "Not_B", exposed = Only [] } )
-                    ]
+            , importedDict = Dict.empty
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -138,6 +136,27 @@ foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
     { typeInference = TypeInference.foldProjectContexts newContext.typeInference previousContext.typeInference
     }
+
+
+
+-- IMPORT VISITOR
+
+
+importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
+importVisitor import_ context =
+    ( []
+    , { context
+        | importedDict =
+            Dict.fromList
+                [ ( [ "Basics" ], Imported { alias = Nothing, exposed = Everything } )
+                , ( [ "B" ], Imported { alias = Just "Not_B", exposed = Only [] } )
+                ]
+      }
+    )
+
+
+
+-- EXPRESSION VISITOR
 
 
 expressionVisitor : Node Expression -> ModuleContext -> ( List (Error {}), ModuleContext )
