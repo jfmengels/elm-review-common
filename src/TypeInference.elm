@@ -63,6 +63,7 @@ type alias OuterModuleContext a =
 type alias ModuleContext =
     { moduleInformationDict : ModuleInformationDict
     , operatorsInScope : Dict String Type
+    , moduleValues : List { name : String, comment : String, tipe : Type.Type }
     }
 
 
@@ -91,6 +92,12 @@ fromProjectToModule { typeInference } =
             )
             elmCorePrelude
             |> Dict.fromList
+    , moduleValues =
+        [ { name = "someThing"
+          , comment = ""
+          , tipe = Type.Type [ "Basics" ] "Int" []
+          }
+        ]
     }
 
 
@@ -100,12 +107,7 @@ fromModuleToProject moduleName moduleContext =
         { dependencies = Dict.empty
         , moduleInformationDict =
             ModuleInformation.singleton moduleName
-                { values =
-                    [ { name = "someThing"
-                      , comment = ""
-                      , tipe = Type.Type [ "Basics" ] "Int" []
-                      }
-                    ]
+                { values = moduleContext.moduleValues
                 }
         }
 
