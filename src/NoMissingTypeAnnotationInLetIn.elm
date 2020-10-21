@@ -163,6 +163,14 @@ reportFunctionWithoutSignature context function =
 
         Nothing ->
             let
+                importedDict : Dict ModuleName Imported
+                importedDict =
+                    Dict.fromList
+                        [ ( [ "Basics" ], Imported { alias = Nothing, exposed = Everything } )
+                        , ( [ "B" ], Imported { alias = Just "Not_B", exposed = Only [] } )
+                        ]
+            in
+            let
                 declaration : Expression.FunctionImplementation
                 declaration =
                     Node.value function.declaration
@@ -171,7 +179,7 @@ reportFunctionWithoutSignature context function =
                 maybeType =
                     if List.isEmpty declaration.arguments then
                         inferType context declaration.expression
-                            |> Maybe.map updateAliases
+                            |> Maybe.map (updateAliases importedDict)
                             |> Maybe.andThen Type.toMetadataType
                             |> Maybe.map typeAsString
 
@@ -317,8 +325,8 @@ typeAnnotationToElmType node =
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
 
 
-type ImportFoo
-    = ImportFoo { alias : Maybe String, exposed : ExposedTypesFromModule }
+type Imported
+    = Imported { alias : Maybe String, exposed : ExposedTypesFromModule }
 
 
 type ExposedTypesFromModule
@@ -326,22 +334,14 @@ type ExposedTypesFromModule
     | Only (List String)
 
 
-updateAliases : Type -> Type
-updateAliases type_ =
-    let
-        dict : Dict ModuleName ImportFoo
-        dict =
-            Dict.fromList
-                [ ( [ "Basics" ], ImportFoo { alias = Nothing, exposed = Everything } )
-                , ( [ "B" ], ImportFoo { alias = Just "Not_B", exposed = Only [] } )
-                ]
-    in
+updateAliases : Dict ModuleName Imported -> Type -> Type
+updateAliases importedDict type_ =
     case type_ of
         Type.Type moduleName string types ->
             let
                 moduleNameToUse =
-                    case Dict.get moduleName dict of
-                        Just (ImportFoo { alias, exposed }) ->
+                    case Dict.get moduleName importedDict of
+                        Just (Imported { alias, exposed }) ->
                             case exposed of
                                 Everything ->
                                     []
@@ -357,7 +357,7 @@ updateAliases type_ =
                         Nothing ->
                             moduleName
             in
-            Type.Type moduleNameToUse string (List.map updateAliases types)
+            Type.Type moduleNameToUse string (List.map (updateAliases importedDict) types)
 
         Type.Unknown ->
             type_
@@ -366,10 +366,10 @@ updateAliases type_ =
             type_
 
         Type.Function input output ->
-            Type.Function (updateAliases input) (updateAliases output)
+            Type.Function (updateAliases importedDict input) (updateAliases importedDict output)
 
         Type.Tuple types ->
-            Type.Tuple (List.map updateAliases types)
+            Type.Tuple (List.map (updateAliases importedDict) types)
 
         Type.Record record ->
-            Type.Record { record | fields = List.map (Tuple.mapSecond updateAliases) record.fields }
+            Type.Record { record | fields = List.map (Tuple.mapSecond (updateAliases importedDict)) record.fields }
