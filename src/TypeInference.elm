@@ -92,12 +92,7 @@ fromProjectToModule { typeInference } =
             )
             elmCorePrelude
             |> Dict.fromList
-    , moduleValues =
-        [ { name = "someThing"
-          , comment = ""
-          , tipe = Type.Type [ "Basics" ] "Int" []
-          }
-        ]
+    , moduleValues = []
     }
 
 
@@ -296,12 +291,26 @@ importVisitor node context =
 
 declarationListVisitor : List (Node Declaration) -> OuterModuleContext a -> ( List nothing, OuterModuleContext a )
 declarationListVisitor nodes context =
+    let
+        moduleContext : ModuleContext
+        moduleContext =
+            context.typeInference
+    in
     ( []
     , { context
         | typeByNameLookup =
             TypeByNameLookup.addType
                 (List.concatMap typeOfDeclaration nodes)
                 context.typeByNameLookup
+        , typeInference =
+            { moduleContext
+                | moduleValues =
+                    [ { name = "someThing"
+                      , comment = ""
+                      , tipe = Type.Type [ "Basics" ] "Int" []
+                      }
+                    ]
+            }
       }
     )
 
