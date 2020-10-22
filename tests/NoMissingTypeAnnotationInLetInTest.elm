@@ -258,6 +258,13 @@ someValue = something"""
             , topLevelDeclarations = """someValue : String -> (Thing -> Thing) -> Int
 someValue = something"""
             }
+        , fixTest "when value is a function call to a known top-level function where one argument needs parens inside it"
+            { arguments = ""
+            , value = "someValue"
+            , expectedType = "List (Attribute msg) -> List (Html msg) -> Html msg"
+            , topLevelDeclarations = """someValue : List (Attribute msg) -> List (Html msg) -> Html msg
+someValue = something"""
+            }
         , fixTest "when value is a tuple"
             { arguments = ""
             , value = """( "abc", 1.0 )"""

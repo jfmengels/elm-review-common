@@ -297,7 +297,13 @@ typeAsStringWithParensMaybe type_ =
             }
 
         Elm.Type.Lambda input output ->
-            { value = typeAsStringWrappedInParens input ++ " -> " ++ typeAsString output
+            { value =
+                case input of
+                    Elm.Type.Lambda _ _ ->
+                        typeAsStringWrappedInParens input ++ " -> " ++ typeAsString output
+
+                    _ ->
+                        typeAsString input ++ " -> " ++ typeAsString output
             , mayNeedParens = True
             }
 
