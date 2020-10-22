@@ -7,6 +7,7 @@ module NoMissingTypeAnnotationInLetIn exposing (rule)
 -}
 
 import Dict exposing (Dict)
+import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Import exposing (Import)
@@ -87,6 +88,7 @@ moduleVisitor : Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRu
 moduleVisitor schema =
     schema
         |> Rule.withImportVisitor (\import_ context -> ( [], importVisitor (Node.value import_) context ))
+        |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
 
 
@@ -100,6 +102,7 @@ type alias ModuleContext =
     , typeByNameLookup : TypeByNameLookup
     , typeInference : TypeInference.ModuleContext
     , importedDict : Dict ModuleName Imported
+    , declaredTypes : Set String
     }
 
 
@@ -129,6 +132,7 @@ fromProjectToModule =
                     , typeByNameLookup = TypeByNameLookup.empty
                     , typeInference = TypeInference.fromProjectToModule projectContext
                     , importedDict = Dict.empty
+                    , declaredTypes = Set.empty
                     }
             in
             List.foldl importVisitor initialContext ElmCorePrelude.elmCorePrelude
@@ -206,6 +210,43 @@ namesOfExposedType topLevelExposed =
 
 
 
+-- DECLARATION LIST VISITOR
+
+
+declarationListVisitor : List (Node Declaration) -> ModuleContext -> ( List nothing, ModuleContext )
+declarationListVisitor nodes context =
+    ( []
+    , { context
+        | declaredTypes =
+            List.filterMap declarationVisitor nodes
+                |> Set.fromList
+      }
+    )
+
+
+declarationVisitor : Node Declaration -> Maybe String
+declarationVisitor node =
+    case Node.value node of
+        Declaration.AliasDeclaration typeAlias ->
+            Just (Node.value typeAlias.name)
+
+        Declaration.CustomTypeDeclaration customType ->
+            Just (Node.value customType.name)
+
+        Declaration.FunctionDeclaration _ ->
+            Nothing
+
+        Declaration.PortDeclaration _ ->
+            Nothing
+
+        Declaration.InfixDeclaration _ ->
+            Nothing
+
+        Declaration.Destructuring _ _ ->
+            Nothing
+
+
+
 -- EXPRESSION VISITOR
 
 
@@ -246,7 +287,7 @@ reportFunctionWithoutSignature context function =
                 maybeType =
                     if List.isEmpty declaration.arguments then
                         inferType context declaration.expression
-                            |> Maybe.map (updateAliases context.importedDict)
+                            |> Maybe.map (updateAliases context)
                             |> Maybe.andThen Type.toMetadataType
                             |> Maybe.map typeAsString
 
@@ -398,35 +439,30 @@ typeAnnotationToElmType node =
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
 
 
-updateAliases : Dict ModuleName Imported -> Type -> Type
-updateAliases importedDict type_ =
+updateAliases : ModuleContext -> Type -> Type
+updateAliases context type_ =
     case type_ of
         Type.Type moduleName name types ->
             let
                 moduleNameToUse : ModuleName
                 moduleNameToUse =
-                    case Dict.get moduleName importedDict of
+                    case Dict.get moduleName context.importedDict of
                         Just (Imported { alias, exposed }) ->
-                            case exposed of
-                                Everything ->
-                                    []
+                            if not (Set.member name context.declaredTypes) && isTypeImportedSomehow exposed name then
+                                []
 
-                                Only importedTypes ->
-                                    if Set.member name importedTypes then
-                                        []
+                            else
+                                case alias of
+                                    Just alias_ ->
+                                        [ alias_ ]
 
-                                    else
-                                        case alias of
-                                            Just alias_ ->
-                                                [ alias_ ]
-
-                                            Nothing ->
-                                                moduleName
+                                    Nothing ->
+                                        moduleName
 
                         Nothing ->
                             moduleName
             in
-            Type.Type moduleNameToUse name (List.map (updateAliases importedDict) types)
+            Type.Type moduleNameToUse name (List.map (updateAliases context) types)
 
         Type.Unknown ->
             type_
@@ -435,10 +471,20 @@ updateAliases importedDict type_ =
             type_
 
         Type.Function input output ->
-            Type.Function (updateAliases importedDict input) (updateAliases importedDict output)
+            Type.Function (updateAliases context input) (updateAliases context output)
 
         Type.Tuple types ->
-            Type.Tuple (List.map (updateAliases importedDict) types)
+            Type.Tuple (List.map (updateAliases context) types)
 
         Type.Record record ->
-            Type.Record { record | fields = List.map (Tuple.mapSecond (updateAliases importedDict)) record.fields }
+            Type.Record { record | fields = List.map (Tuple.mapSecond (updateAliases context)) record.fields }
+
+
+isTypeImportedSomehow : ExposedTypesFromModule -> String -> Bool
+isTypeImportedSomehow exposed name =
+    case exposed of
+        Everything ->
+            True
+
+        Only importedTypes ->
+            Set.member name importedTypes
