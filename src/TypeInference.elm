@@ -925,13 +925,13 @@ typeAnnotationToElmType moduleNameLookupTable node =
             Type.Generic var
 
         TypeAnnotation.Typed (Node typeRange ( rawModuleName, name )) nodes ->
-            let
-                moduleName : ModuleName
-                moduleName =
-                    ModuleNameLookupTable.moduleNameAt moduleNameLookupTable typeRange
-                        |> Maybe.withDefault rawModuleName
-            in
-            Type.Type moduleName name (List.map (typeAnnotationToElmType moduleNameLookupTable) nodes)
+            case ModuleNameLookupTable.moduleNameAt moduleNameLookupTable typeRange of
+                Just moduleName ->
+                    Type.Type moduleName name (List.map (typeAnnotationToElmType moduleNameLookupTable) nodes)
+
+                Nothing ->
+                    -- TODO Should probably be Type.Unknown
+                    Type.Type rawModuleName name (List.map (typeAnnotationToElmType moduleNameLookupTable) nodes)
 
         TypeAnnotation.Unit ->
             Type.Tuple []
