@@ -143,7 +143,7 @@ fixTests =
             }
         , fixTest "when value is `True`"
             { arguments = ""
-            , value = "False"
+            , value = "True"
             , expectedType = "Bool"
             , topLevelDeclarations = ""
             }
