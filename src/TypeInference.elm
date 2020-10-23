@@ -311,7 +311,35 @@ takeValues moduleNameLookupTable node =
             ]
 
         Declaration.CustomTypeDeclaration type_ ->
-            []
+            let
+                customTypeType : Type
+                customTypeType =
+                    Type.Type
+                        []
+                        (Node.value type_.name)
+                        (List.map (Node.value >> Type.Generic) type_.generics)
+            in
+            List.map
+                (\(Node _ { name, arguments }) ->
+                    let
+                        functionType : Type
+                        functionType =
+                            List.foldr
+                                (\input output ->
+                                    Type.Function
+                                        (typeAnnotationToElmType moduleNameLookupTable input)
+                                        output
+                                )
+                                customTypeType
+                                arguments
+                    in
+                    Value.create
+                        { name = Node.value name
+                        , documentation = ""
+                        , tipe = functionType
+                        }
+                )
+                type_.constructors
 
         Declaration.AliasDeclaration typeAlias ->
             []
