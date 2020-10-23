@@ -342,7 +342,38 @@ takeValues moduleNameLookupTable node =
                 type_.constructors
 
         Declaration.AliasDeclaration typeAlias ->
-            []
+            let
+                aliasType : Type
+                aliasType =
+                    Type.Type []
+                        (Node.value typeAlias.name)
+                        (List.map (Node.value >> Type.Generic) typeAlias.generics)
+            in
+            case typeAnnotationToElmType moduleNameLookupTable typeAlias.typeAnnotation of
+                Type.Record { fields } ->
+                    let
+                        functionType : Type
+                        functionType =
+                            List.foldr
+                                (\( _, type_ ) output -> Type.Function type_ output)
+                                aliasType
+                                fields
+                    in
+                    [ Value.create
+                        { name = Node.value typeAlias.name
+                        , documentation =
+                            case typeAlias.documentation of
+                                Just documentation ->
+                                    Node.value documentation
+
+                                Nothing ->
+                                    ""
+                        , tipe = functionType
+                        }
+                    ]
+
+                _ ->
+                    []
 
         Declaration.PortDeclaration { name, typeAnnotation } ->
             []

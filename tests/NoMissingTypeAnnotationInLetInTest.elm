@@ -918,6 +918,36 @@ a = let
                             ]
                           )
                         ]
+        , test "when value is a type alias constructor from a different local module" <|
+            \_ ->
+                [ """module A exposing (..)
+import B
+a = let
+      hasNoTypeAnnotation = B.B_Type
+    in
+    d
+""", """module B exposing (..)
+type alias B_Type = {}
+""" ]
+                    |> Review.Test.runOnModulesWithProjectData project rule
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                                , details = details
+                                , under = "hasNoTypeAnnotation"
+                                }
+                                |> Review.Test.whenFixed """module A exposing (..)
+import B
+a = let
+      hasNoTypeAnnotation : B.B_Type
+      hasNoTypeAnnotation = B.B_Type
+    in
+    d
+"""
+                            ]
+                          )
+                        ]
         , test "when value is a type from a different local module, when module is aliased" <|
             \_ ->
                 [ """module A exposing (..)
