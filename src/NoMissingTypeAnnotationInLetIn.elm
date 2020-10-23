@@ -359,8 +359,6 @@ typeAsStringWithParensMaybe type_ =
             }
 
         Elm.Type.Type string types ->
-            -- TODO Handle aliasing correctly
-            -- TODO Add imports if necessary
             { value = String.join " " (string :: List.map typeAsStringWrappedInParens types)
             , mayNeedParens = not (List.isEmpty types)
             }
