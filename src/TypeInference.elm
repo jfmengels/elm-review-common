@@ -185,7 +185,7 @@ declarationListVisitor nodes context =
             TypeByNameLookup.addType
                 (List.concatMap (typeOfDeclaration context.moduleNameLookupTable) nodes)
                 context.typeByNameLookup
-        , typeInference = { moduleContext | moduleValues = List.filterMap (takeValue context.moduleNameLookupTable) nodes }
+        , typeInference = { moduleContext | moduleValues = List.concatMap (takeValues context.moduleNameLookupTable) nodes }
       }
     )
 
@@ -276,8 +276,8 @@ typeOfDeclaration moduleNameLookupTable node =
             []
 
 
-takeValue : ModuleNameLookupTable -> Node Declaration -> Maybe Value
-takeValue moduleNameLookupTable node =
+takeValues : ModuleNameLookupTable -> Node Declaration -> List Value
+takeValues moduleNameLookupTable node =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
             let
@@ -288,44 +288,43 @@ takeValue moduleNameLookupTable node =
                         |> .name
                         |> Node.value
             in
-            Just
-                (Value.create
-                    { name = functionName
-                    , documentation =
-                        case function.documentation of
-                            Just documentation ->
-                                Node.value documentation
+            [ Value.create
+                { name = functionName
+                , documentation =
+                    case function.documentation of
+                        Just documentation ->
+                            Node.value documentation
 
-                            Nothing ->
-                                ""
-                    , tipe =
-                        case function.signature of
-                            Just signature ->
-                                signature
-                                    |> Node.value
-                                    |> .typeAnnotation
-                                    |> typeAnnotationToElmType moduleNameLookupTable
+                        Nothing ->
+                            ""
+                , tipe =
+                    case function.signature of
+                        Just signature ->
+                            signature
+                                |> Node.value
+                                |> .typeAnnotation
+                                |> typeAnnotationToElmType moduleNameLookupTable
 
-                            Nothing ->
-                                Type.Unknown
-                    }
-                )
+                        Nothing ->
+                            Type.Unknown
+                }
+            ]
 
         Declaration.CustomTypeDeclaration type_ ->
-            Nothing
+            []
 
         Declaration.AliasDeclaration typeAlias ->
-            Nothing
+            []
 
         Declaration.PortDeclaration { name, typeAnnotation } ->
-            Nothing
+            []
 
         Declaration.InfixDeclaration _ ->
-            Nothing
+            []
 
         Declaration.Destructuring _ _ ->
             -- Can't occur
-            Nothing
+            []
 
 
 
