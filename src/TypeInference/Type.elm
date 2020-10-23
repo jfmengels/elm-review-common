@@ -113,9 +113,9 @@ toMetadataType type_ =
 relateToModule : ModuleName -> Type -> Type
 relateToModule moduleName type_ =
     case type_ of
-        Type originalModuleName string types ->
+        Type originalModuleName name types ->
             if originalModuleName == [] then
-                Type moduleName string types
+                Type moduleName name types
 
             else
                 type_

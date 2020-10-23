@@ -870,8 +870,14 @@ typeAnnotationToElmType moduleNameLookupTable node =
             let
                 moduleName : ModuleName
                 moduleName =
-                    ModuleNameLookupTable.moduleNameFor moduleNameLookupTable node
-                        |> Maybe.withDefault rawModuleName
+                    -- Edge-case because `List` never appears in the modules of the `elm/core` dependency
+                    -- https://github.com/elm/core/issues/965
+                    if ( rawModuleName, name ) == ( [], "List" ) then
+                        [ "List" ]
+
+                    else
+                        ModuleNameLookupTable.moduleNameFor moduleNameLookupTable node
+                            |> Maybe.withDefault rawModuleName
             in
             Type.Type moduleName name (List.map (typeAnnotationToElmType moduleNameLookupTable) nodes)
 
