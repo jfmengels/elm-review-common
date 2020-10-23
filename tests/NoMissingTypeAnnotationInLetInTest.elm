@@ -948,6 +948,37 @@ a = let
                             ]
                           )
                         ]
+        , test "when value is a port from a different local module" <|
+            \_ ->
+                [ """module A exposing (..)
+import B
+a = let
+      hasNoTypeAnnotation = B.output
+    in
+    d
+""", """module B exposing (..)
+type Msg = Msg
+port output : String -> Cmd Msg
+""" ]
+                    |> Review.Test.runOnModulesWithProjectData project rule
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                                , details = details
+                                , under = "hasNoTypeAnnotation"
+                                }
+                                |> Review.Test.whenFixed """module A exposing (..)
+import B
+a = let
+      hasNoTypeAnnotation : String -> Cmd Msg
+      hasNoTypeAnnotation = B.output
+    in
+    d
+"""
+                            ]
+                          )
+                        ]
         , test "when value is a type from a different local module, when module is aliased" <|
             \_ ->
                 [ """module A exposing (..)

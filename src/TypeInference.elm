@@ -376,7 +376,12 @@ takeValues moduleNameLookupTable node =
                     []
 
         Declaration.PortDeclaration { name, typeAnnotation } ->
-            []
+            [ Value.create
+                { name = Node.value name
+                , documentation = ""
+                , tipe = typeAnnotationToElmType moduleNameLookupTable typeAnnotation
+                }
+            ]
 
         Declaration.InfixDeclaration _ ->
             []
