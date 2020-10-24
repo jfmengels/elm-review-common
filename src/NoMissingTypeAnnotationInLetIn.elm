@@ -13,6 +13,7 @@ import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
+import Elm.Syntax.Range as Range
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
 import ElmCorePrelude
@@ -87,7 +88,7 @@ rule =
 moduleVisitor : Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
 moduleVisitor schema =
     schema
-        |> Rule.withImportVisitor (\import_ context -> ( [], importVisitor (Node.value import_) context ))
+        |> Rule.withImportVisitor importVisitor
         |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
 
@@ -103,6 +104,7 @@ type alias ModuleContext =
     , typeInference : TypeInference.ModuleContext
     , importedDict : Dict ModuleName Imported
     , declaredTypes : Set String
+    , importInsertionLine : Int
     }
 
 
@@ -133,9 +135,12 @@ fromProjectToModule =
                     , typeInference = TypeInference.fromProjectToModule projectContext
                     , importedDict = Dict.empty
                     , declaredTypes = Set.empty
+
+                    -- TODO Make this dependent on imports/declarations
+                    , importInsertionLine = 2
                     }
             in
-            List.foldl importVisitor initialContext ElmCorePrelude.elmCorePrelude
+            List.foldl importWithoutRangeVisitor initialContext ElmCorePrelude.elmCorePrelude
         )
         |> Rule.withModuleNameLookupTable
 
@@ -163,8 +168,16 @@ foldProjectContexts newContext previousContext =
 -- IMPORT VISITOR
 
 
-importVisitor : Import -> ModuleContext -> ModuleContext
-importVisitor import_ context =
+importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
+importVisitor node context =
+    ( []
+    , { context | importInsertionLine = (Node.range node).end.row + 1 }
+        |> importWithoutRangeVisitor (Node.value node)
+    )
+
+
+importWithoutRangeVisitor : Import -> ModuleContext -> ModuleContext
+importWithoutRangeVisitor import_ context =
     { context
         | importedDict =
             Dict.insert
@@ -283,13 +296,15 @@ reportFunctionWithoutSignature context function =
                 declaration =
                     Node.value function.declaration
 
-                maybeType : Maybe String
-                maybeType =
+                maybeTypeAndModulesToImport : Maybe ( String, Set ModuleName )
+                maybeTypeAndModulesToImport =
                     if List.isEmpty declaration.arguments then
                         inferType context declaration.expression
                             |> Maybe.map (updateAliases context)
-                            |> Maybe.andThen Type.toMetadataType
-                            |> Maybe.map typeAsString
+                            |> Maybe.andThen
+                                (\( type_, moduleNames ) ->
+                                    Type.toMetadataType type_ |> Maybe.map (\metadataType -> ( typeAsString metadataType, moduleNames ))
+                                )
 
                     else
                         Nothing
@@ -301,17 +316,17 @@ reportFunctionWithoutSignature context function =
                     ]
                 }
                 (Node.range declaration.name)
-                (createFix declaration.name maybeType)
+                (createFix context.importInsertionLine declaration.name maybeTypeAndModulesToImport)
                 |> Just
 
 
-createFix : Node String -> Maybe String -> List Fix
-createFix functionNameNode maybeInferredType =
-    case maybeInferredType of
+createFix : Int -> Node String -> Maybe ( String, Set ModuleName ) -> List Fix
+createFix importInsertionLine functionNameNode maybeInferredTypeAndModulesToImport =
+    case maybeInferredTypeAndModulesToImport of
         Nothing ->
             []
 
-        Just inferredType ->
+        Just ( inferredType, moduleNamesThatNeedToBeImported ) ->
             let
                 functionName : String
                 functionName =
@@ -320,8 +335,28 @@ createFix functionNameNode maybeInferredType =
                 position : { row : Int, column : Int }
                 position =
                     (Node.range functionNameNode).start
+
+                typeAnnotationFix : Fix
+                typeAnnotationFix =
+                    Fix.insertAt position (functionName ++ " : " ++ inferredType ++ "\n" ++ String.repeat (position.column - 1) " ")
             in
-            [ Fix.insertAt position (functionName ++ " : " ++ inferredType ++ "\n" ++ String.repeat (position.column - 1) " ") ]
+            if Set.isEmpty moduleNamesThatNeedToBeImported then
+                [ typeAnnotationFix ]
+
+            else
+                let
+                    importsToInsert : String
+                    importsToInsert =
+                        moduleNamesThatNeedToBeImported
+                            |> Set.toList
+                            |> List.map (\moduleName -> "import " ++ String.join "." moduleName)
+                            |> String.join "\n"
+
+                    importFixes : Fix
+                    importFixes =
+                        Fix.insertAt { row = importInsertionLine, column = 1 } (importsToInsert ++ "\n")
+                in
+                [ importFixes, typeAnnotationFix ]
 
 
 typeAsString : Elm.Type.Type -> String
@@ -437,45 +472,77 @@ typeAnnotationToElmType node =
             Elm.Type.Lambda (typeAnnotationToElmType input) (typeAnnotationToElmType output)
 
 
-updateAliases : ModuleContext -> Type -> Type
+updateAliases : ModuleContext -> Type -> ( Type, Set ModuleName )
 updateAliases context type_ =
     case type_ of
         Type.Type moduleName name types ->
             let
-                moduleNameToUse : ModuleName
-                moduleNameToUse =
-                    case Dict.get moduleName context.importedDict of
-                        Just (Imported { alias, exposed }) ->
-                            if not (Set.member name context.declaredTypes) && isTypeImportedSomehow exposed name then
-                                []
+                ( moduleNameToUse, moduleNameToImport ) =
+                    if moduleName == [] then
+                        ( moduleName, Set.empty )
 
-                            else
-                                case alias of
-                                    Just alias_ ->
-                                        [ alias_ ]
+                    else
+                        case Dict.get moduleName context.importedDict of
+                            Just (Imported { alias, exposed }) ->
+                                if not (Set.member name context.declaredTypes) && isTypeImportedSomehow exposed name then
+                                    ( [], Set.empty )
 
-                                    Nothing ->
-                                        moduleName
+                                else
+                                    case alias of
+                                        Just alias_ ->
+                                            ( [ alias_ ], Set.empty )
 
-                        Nothing ->
-                            moduleName
+                                        Nothing ->
+                                            ( moduleName, Set.empty )
+
+                            Nothing ->
+                                ( moduleName, Set.singleton moduleName )
+
+                argumentTypes : List ( Type, Set ModuleName )
+                argumentTypes =
+                    List.map (updateAliases context) types
             in
-            Type.Type moduleNameToUse name (List.map (updateAliases context) types)
+            ( Type.Type moduleNameToUse name (List.map Tuple.first argumentTypes)
+            , List.foldl (Tuple.second >> Set.union) moduleNameToImport argumentTypes
+            )
 
         Type.Unknown ->
-            type_
+            ( type_, Set.empty )
 
         Type.Generic _ ->
-            type_
+            ( type_, Set.empty )
 
         Type.Function input output ->
-            Type.Function (updateAliases context input) (updateAliases context output)
+            let
+                ( inputType, moduleNamesInput ) =
+                    updateAliases context input
+
+                ( outputType, moduleNamesOutput ) =
+                    updateAliases context output
+            in
+            ( Type.Function inputType outputType
+            , Set.union moduleNamesInput moduleNamesOutput
+            )
 
         Type.Tuple types ->
-            Type.Tuple (List.map (updateAliases context) types)
+            let
+                argumentTypes : List ( Type, Set ModuleName )
+                argumentTypes =
+                    List.map (updateAliases context) types
+            in
+            ( Type.Tuple (List.map Tuple.first argumentTypes)
+            , List.foldl (Tuple.second >> Set.union) Set.empty argumentTypes
+            )
 
         Type.Record record ->
-            Type.Record { record | fields = List.map (Tuple.mapSecond (updateAliases context)) record.fields }
+            let
+                fieldTypes : List ( String, ( Type, Set ModuleName ) )
+                fieldTypes =
+                    List.map (Tuple.mapSecond (updateAliases context)) record.fields
+            in
+            ( Type.Record { record | fields = List.map (Tuple.mapSecond Tuple.first) fieldTypes }
+            , List.foldl (Tuple.second >> Tuple.second >> Set.union) Set.empty fieldTypes
+            )
 
 
 isTypeImportedSomehow : ExposedTypesFromModule -> String -> Bool

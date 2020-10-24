@@ -1175,6 +1175,75 @@ a = let
                             ]
                           )
                         ]
+        , test "when value references another module's function which references another module's type" <|
+            \_ ->
+                [ """module A exposing (..)
+import B
+import Set
+a = let
+      hasNoTypeAnnotation = B.thing
+    in
+    d
+""", """module B exposing (..)
+import Set
+thing : Set.Set String
+thing =
+    Set.empty
+""" ]
+                    |> Review.Test.runOnModulesWithProjectData project rule
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                                , details = details
+                                , under = "hasNoTypeAnnotation"
+                                }
+                                |> Review.Test.whenFixed """module A exposing (..)
+import B
+import Set
+a = let
+      hasNoTypeAnnotation : Set.Set String
+      hasNoTypeAnnotation = B.thing
+    in
+    d
+"""
+                            ]
+                          )
+                        ]
+        , test "when value references another module's function which references another module's type that isn't imported" <|
+            \_ ->
+                [ """module A exposing (..)
+import B
+a = let
+      hasNoTypeAnnotation = B.thing
+    in
+    d
+""", """module B exposing (..)
+import Set
+thing : Set.Set String
+thing =
+    Set.empty
+""" ]
+                    |> Review.Test.runOnModulesWithProjectData project rule
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Missing type annotation for `hasNoTypeAnnotation`"
+                                , details = details
+                                , under = "hasNoTypeAnnotation"
+                                }
+                                |> Review.Test.whenFixed """module A exposing (..)
+import B
+import Set
+a = let
+      hasNoTypeAnnotation : Set.Set String
+      hasNoTypeAnnotation = B.thing
+    in
+    d
+"""
+                            ]
+                          )
+                        ]
         , noFixTest "should not provide a fix (for now) when type variables are found both in the input parameters and output parameters"
             { arguments = ""
             , value = "someValue string"
