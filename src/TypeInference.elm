@@ -402,10 +402,10 @@ inferType context node =
             inferType context expr
 
         Expression.Literal _ ->
-            Just (Type.Type [ "Basics" ] "String" [])
+            Just (Type.Type [ "String" ] "String" [])
 
         Expression.CharLiteral _ ->
-            Just (Type.Type [ "Basics" ] "Char" [])
+            Just (Type.Type [ "Char" ] "Char" [])
 
         Expression.Integer _ ->
             Just (Type.Generic "number")
@@ -460,11 +460,11 @@ inferType context node =
 
         Expression.ListExpr nodes ->
             if List.isEmpty nodes then
-                Just (Type.Type [ "Basics" ] "List" [ Type.Generic "nothing" ])
+                Just (Type.Type [ "List" ] "List" [ Type.Generic "nothing" ])
 
             else
                 inferTypeFromCombinationOf (List.map (\nodeInList () -> ( context, nodeInList )) nodes)
-                    |> Maybe.map (\type_ -> Type.Type [ "Basics" ] "List" [ type_ ])
+                    |> Maybe.map (\type_ -> Type.Type [ "List" ] "List" [ type_ ])
 
         Expression.RecordExpr fields ->
             let

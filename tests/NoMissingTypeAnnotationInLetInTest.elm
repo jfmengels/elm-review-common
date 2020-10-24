@@ -313,6 +313,18 @@ someValue = something"""
             , expectedType = "List Float"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is an empty list and Basics has been aliased"
+            { arguments = ""
+            , value = """[]"""
+            , expectedType = "List nothing"
+            , topLevelDeclarations = "import Basics as Thing"
+            }
+        , fixTest "when value is a non-empty list and Basics has been aliased"
+            { arguments = ""
+            , value = """[ 1.0 ]"""
+            , expectedType = "List Thing.Float"
+            , topLevelDeclarations = "import Basics as Thing"
+            }
         , fixTest "when value is a list with typeclasses where one element is very precise (in a different order)"
             { arguments = ""
             , value = "[ 1, a, 1.1, 1 ]"
