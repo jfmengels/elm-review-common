@@ -337,6 +337,12 @@ someValue = something"""
             , expectedType = "{ a : String, b : Float }"
             , topLevelDeclarations = ""
             }
+        , fixTest "when value is a record with a type variable"
+            { arguments = ""
+            , value = """{ a = Nothing }"""
+            , expectedType = "{ a : Maybe a }"
+            , topLevelDeclarations = ""
+            }
         , noFixTest "should not provide a fix when value is a record where some fields are unknown"
             { arguments = ""
             , value = "{ a = someThing, b = 1.0 }"
