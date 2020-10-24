@@ -971,7 +971,7 @@ port output : String -> Cmd Msg
                                 |> Review.Test.whenFixed """module A exposing (..)
 import B
 a = let
-      hasNoTypeAnnotation : String -> Cmd Msg
+      hasNoTypeAnnotation : String -> Cmd B.Msg
       hasNoTypeAnnotation = B.output
     in
     d
