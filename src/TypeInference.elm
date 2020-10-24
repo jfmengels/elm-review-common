@@ -420,17 +420,11 @@ inferType context node =
             Just (Type.Tuple [])
 
         Expression.FunctionOrValue _ name ->
-            case ( ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable node, name ) of
-                ( Just [ "Basics" ], "True" ) ->
-                    Just (Type.Type [ "Basics" ] "Bool" [])
-
-                ( Just [ "Basics" ], "False" ) ->
-                    Just (Type.Type [ "Basics" ] "Bool" [])
-
-                ( Just [], _ ) ->
+            case ModuleNameLookupTable.moduleNameFor context.moduleNameLookupTable node of
+                Just [] ->
                     TypeByNameLookup.byName context.typeByNameLookup name
 
-                ( Just moduleName, _ ) ->
+                Just moduleName ->
                     case ModuleInformation.forModule moduleName context.typeInference.moduleInformationDict of
                         Just module_ ->
                             ModuleInformation.values module_
@@ -440,7 +434,7 @@ inferType context node =
                         Nothing ->
                             Nothing
 
-                _ ->
+                Nothing ->
                     Nothing
 
         Expression.Application elements ->

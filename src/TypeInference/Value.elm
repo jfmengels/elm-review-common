@@ -2,7 +2,8 @@ module TypeInference.Value exposing
     ( Value
     , comment
     , create
-    , fromMetadata
+    , fromMetadataUnion
+    , fromMetadataValue
     , name
     , relateToModule
     , tipe
@@ -31,13 +32,30 @@ relateToModule moduleName (Value value) =
     Value { value | tipe = Type.relateToModule moduleName value.tipe }
 
 
-fromMetadata : Elm.Docs.Value -> Value
-fromMetadata value =
+fromMetadataValue : Elm.Docs.Value -> Value
+fromMetadataValue value =
     Value
         { name = value.name
         , documentation = value.comment
         , tipe = Type.fromMetadataType value.tipe
         }
+
+
+fromMetadataUnion : ModuleName -> Elm.Docs.Union -> List Value
+fromMetadataUnion moduleName value =
+    List.map
+        (\( name_, types ) ->
+            Value
+                { name = name_
+                , documentation = value.comment
+                , tipe =
+                    List.foldl
+                        (\input output -> Type.Function (Type.fromMetadataType input) output)
+                        (Type.Type moduleName value.name (List.map Type.Generic value.args))
+                        types
+                }
+        )
+        value.tags
 
 
 name : Value -> String

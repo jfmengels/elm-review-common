@@ -29,9 +29,21 @@ fromDependencies dependencies =
         |> List.concatMap Review.Project.Dependency.modules
         |> List.map
             (\module_ ->
-                ( String.split "." module_.name
+                let
+                    moduleName : List String
+                    moduleName =
+                        String.split "." module_.name
+                in
+                ( moduleName
                 , ModuleInformation
-                    { values = dictByName Value.fromMetadata module_.values
+                    { values =
+                        Dict.union
+                            (dictByName Value.fromMetadataValue module_.values)
+                            (module_.unions
+                                |> List.concatMap (Value.fromMetadataUnion moduleName)
+                                |> List.map (\element -> ( Value.name element, element ))
+                                |> Dict.fromList
+                            )
                     , binops = dictByName Binop.fromMetadata module_.binops
                     }
                 )
