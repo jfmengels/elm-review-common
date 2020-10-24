@@ -343,6 +343,13 @@ someValue = something"""
             , expectedType = "{ a : Maybe a }"
             , topLevelDeclarations = ""
             }
+        , Test.skip <|
+            fixTest "when value is a record with multiple probably disjoint type variables"
+                { arguments = ""
+                , value = """{ a = Nothing, b = Nothing }"""
+                , expectedType = "{ a : Maybe a, b : Maybe b }"
+                , topLevelDeclarations = ""
+                }
         , noFixTest "should not provide a fix when value is a record where some fields are unknown"
             { arguments = ""
             , value = "{ a = someThing, b = 1.0 }"
