@@ -37,13 +37,19 @@ fromDependencies dependencies =
                 ( moduleName
                 , ModuleInformation
                     { values =
-                        Dict.union
-                            (dictByName Value.fromMetadataValue module_.values)
-                            (module_.unions
-                                |> List.concatMap (Value.fromMetadataUnion moduleName)
-                                |> List.map (\element -> ( Value.name element, element ))
-                                |> Dict.fromList
-                            )
+                        dictByName Value.fromMetadataValue module_.values
+                            |> Dict.union
+                                (module_.unions
+                                    |> List.concatMap (Value.fromMetadataUnion moduleName)
+                                    |> List.map (\element -> ( Value.name element, element ))
+                                    |> Dict.fromList
+                                )
+                            |> Dict.union
+                                (module_.aliases
+                                    |> List.filterMap (Value.fromMetadataAlias moduleName)
+                                    |> List.map (\element -> ( Value.name element, element ))
+                                    |> Dict.fromList
+                                )
                     , binops = dictByName Binop.fromMetadata module_.binops
                     }
                 )
