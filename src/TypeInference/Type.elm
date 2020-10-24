@@ -114,11 +114,16 @@ relateToModule : ModuleName -> Type -> Type
 relateToModule moduleName type_ =
     case type_ of
         Type originalModuleName name types ->
-            if originalModuleName == [] then
-                Type moduleName name types
+            let
+                moduleNameToUse : ModuleName
+                moduleNameToUse =
+                    if originalModuleName == [] then
+                        moduleName
 
-            else
-                type_
+                    else
+                        originalModuleName
+            in
+            Type moduleNameToUse name (List.map (relateToModule moduleName) types)
 
         Unknown ->
             type_
