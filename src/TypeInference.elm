@@ -102,7 +102,7 @@ fromModuleToProject moduleName moduleContext =
     ProjectContext
         { dependencies = Dict.empty
         , moduleInformationDict =
-            ModuleInformation.singleton moduleName
+            ModuleInformation.fromVisitedModule moduleName
                 { values = List.map (Value.relateToModule moduleName) moduleContext.moduleValues
                 }
         }

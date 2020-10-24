@@ -5,8 +5,8 @@ module TypeInference.ModuleInformation exposing
     , empty
     , forModule
     , fromDependencies
+    , fromVisitedModule
     , merge
-    , singleton
     , values
     )
 
@@ -64,8 +64,8 @@ empty =
     ModuleInformationDict Dict.empty
 
 
-singleton : ModuleName -> { values : List Value } -> ModuleInformationDict
-singleton moduleName moduleData =
+fromVisitedModule : ModuleName -> { values : List Value } -> ModuleInformationDict
+fromVisitedModule moduleName moduleData =
     ModuleInformationDict
         (Dict.singleton moduleName
             (ModuleInformation
