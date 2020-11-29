@@ -5,11 +5,11 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.1/NoExposingEverything) - Forbids exporting everything from a module.
-- [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.1/NoImportingEverything) - Forbids importing everything from a module.
-- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.1/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
-- [`NoMissingTypeAnnotationInLetIn`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.1/NoMissingTypeAnnotationInLetIn) - Reports `let in` declarations that do not have a type annotation.
-- [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.1/NoMissingTypeExpose) - Reports types that should be exposed but are not.
+- [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoExposingEverything) - Forbids exporting everything from a module.
+- [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoImportingEverything) - Forbids importing everything from a module.
+- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
+- [`NoMissingTypeAnnotationInLetIn`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeAnnotationInLetIn) - Reports `let in` declarations that do not have a type annotation.
+- [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeExpose) - Reports types that should be exposed but are not.
 
 
 ## Configuration
@@ -43,4 +43,4 @@ elm-review --template jfmengels/elm-review-common/example
 
 ## Thanks
 
-Thanks to @sparksp for writing [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.1/NoMissingTypeExpose).
+Thanks to @sparksp for writing [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeExpose).

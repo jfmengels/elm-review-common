@@ -3,7 +3,7 @@
     "name": "jfmengels/elm-review-common",
     "summary": "Provides common linting rules for elm-review",
     "license": "BSD-3-Clause",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "exposed-modules": [
         "NoExposingEverything",
         "NoImportingEverything",
