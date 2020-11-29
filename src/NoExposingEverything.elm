@@ -56,15 +56,14 @@ elm-review --template jfmengels/elm-review-common/example --rules NoExposingEver
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoExposingEverything" ExposingUnknown
+    Rule.newModuleRuleSchema "NoExposingEverything" ExposingOk
         |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
         |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.fromModuleRuleSchema
 
 
 type ExposingContext
-    = ExposingUnknown
-    | ExposingOk
+    = ExposingOk
     | ExposingAll Range
 
 
