@@ -21,6 +21,7 @@ import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoUnused.CustomTypeConstructors
+import NoUnused.CustomTypeConstructorArgs
 import NoUnused.Dependencies
 import NoUnused.Exports
 import NoUnused.Modules
@@ -43,6 +44,7 @@ config =
     , NoMissingTypeAnnotationInLetIn.rule
     , NoMissingTypeExpose.rule
     , NoUnused.CustomTypeConstructors.rule []
+    , NoUnused.CustomTypeConstructorArgs.rule
     , NoUnused.Dependencies.rule
     , NoUnused.Exports.rule
     , NoUnused.Modules.rule
