@@ -9,6 +9,8 @@ module NoImportingEverything exposing (rule)
 import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Range as Range
+import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Error, Rule)
 import Set exposing (Set)
 
@@ -80,13 +82,14 @@ importVisitor exceptions node =
                 |> Maybe.map Node.value
         of
             Just (Exposing.All range) ->
-                [ Rule.error
+                [ Rule.errorWithFix
                     { message = "Prefer listing what you wish to import and/or using qualified imports"
                     , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
                     }
                     { start = { row = range.start.row, column = range.start.column - 1 }
                     , end = { row = range.end.row, column = range.end.column + 1 }
                     }
+                    [ removeExposingFix node ]
                 ]
 
             _ ->
@@ -99,3 +102,17 @@ moduleName node =
         |> Node.value
         |> .moduleName
         |> Node.value
+
+
+removeExposingFix : Node Import -> Fix
+removeExposingFix node =
+    let
+        endOfModuleName : Range.Location
+        endOfModuleName =
+            node |> Node.value |> .moduleName |> Node.range |> .end
+
+        endOfImport : Range.Location
+        endOfImport =
+            Node.range node |> .end
+    in
+    Fix.replaceRangeBy { start = endOfModuleName, end = endOfImport } ""
