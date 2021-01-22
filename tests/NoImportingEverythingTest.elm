@@ -42,6 +42,9 @@ import Html exposing (..)
                             , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
                             , under = "(..)"
                             }
+                            |> Review.Test.whenFixed """module A exposing (thing)
+import Html
+"""
                         ]
         , test "should not report imports that are in the exceptions list" <|
             \_ ->
