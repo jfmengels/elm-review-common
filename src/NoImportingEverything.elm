@@ -106,13 +106,27 @@ moduleName node =
 
 removeExposingFix : Node Import -> Fix
 removeExposingFix node =
-    let
-        endOfModuleName : Range.Location
-        endOfModuleName =
-            node |> Node.value |> .moduleName |> Node.range |> .end
+    case node |> Node.value |> .moduleAlias of
+        Just aliasNode ->
+            let
+                endOfAliasName : Range.Location
+                endOfAliasName =
+                    aliasNode |> Node.range |> .end
 
-        endOfImport : Range.Location
-        endOfImport =
-            Node.range node |> .end
-    in
-    Fix.replaceRangeBy { start = endOfModuleName, end = endOfImport } ""
+                endOfImport : Range.Location
+                endOfImport =
+                    Node.range node |> .end
+            in
+            Fix.replaceRangeBy { start = endOfAliasName, end = endOfImport } ""
+
+        Nothing ->
+            let
+                endOfModuleName : Range.Location
+                endOfModuleName =
+                    node |> Node.value |> .moduleName |> Node.range |> .end
+
+                endOfImport : Range.Location
+                endOfImport =
+                    Node.range node |> .end
+            in
+            Fix.replaceRangeBy { start = endOfModuleName, end = endOfImport } ""
