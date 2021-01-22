@@ -6,11 +6,15 @@ module NoImportingEverything exposing (rule)
 
 -}
 
+import Dict exposing (Dict)
 import Elm.Syntax.Exposing as Exposing
+import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Import exposing (Import)
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node)
-import Elm.Syntax.Range as Range
+import Elm.Syntax.Range as Range exposing (Range)
 import Review.Fix as Fix exposing (Fix)
+import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
 import Set exposing (Set)
 
@@ -58,9 +62,38 @@ elm-review --template jfmengels/elm-review-common/example --rules NoImportingEve
 -}
 rule : List String -> Rule
 rule exceptions =
-    Rule.newModuleRuleSchema "NoImportingEverything" ()
-        |> Rule.withSimpleImportVisitor (importVisitor <| exceptionsToSet exceptions)
+    Rule.newModuleRuleSchemaUsingContextCreator "NoImportingEverything" createContext
+        |> Rule.withImportVisitor (importVisitor <| exceptionsToSet exceptions)
+        |> Rule.withExpressionEnterVisitor expressionVisitor
+        |> Rule.withFinalModuleEvaluation finalEvaluation
         |> Rule.fromModuleRuleSchema
+
+
+type alias Context =
+    { lookupTable : ModuleNameLookupTable
+    , importsExposingAll : Dict ModuleName ImportExposingAll
+    }
+
+
+type alias ImportExposingAll =
+    { node : Node Import
+    , exposingRange : Range
+    , values : Set String
+    }
+
+
+createContext : Rule.ContextCreator () Context
+createContext =
+    Rule.initContextCreator
+        (\lookupTable () -> initialContext lookupTable)
+        |> Rule.withModuleNameLookupTable
+
+
+initialContext : ModuleNameLookupTable -> Context
+initialContext lookupTable =
+    { lookupTable = lookupTable
+    , importsExposingAll = Dict.empty
+    }
 
 
 exceptionsToSet : List String -> Set (List String)
@@ -70,10 +103,15 @@ exceptionsToSet exceptions =
         |> Set.fromList
 
 
-importVisitor : Set (List String) -> Node Import -> List (Error {})
-importVisitor exceptions node =
-    if Set.member (moduleName node) exceptions then
-        []
+importVisitor : Set (List String) -> Node Import -> Context -> ( List (Error nothing), Context )
+importVisitor exceptions node context =
+    let
+        moduleName : ModuleName
+        moduleName =
+            importModuleName node
+    in
+    if Set.member moduleName exceptions then
+        ( [], context )
 
     else
         case
@@ -81,27 +119,92 @@ importVisitor exceptions node =
                 |> .exposingList
                 |> Maybe.map Node.value
         of
-            Just (Exposing.All range) ->
-                [ Rule.errorWithFix
-                    { message = "Prefer listing what you wish to import and/or using qualified imports"
-                    , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
-                    }
-                    { start = { row = range.start.row, column = range.start.column - 1 }
-                    , end = { row = range.end.row, column = range.end.column + 1 }
-                    }
-                    [ removeExposingFix node ]
-                ]
+            Just (Exposing.All allRange) ->
+                ( []
+                , { context
+                    | importsExposingAll =
+                        Dict.insert moduleName
+                            { node = node
+                            , exposingRange = allRange
+                            , values = Set.empty
+                            }
+                            context.importsExposingAll
+                  }
+                )
 
             _ ->
-                []
+                ( [], context )
 
 
-moduleName : Node Import -> List String
-moduleName node =
+expressionVisitor : Node Expression -> Context -> ( List (Rule.Error nothing), Context )
+expressionVisitor node context =
+    case Node.value node of
+        Expression.FunctionOrValue [] name ->
+            case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
+                Just moduleName ->
+                    ( []
+                    , useImportedFunction context moduleName name
+                    )
+
+                Nothing ->
+                    ( [], context )
+
+        _ ->
+            ( [], context )
+
+
+finalEvaluation : Context -> List (Error {})
+finalEvaluation context =
+    context.importsExposingAll
+        |> Dict.values
+        |> List.map importError
+
+
+importError : ImportExposingAll -> Error {}
+importError ({ exposingRange } as importExposingAll) =
+    Rule.errorWithFix
+        { message = "Prefer listing what you wish to import and/or using qualified imports"
+        , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+        }
+        { start = { row = exposingRange.start.row, column = exposingRange.start.column - 1 }
+        , end = { row = exposingRange.end.row, column = exposingRange.end.column + 1 }
+        }
+        [ exposingFix importExposingAll ]
+
+
+useImportedFunction : Context -> ModuleName -> String -> Context
+useImportedFunction context moduleName name =
+    { context
+        | importsExposingAll = Dict.update moduleName (updateImportsUsed name) context.importsExposingAll
+    }
+
+
+updateImportsUsed : String -> Maybe ImportExposingAll -> Maybe ImportExposingAll
+updateImportsUsed name maybeImport =
+    Maybe.map (insertValueUsed name) maybeImport
+
+
+insertValueUsed : String -> ImportExposingAll -> ImportExposingAll
+insertValueUsed name importExposingAll =
+    { importExposingAll | values = Set.insert name importExposingAll.values }
+
+
+importModuleName : Node Import -> List String
+importModuleName node =
     node
         |> Node.value
         |> .moduleName
         |> Node.value
+
+
+exposingFix : ImportExposingAll -> Fix
+exposingFix { node, exposingRange, values } =
+    case Set.toList values of
+        [] ->
+            removeExposingFix node
+
+        list ->
+            replaceExposingFix list exposingRange
 
 
 removeExposingFix : Node Import -> Fix
@@ -130,3 +233,8 @@ removeExposingFix node =
                     Node.range node |> .end
             in
             Fix.replaceRangeBy { start = endOfModuleName, end = endOfImport } ""
+
+
+replaceExposingFix : List String -> Range -> Fix
+replaceExposingFix values range =
+    Fix.replaceRangeBy range (String.join ", " values)
