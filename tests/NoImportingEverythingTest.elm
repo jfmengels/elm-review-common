@@ -46,6 +46,22 @@ import Html exposing (..)
 import Html
 """
                         ]
+        , test "should report aliased imports that expose everything" <|
+            \_ ->
+                """module A exposing (thing)
+import Json.Decode as JD exposing (..)
+"""
+                    |> Review.Test.run (rule [])
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Prefer listing what you wish to import and/or using qualified imports"
+                            , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                            , under = "(..)"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (thing)
+import Json.Decode as JD
+"""
+                        ]
         , test "should not report imports that are in the exceptions list" <|
             \_ ->
                 """module A exposing (thing)
