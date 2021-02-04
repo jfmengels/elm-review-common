@@ -63,7 +63,10 @@ expressionVisitor node =
                             List.filterMap
                                 (\declaration ->
                                     case Node.value declaration of
-                                        _ ->
+                                        Expression.LetFunction function ->
+                                            Nothing
+
+                                        Expression.LetDestructuring _ _ ->
                                             Nothing
                                 )
                                 declarations
