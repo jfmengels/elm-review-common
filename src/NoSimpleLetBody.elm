@@ -57,7 +57,7 @@ expressionVisitor node =
     case Node.value node of
         Expression.LetExpression { expression } ->
             case Node.value expression of
-                Expression.FunctionOrValue [] _ ->
+                Expression.FunctionOrValue [] name ->
                     [ Rule.error
                         { message = "REPLACEME"
                         , details = [ "REPLACEME" ]
