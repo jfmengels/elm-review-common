@@ -31,4 +31,30 @@ a = let b = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report an error if the return value was not declared in the let" <|
+            \() ->
+                """module A exposing (..)
+a = let b = 1
+    in c
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should not report an error if the return value was destructured in the let" <|
+            \() ->
+                """module A exposing (..)
+a1 = let (b, _) = 1
+     in b
+a2 = let {b} = 1
+     in b
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should not report an error if the return value is a reference to another module's value with the same name as something declared" <|
+            \() ->
+                """module A exposing (..)
+a = let b = 1
+    in A.b
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
