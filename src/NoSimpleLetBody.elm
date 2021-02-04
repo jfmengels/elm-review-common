@@ -6,6 +6,8 @@ module NoSimpleLetBody exposing (rule)
 
 -}
 
+import Elm.Syntax.Expression exposing (Expression)
+import Elm.Syntax.Node exposing (Node)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -46,5 +48,10 @@ elm-review --template jfmengels/elm-review-common/example --rules NoSimpleLetBod
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoSimpleLetBody" ()
-        -- Add your visitors
+        |> Rule.withSimpleExpressionVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
+
+
+expressionVisitor : Node Expression -> List (Rule.Error {})
+expressionVisitor node =
+    []
