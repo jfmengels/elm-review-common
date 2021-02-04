@@ -60,7 +60,7 @@ expressionVisitor node =
                 Expression.FunctionOrValue [] name ->
                     let
                         declared =
-                            List.filterMap (\_ -> Nothing) declarations
+                            List.filterMap (\declaration -> Nothing) declarations
                     in
                     if List.member name declared then
                         [ Rule.error
