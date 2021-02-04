@@ -21,6 +21,6 @@ a = let b = 1
                             , details = [ "REPLACEME" ]
                             , under = "b"
                             }
-                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 14 } }
+                            |> Review.Test.atExactly { start = { row = 3, column = 8 }, end = { row = 3, column = 9 } }
                         ]
         ]
