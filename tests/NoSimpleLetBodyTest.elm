@@ -23,4 +23,12 @@ a = let b = 1
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 8 }, end = { row = 3, column = 9 } }
                         ]
+        , test "should not report an error when let body is a function call" <|
+            \() ->
+                """module A exposing (..)
+a = let b = 1
+    in b ()
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
