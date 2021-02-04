@@ -64,7 +64,11 @@ expressionVisitor node =
                                 (\declaration ->
                                     case Node.value declaration of
                                         Expression.LetFunction function ->
-                                            Nothing
+                                            function.declaration
+                                                |> Node.value
+                                                |> .name
+                                                |> Node.value
+                                                |> Just
 
                                         Expression.LetDestructuring _ _ ->
                                             Nothing
