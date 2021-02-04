@@ -58,7 +58,11 @@ expressionVisitor node =
         Expression.LetExpression { expression } ->
             case Node.value expression of
                 Expression.FunctionOrValue [] name ->
-                    if List.member name [] then
+                    let
+                        declared =
+                            []
+                    in
+                    if List.member name declared then
                         [ Rule.error
                             { message = "REPLACEME"
                             , details = [ "REPLACEME" ]
