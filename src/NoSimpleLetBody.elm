@@ -57,9 +57,9 @@ expressionVisitor node =
     case Node.value node of
         Expression.LetExpression { expression } ->
             case Node.value expression of
-                Expression.FunctionOrValue _ _ ->
-                    []
-
+                --Expression.FunctionOrValue _ _ ->
+                --    []
+                --
                 _ ->
                     []
 
