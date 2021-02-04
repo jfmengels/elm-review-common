@@ -58,12 +58,16 @@ expressionVisitor node =
         Expression.LetExpression { expression } ->
             case Node.value expression of
                 Expression.FunctionOrValue [] name ->
-                    [ Rule.error
-                        { message = "REPLACEME"
-                        , details = [ "REPLACEME" ]
-                        }
-                        (Node.range expression)
-                    ]
+                    if True then
+                        [ Rule.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            }
+                            (Node.range expression)
+                        ]
+
+                    else
+                        []
 
                 _ ->
                     []
