@@ -62,7 +62,7 @@ expressionVisitor node =
                         declared =
                             List.filterMap
                                 (\declaration ->
-                                    case declaration of
+                                    case Node.value declaration of
                                         _ ->
                                             Nothing
                                 )
