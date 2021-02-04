@@ -5,12 +5,12 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoSimpleLetBody`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoSimpleLetBody) - Reports REPLACEME.
 - [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoExposingEverything) - Forbids exporting everything from a module.
 - [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoImportingEverything) - Forbids importing everything from a module.
-- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
 - [`NoMissingTypeAnnotationInLetIn`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeAnnotationInLetIn) - Reports `let in` declarations that do not have a type annotation.
+- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
 - [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoMissingTypeExpose) - Reports types that should be exposed but are not.
+- [`NoSimpleLetBody`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.2/NoSimpleLetBody) - Reports when a let expression's body is a simple reference to a value declared in the let expression.
 
 
 ## Configuration

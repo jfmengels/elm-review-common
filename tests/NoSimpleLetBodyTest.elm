@@ -17,8 +17,11 @@ a = let b = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = "The referenced value should be inlined."
+                            , details =
+                                [ "The name of the value is redundant with the surrounding expression."
+                                , "If you feel like the expression needs a name because it is too complex, consider splitting the expression up more or extracting it to a new function."
+                                ]
                             , under = "b"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 8 }, end = { row = 3, column = 9 } }
