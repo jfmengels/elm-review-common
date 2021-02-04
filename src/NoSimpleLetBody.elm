@@ -61,7 +61,12 @@ expressionVisitor node =
                 --    []
                 --
                 _ ->
-                    []
+                    [ Rule.error
+                        { message = "REPLACEME"
+                        , details = [ "REPLACEME" ]
+                        }
+                        (Node.range expression)
+                    ]
 
         _ ->
             []
