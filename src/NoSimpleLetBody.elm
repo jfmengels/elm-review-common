@@ -55,12 +55,12 @@ rule =
 expressionVisitor : Node Expression -> List (Rule.Error {})
 expressionVisitor node =
     case Node.value node of
-        Expression.LetExpression { expression } ->
+        Expression.LetExpression { declarations, expression } ->
             case Node.value expression of
                 Expression.FunctionOrValue [] name ->
                     let
                         declared =
-                            List.filterMap (\_ -> Nothing) []
+                            List.filterMap (\_ -> Nothing) declarations
                     in
                     if List.member name declared then
                         [ Rule.error
