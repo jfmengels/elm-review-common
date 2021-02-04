@@ -59,6 +59,7 @@ expressionVisitor node =
             case Node.value expression of
                 Expression.FunctionOrValue [] name ->
                     let
+                        declared : List String
                         declared =
                             List.filterMap
                                 (\declaration ->
