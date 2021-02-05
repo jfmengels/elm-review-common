@@ -111,7 +111,7 @@ expressionVisitor node =
                             { message = "The referenced value should be inlined."
                             , details =
                                 [ "The name of the value is redundant with the surrounding expression."
-                                , "If you feel like the expression needs a name because it is too complex, consider splitting the expression up more or extracting it to a new function."
+                                , "If you believe that the expression needs a name because it is too complex, consider splitting the expression up more or extracting it to a new function."
                                 ]
                             }
                             (Node.range expression)
