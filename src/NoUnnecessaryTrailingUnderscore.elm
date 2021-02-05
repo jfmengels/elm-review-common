@@ -61,18 +61,20 @@ declarationVisitor node context =
             let
                 argNames : List ( Range, String )
                 argNames =
-                    []
-            in
-            ( (function.declaration |> Node.value |> .arguments)
-                |> List.filterMap
-                    (\arg ->
-                        case Node.value arg of
-                            Pattern.VarPattern name ->
-                                Just ( Node.range arg, name )
+                    function.declaration
+                        |> Node.value
+                        |> .arguments
+                        |> List.filterMap
+                            (\arg ->
+                                case Node.value arg of
+                                    Pattern.VarPattern name ->
+                                        Just ( Node.range arg, name )
 
-                            _ ->
-                                Nothing
-                    )
+                                    _ ->
+                                        Nothing
+                            )
+            in
+            ( argNames
                 |> List.filter (Tuple.second >> String.endsWith "_")
                 |> List.map
                     (\( range, name ) ->
