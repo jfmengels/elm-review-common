@@ -11,14 +11,14 @@ all =
         [ test "should report an error when REPLACEME" <|
             \() ->
                 """module A exposing (..)
-a = 1
+a value_ = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "REPLACEME"
                             , details = [ "REPLACEME" ]
-                            , under = "REPLACEME"
+                            , under = "value_"
                             }
                         ]
         ]
