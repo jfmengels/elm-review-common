@@ -28,4 +28,11 @@ a value = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report an error when another argument with the same name without the _ exists" <|
+            \() ->
+                """module A exposing (..)
+a value_ value = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
