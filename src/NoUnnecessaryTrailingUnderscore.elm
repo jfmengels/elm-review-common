@@ -56,12 +56,15 @@ rule =
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
-            ( [ Rule.error
-                    { message = "REPLACEME"
-                    , details = [ "REPLACEME" ]
-                    }
-                    (Node.range node)
-              ]
+            ( List.map
+                (\_ ->
+                    Rule.error
+                        { message = "REPLACEME"
+                        , details = [ "REPLACEME" ]
+                        }
+                        (Node.range node)
+                )
+                []
             , context
             )
 
