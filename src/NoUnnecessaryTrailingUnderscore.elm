@@ -67,20 +67,19 @@ declarationVisitor node context =
                     (\arg ->
                         case Node.value arg of
                             Pattern.VarPattern name ->
-                                if String.endsWith "_" name then
-                                    Just
-                                        (Rule.error
-                                            { message = "REPLACEME"
-                                            , details = [ "REPLACEME" ]
-                                            }
-                                            (Node.range arg)
-                                        )
-
-                                else
-                                    Nothing
+                                Just ( Node.range arg, name )
 
                             _ ->
                                 Nothing
+                    )
+                |> List.filter (Tuple.second >> String.endsWith "_")
+                |> List.map
+                    (\( range, name ) ->
+                        Rule.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            }
+                            range
                     )
             , context
             )
