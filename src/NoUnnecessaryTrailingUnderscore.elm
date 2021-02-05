@@ -64,7 +64,7 @@ declarationVisitor node context =
                         }
                         (Node.range arg)
                 )
-                []
+                (function.declaration |> Node.value |> .arguments)
             , context
             )
 
