@@ -6,6 +6,7 @@ module NoUnnecessaryTrailingUnderscore exposing (rule)
 
 -}
 
+import Elm.Syntax.Declaration as Declaration
 import Elm.Syntax.Node as Node
 import Review.Rule as Rule exposing (Rule)
 
@@ -53,14 +54,19 @@ rule =
 
 
 declarationVisitor node context =
-    ( [ Rule.error
-            { message = "REPLACEME"
-            , details = [ "REPLACEME" ]
-            }
-            (Node.range node)
-      ]
-    , context
-    )
+    case Node.value node of
+        Declaration.FunctionDeclaration function ->
+            ( [ Rule.error
+                    { message = "REPLACEME"
+                    , details = [ "REPLACEME" ]
+                    }
+                    (Node.range node)
+              ]
+            , context
+            )
+
+        _ ->
+            ( [], context )
 
 
 expressionVisitor node context =
