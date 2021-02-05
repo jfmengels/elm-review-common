@@ -8,6 +8,7 @@ module NoUnnecessaryTrailingUnderscore exposing (rule)
 
 import Elm.Syntax.Declaration as Declaration
 import Elm.Syntax.Node as Node
+import Elm.Syntax.Pattern as Pattern
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -59,7 +60,7 @@ declarationVisitor node context =
             ( List.filterMap
                 (\arg ->
                     case Node.value arg of
-                        _ ->
+                        Pattern.VarPattern name ->
                             Just
                                 (Rule.error
                                     { message = "REPLACEME"
@@ -67,6 +68,9 @@ declarationVisitor node context =
                                     }
                                     (Node.range arg)
                                 )
+
+                        _ ->
+                            Nothing
                 )
                 (function.declaration |> Node.value |> .arguments)
             , context
