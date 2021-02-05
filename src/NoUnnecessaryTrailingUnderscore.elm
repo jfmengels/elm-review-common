@@ -62,26 +62,26 @@ declarationVisitor node context =
                 argNames =
                     []
             in
-            ( List.filterMap
-                (\arg ->
-                    case Node.value arg of
-                        Pattern.VarPattern name ->
-                            if String.endsWith "_" name then
-                                Just
-                                    (Rule.error
-                                        { message = "REPLACEME"
-                                        , details = [ "REPLACEME" ]
-                                        }
-                                        (Node.range arg)
-                                    )
+            ( (function.declaration |> Node.value |> .arguments)
+                |> List.filterMap
+                    (\arg ->
+                        case Node.value arg of
+                            Pattern.VarPattern name ->
+                                if String.endsWith "_" name then
+                                    Just
+                                        (Rule.error
+                                            { message = "REPLACEME"
+                                            , details = [ "REPLACEME" ]
+                                            }
+                                            (Node.range arg)
+                                        )
 
-                            else
+                                else
+                                    Nothing
+
+                            _ ->
                                 Nothing
-
-                        _ ->
-                            Nothing
-                )
-                (function.declaration |> Node.value |> .arguments)
+                    )
             , context
             )
 
