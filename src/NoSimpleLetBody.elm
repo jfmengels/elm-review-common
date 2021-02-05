@@ -71,7 +71,7 @@ your team's frustration if they disagree with or don't care about this rule.
 You can try this rule out by running the following command:
 
 ```bash
-elm-review --template jfmengels/elm-review-common/example --rules NoSimpleLetBody
+elm-review --template jfmengels/elm-review-common/no-simple-let-body --rules NoSimpleLetBody
 ```
 
 -}
