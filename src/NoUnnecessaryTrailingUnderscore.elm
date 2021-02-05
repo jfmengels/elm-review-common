@@ -9,6 +9,7 @@ module NoUnnecessaryTrailingUnderscore exposing (rule)
 import Elm.Syntax.Declaration as Declaration
 import Elm.Syntax.Node as Node exposing (Node)
 import Elm.Syntax.Pattern as Pattern
+import Elm.Syntax.Range exposing (Range)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -58,7 +59,7 @@ declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
             let
-                argNames : List (Node String)
+                argNames : List ( Range, String )
                 argNames =
                     []
             in
