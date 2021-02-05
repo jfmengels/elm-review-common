@@ -61,13 +61,17 @@ declarationVisitor node context =
                 (\arg ->
                     case Node.value arg of
                         Pattern.VarPattern name ->
-                            Just
-                                (Rule.error
-                                    { message = "REPLACEME"
-                                    , details = [ "REPLACEME" ]
-                                    }
-                                    (Node.range arg)
-                                )
+                            if String.endsWith "_" name then
+                                Just
+                                    (Rule.error
+                                        { message = "REPLACEME"
+                                        , details = [ "REPLACEME" ]
+                                        }
+                                        (Node.range arg)
+                                    )
+
+                            else
+                                Nothing
 
                         _ ->
                             Nothing
