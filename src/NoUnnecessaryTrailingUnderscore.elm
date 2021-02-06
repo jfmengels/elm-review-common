@@ -244,6 +244,10 @@ expressionVisitorHelp node context =
                 [ ( args, expression ) ]
                 context
 
+        Expression.LetExpression { declarations, expression } ->
+            {- TODO -}
+            ( [], context )
+
         _ ->
             ( [], context )
 
