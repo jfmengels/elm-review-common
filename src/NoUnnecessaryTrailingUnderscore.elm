@@ -124,10 +124,6 @@ declarationVisitor node context =
 argumentErrors : Scopes -> List (Node Pattern.Pattern) -> List (Rule.Error {})
 argumentErrors scopes arguments =
     let
-        newScopes : Scopes
-        newScopes =
-            scopes
-
         argNames : List ( Range, String )
         argNames =
             List.concatMap getDeclaredVariableNames arguments
@@ -137,6 +133,10 @@ argumentErrors scopes arguments =
             argNames
                 |> List.map Tuple.second
                 |> Set.fromList
+
+        newScopes : Scopes
+        newScopes =
+            scopes
     in
     List.filterMap (error newScopes) argNames
 
