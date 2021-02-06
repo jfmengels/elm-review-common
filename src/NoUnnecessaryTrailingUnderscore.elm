@@ -124,6 +124,7 @@ declarationVisitor node context =
 argumentErrors : Scopes -> List (Node Pattern.Pattern) -> List (Rule.Error {})
 argumentErrors scopes arguments =
     let
+        newScopes : Scopes
         newScopes =
             scopes
 
