@@ -204,13 +204,7 @@ expressionVisitor node context =
 
                 errors : List (Rule.Error {})
                 errors =
-                    List.concatMap
-                        (\( pattern, _ ) ->
-                            pattern
-                                |> getDeclaredVariableNames
-                                |> List.filterMap (error context.scopes)
-                        )
-                        cases
+                    List.filterMap (error context.scopes) names
             in
             ( errors, context )
 
