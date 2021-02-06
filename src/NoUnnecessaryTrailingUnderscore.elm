@@ -113,7 +113,7 @@ declarationVisitor node context =
             ( function.declaration
                 |> Node.value
                 |> .arguments
-                |> argumentErrors
+                |> argumentErrors context.scopes
             , context
             )
 
@@ -121,9 +121,12 @@ declarationVisitor node context =
             ( [], context )
 
 
-argumentErrors : List (Node Pattern.Pattern) -> List (Rule.Error {})
-argumentErrors arguments =
+argumentErrors : Scopes -> List (Node Pattern.Pattern) -> List (Rule.Error {})
+argumentErrors scopes arguments =
     let
+        newScopes =
+            scopes
+
         argNames : List ( Range, String )
         argNames =
             List.concatMap getDeclaredVariableNames arguments
@@ -134,7 +137,7 @@ argumentErrors arguments =
                 |> List.map Tuple.second
                 |> Set.fromList
     in
-    List.filterMap (error ( argNamesInScope, [] {- TODO -} )) argNames
+    List.filterMap (error newScopes) argNames
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
