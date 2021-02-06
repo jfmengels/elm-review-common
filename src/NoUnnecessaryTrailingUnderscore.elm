@@ -96,7 +96,7 @@ declarationListVisitor declarations emptyContext =
 
                       else
                         errors
-                    , context
+                    , { context | scope = context.scope }
                     )
 
                 _ ->
