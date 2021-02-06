@@ -59,11 +59,11 @@ rule =
 
 
 type alias Context =
-    { scopes : Stack String
+    { scopes : Scopes String
     }
 
 
-type alias Stack comparable =
+type alias Scopes comparable =
     ( Set comparable, List (Set comparable) )
 
 
@@ -208,7 +208,7 @@ expressionVisitor node context =
             ( [], context )
 
 
-error : Stack String -> ( Range, String ) -> Maybe (Rule.Error {})
+error : Scopes String -> ( Range, String ) -> Maybe (Rule.Error {})
 error scopes ( range, name ) =
     if
         String.endsWith "_" name
@@ -227,6 +227,6 @@ error scopes ( range, name ) =
         Nothing
 
 
-isDefinedInScope : Stack String -> String -> Bool
+isDefinedInScope : Scopes String -> String -> Bool
 isDefinedInScope ( top, rest ) name =
     List.any (Set.member name) (top :: rest)
