@@ -70,7 +70,10 @@ declarationVisitor node context =
 
                 functionName : Range
                 functionName =
-                    function.declaration |> Node.value |> .name |> Node.range
+                    function.declaration
+                        |> Node.value
+                        |> .name
+                        |> Node.range
             in
             ( if True then
                 Rule.error
