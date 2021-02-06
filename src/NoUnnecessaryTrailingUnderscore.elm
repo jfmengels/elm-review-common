@@ -96,7 +96,7 @@ declarationListVisitor declarations emptyContext =
 
                       else
                         errors
-                    , { context | scope = context.scope }
+                    , { context | scopes = Tuple.mapFirst (Set.insert (Node.value functionName)) context.scopes }
                     )
 
                 _ ->
