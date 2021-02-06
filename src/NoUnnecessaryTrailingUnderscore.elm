@@ -194,9 +194,9 @@ expressionVisitor node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
             let
-                names : List (List ( Range, String ))
+                names : List ( Range, String )
                 names =
-                    List.map
+                    List.concatMap
                         (\( pattern, _ ) ->
                             getDeclaredVariableNames pattern
                         )
