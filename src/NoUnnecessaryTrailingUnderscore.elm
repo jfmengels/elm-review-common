@@ -209,4 +209,4 @@ error context ( range, name ) =
 
 isDefinedInScope : Context -> String -> Bool
 isDefinedInScope ( top, rest ) name =
-    Set.member name top
+    List.any (Set.member name) (top :: rest)
