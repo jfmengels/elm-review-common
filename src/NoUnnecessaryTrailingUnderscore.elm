@@ -249,6 +249,15 @@ expressionVisitorHelp node context =
                     List.concatMap
                         (\( pattern, _ ) ->
                             getDeclaredVariableNames pattern
+                                |> List.filter
+                                    (\{ origin } ->
+                                        case origin of
+                                            FromRecord ->
+                                                False
+
+                                            NotFromRecord ->
+                                                True
+                                    )
                         )
                         cases
 
