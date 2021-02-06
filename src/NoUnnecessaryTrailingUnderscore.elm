@@ -198,7 +198,17 @@ reservedElmKeywords =
 
 expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitor node context =
-    expressionVisitorHelp node context
+    let
+        newContext : Context
+        newContext =
+            case Dict.get (Node.range node |> rangeToRangeLike) context.scopesToAdd of
+                Just scopeToAdd ->
+                    { context | scopes = addNewScope scopeToAdd context.scopes }
+
+                Nothing ->
+                    context
+    in
+    expressionVisitorHelp node newContext
 
 
 expressionVisitorHelp : Node Expression -> Context -> ( List (Rule.Error {}), Context )
