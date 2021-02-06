@@ -198,6 +198,11 @@ reservedElmKeywords =
 
 expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitor node context =
+    expressionVisitorHelp node context
+
+
+expressionVisitorHelp : Node Expression -> Context -> ( List (Rule.Error {}), Context )
+expressionVisitorHelp node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
             let
