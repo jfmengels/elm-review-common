@@ -6,6 +6,7 @@ module NoUnnecessaryTrailingUnderscore exposing (rule)
 
 -}
 
+import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
@@ -60,6 +61,7 @@ rule =
 
 type alias Context =
     { scopes : Scopes
+    , scopesToAdd : Dict RangeLike (Set String)
     }
 
 
@@ -67,9 +69,14 @@ type alias Scopes =
     ( Set String, List (Set String) )
 
 
+type alias RangeLike =
+    List Int
+
+
 initialContext : Context
 initialContext =
     { scopes = ( Set.empty, [] )
+    , scopesToAdd = Dict.empty
     }
 
 
@@ -241,3 +248,12 @@ error scopes ( range, name ) =
 isDefinedInScope : Scopes -> String -> Bool
 isDefinedInScope ( top, rest ) name =
     List.any (Set.member name) (top :: rest)
+
+
+rangeToRangeLike : Range -> List Int
+rangeToRangeLike range =
+    [ range.start.row
+    , range.start.column
+    , range.end.row
+    , range.end.column
+    ]
