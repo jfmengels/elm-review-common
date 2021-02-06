@@ -52,6 +52,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoUnnecessaryT
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoUnnecessaryTrailingUnderscore" initialContext
+        |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
@@ -70,6 +71,11 @@ initialContext : Context
 initialContext =
     { scopes = ( Set.empty, [] )
     }
+
+
+declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
+declarationListVisitor declarations context =
+    ( [], context )
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
