@@ -247,8 +247,19 @@ expressionVisitorHelp node context =
                                 getDeclaredVariableNames pattern
                             )
 
+                scopesToAdd : Dict RangeLike (Set String)
                 scopesToAdd =
-                    Dict.empty
+                    cases
+                        |> List.map
+                            (\( pattern, expression ) ->
+                                ( rangeToRangeLike (Node.range expression)
+                                , pattern
+                                    |> getDeclaredVariableNames
+                                    |> List.map Tuple.second
+                                    |> Set.fromList
+                                )
+                            )
+                        |> Dict.fromList
 
                 newScopes : Scopes
                 newScopes =
