@@ -125,14 +125,14 @@ declarationVisitor node context =
                         |> Node.value
                         |> .arguments
 
-                argNames : List ( Range, String )
+                argNames : List ScopeNames
                 argNames =
                     List.concatMap getDeclaredVariableNames arguments
 
                 argNamesInScope : Set String
                 argNamesInScope =
                     argNames
-                        |> List.map Tuple.second
+                        |> List.map .name
                         |> Set.fromList
 
                 newScopes : Scopes
@@ -147,17 +147,23 @@ declarationVisitor node context =
             ( [], context )
 
 
-getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
+type alias ScopeNames =
+    { name : String
+    , range : Range
+    }
+
+
+getDeclaredVariableNames : Node Pattern.Pattern -> List ScopeNames
 getDeclaredVariableNames pattern =
     case Node.value pattern of
         Pattern.VarPattern name ->
-            [ ( Node.range pattern, name ) ]
+            [ { name = name, range = Node.range pattern } ]
 
         Pattern.ParenthesizedPattern subPattern ->
             getDeclaredVariableNames subPattern
 
         Pattern.AsPattern subPattern name ->
-            ( Node.range name, Node.value name ) :: getDeclaredVariableNames subPattern
+            { name = Node.value name, range = Node.range name } :: getDeclaredVariableNames subPattern
 
         Pattern.TuplePattern patterns ->
             List.concatMap getDeclaredVariableNames patterns
@@ -172,7 +178,7 @@ getDeclaredVariableNames pattern =
             List.concatMap getDeclaredVariableNames patterns
 
         Pattern.RecordPattern fields ->
-            List.map (\field -> ( Node.range field, Node.value field )) fields
+            List.map (\field -> { name = Node.value field, range = Node.range field }) fields
 
         _ ->
             []
@@ -232,7 +238,7 @@ expressionVisitorHelp node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
             let
-                namesToReport : List ( Range, String )
+                namesToReport : List ScopeNames
                 namesToReport =
                     List.concatMap
                         (\( pattern, _ ) ->
@@ -248,7 +254,7 @@ expressionVisitorHelp node context =
                                 ( rangeToRangeLike (Node.range expression)
                                 , pattern
                                     |> getDeclaredVariableNames
-                                    |> List.map Tuple.second
+                                    |> List.map .name
                                     |> Set.fromList
                                 )
                             )
@@ -277,8 +283,8 @@ popScope ( head, tail ) =
             ( newHead, newTail )
 
 
-error : Scopes -> ( Range, String ) -> Maybe (Rule.Error {})
-error scopes ( range, name ) =
+error : Scopes -> ScopeNames -> Maybe (Rule.Error {})
+error scopes { range, name } =
     if
         String.endsWith "_" name
             && not (isDefinedInScope scopes (String.dropRight 1 name))
