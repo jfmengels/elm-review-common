@@ -249,15 +249,6 @@ expressionVisitorHelp node context =
                     List.concatMap
                         (\( pattern, _ ) ->
                             getDeclaredVariableNames pattern
-                                |> List.filter
-                                    (\{ origin } ->
-                                        case origin of
-                                            FromRecord ->
-                                                False
-
-                                            NotFromRecord ->
-                                                True
-                                    )
                         )
                         cases
 
@@ -299,11 +290,12 @@ popScope ( head, tail ) =
 
 
 error : Scopes -> ScopeNames -> Maybe (Rule.Error {})
-error scopes { range, name } =
+error scopes { range, name, origin } =
     if
         String.endsWith "_" name
             && not (isDefinedInScope scopes (String.dropRight 1 name))
             && not (Set.member name reservedElmKeywords)
+            && shouldNameBeReported origin
     then
         Just
             (Rule.error
@@ -315,6 +307,16 @@ error scopes { range, name } =
 
     else
         Nothing
+
+
+shouldNameBeReported : NameOrigin -> Bool
+shouldNameBeReported origin =
+    case origin of
+        FromRecord ->
+            False
+
+        NotFromRecord ->
+            True
 
 
 isDefinedInScope : Scopes -> String -> Bool
