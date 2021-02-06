@@ -74,39 +74,47 @@ initialContext =
 
 
 declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
-declarationListVisitor declarations context =
-    ( [], context )
+declarationListVisitor declarations emptyContext =
+    List.foldl
+        (\node ( errors, context ) ->
+            case Node.value node of
+                Declaration.FunctionDeclaration function ->
+                    let
+                        functionName : Node String
+                        functionName =
+                            function.declaration
+                                |> Node.value
+                                |> .name
+                    in
+                    ( if String.endsWith "_" (Node.value functionName) && not (Set.member (Node.value functionName) reservedElmKeywords) then
+                        Rule.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            }
+                            (Node.range functionName)
+                            :: errors
+
+                      else
+                        errors
+                    , context
+                    )
+
+                _ ->
+                    ( [], context )
+        )
+        ( [], emptyContext )
+        declarations
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
-            let
-                argErrors : List (Rule.Error {})
-                argErrors =
-                    argumentErrors
-                        (function.declaration
-                            |> Node.value
-                            |> .arguments
-                        )
-
-                functionName : Node String
-                functionName =
-                    function.declaration
-                        |> Node.value
-                        |> .name
-            in
-            ( if String.endsWith "_" (Node.value functionName) && not (Set.member (Node.value functionName) reservedElmKeywords) then
-                Rule.error
-                    { message = "REPLACEME"
-                    , details = [ "REPLACEME" ]
-                    }
-                    (Node.range functionName)
-                    :: argErrors
-
-              else
-                argErrors
+            ( argumentErrors
+                (function.declaration
+                    |> Node.value
+                    |> .arguments
+                )
             , context
             )
 
