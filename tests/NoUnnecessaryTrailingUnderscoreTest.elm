@@ -75,4 +75,17 @@ port_ = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should report an error when argument in parens has unnecessary trailing _" <|
+            \() ->
+                """module A exposing (..)
+a (value_) = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value_"
+                            }
+                        ]
         ]
