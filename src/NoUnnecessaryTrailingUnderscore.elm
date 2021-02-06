@@ -94,15 +94,6 @@ declarationVisitor node context =
 argumentErrors : List (Node Pattern.Pattern) -> List (Rule.Error {})
 argumentErrors arguments =
     let
-        getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
-        getDeclaredVariableNames arg =
-            case Node.value arg of
-                Pattern.VarPattern name ->
-                    [ ( Node.range arg, name ) ]
-
-                _ ->
-                    []
-
         argNames : List ( Range, String )
         argNames =
             List.concatMap getDeclaredVariableNames arguments
@@ -128,6 +119,16 @@ argumentErrors arguments =
                     }
                     range
             )
+
+
+getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
+getDeclaredVariableNames arg =
+    case Node.value arg of
+        Pattern.VarPattern name ->
+            [ ( Node.range arg, name ) ]
+
+        _ ->
+            []
 
 
 reservedElmKeywords : Set String
