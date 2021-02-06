@@ -6,7 +6,7 @@ module NoUnnecessaryTrailingUnderscore exposing (rule)
 
 -}
 
-import Elm.Syntax.Declaration as Declaration
+import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
 import Elm.Syntax.Pattern as Pattern
@@ -57,6 +57,11 @@ rule =
         |> Rule.fromModuleRuleSchema
 
 
+type alias Context =
+    ()
+
+
+declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
@@ -171,6 +176,7 @@ reservedElmKeywords =
         ]
 
 
+expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitor node context =
     case Node.value node of
         Expression.CaseExpression _ ->
