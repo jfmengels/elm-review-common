@@ -167,6 +167,7 @@ expressionVisitor node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
             let
+                errors : List (Rule.Error {})
                 errors =
                     List.concatMap
                         (\( pattern, _ ) ->
