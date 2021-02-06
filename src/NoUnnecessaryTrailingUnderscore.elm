@@ -96,14 +96,14 @@ argumentErrors arguments =
     let
         argNames : List ( Range, String )
         argNames =
-            List.filterMap
+            List.concatMap
                 (\arg ->
                     case Node.value arg of
                         Pattern.VarPattern name ->
-                            Just ( Node.range arg, name )
+                            [ ( Node.range arg, name ) ]
 
                         _ ->
-                            Nothing
+                            []
                 )
                 arguments
 
