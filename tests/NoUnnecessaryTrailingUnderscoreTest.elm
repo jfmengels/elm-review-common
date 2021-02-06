@@ -221,4 +221,22 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not consider a name from a different case as in the scope of a case" <|
+            \() ->
+                """module A exposing (..)
+a =
+    case b of
+      value -> 1
+      () ->
+        case b of
+          value_ -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value_"
+                            }
+                        ]
         ]
