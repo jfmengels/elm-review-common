@@ -74,7 +74,7 @@ declarationVisitor node context =
                         |> Node.value
                         |> .name
             in
-            ( if True then
+            ( if String.endsWith "_" (Node.value functionName) then
                 Rule.error
                     { message = "REPLACEME"
                     , details = [ "REPLACEME" ]
