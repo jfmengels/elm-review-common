@@ -110,11 +110,10 @@ declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Cont
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
-            ( argumentErrors
-                (function.declaration
-                    |> Node.value
-                    |> .arguments
-                )
+            ( function.declaration
+                |> Node.value
+                |> .arguments
+                |> argumentErrors
             , context
             )
 
