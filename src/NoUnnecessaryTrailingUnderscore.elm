@@ -194,6 +194,14 @@ expressionVisitor node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
             let
+                names : List (List ( Range, String ))
+                names =
+                    List.map
+                        (\( pattern, _ ) ->
+                            getDeclaredVariableNames pattern
+                        )
+                        cases
+
                 errors : List (Rule.Error {})
                 errors =
                     List.concatMap
