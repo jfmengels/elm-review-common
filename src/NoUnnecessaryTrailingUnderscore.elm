@@ -125,46 +125,18 @@ declarationVisitor node context =
                         |> Node.value
                         |> .arguments
 
-                argNames : List ScopeNames
-                argNames =
-                    List.concatMap getDeclaredVariableNames arguments
-
-                argNamesInScope : Set String
-                argNamesInScope =
-                    argNames
-                        |> List.map .name
-                        |> Set.fromList
-
-                newScopes : Scopes
-                newScopes =
-                    Tuple.mapFirst (Set.union argNamesInScope) context.scopes
-
-                bodyRange : RangeLike
-                bodyRange =
+                body : Node Expression
+                body =
                     function.declaration
                         |> Node.value
                         |> .expression
-                        |> Node.range
-                        |> rangeToRangeLike
-
-                scopesToAdd : Dict RangeLike (Set String)
-                scopesToAdd =
-                    arguments
-                        |> List.concatMap getDeclaredVariableNames
-                        |> List.map .name
-                        |> Set.fromList
-                        |> Dict.singleton bodyRange
             in
-            ( List.filterMap (error newScopes) argNames
-            , { context | scopesToAdd = scopesToAdd }
-            )
+            report
+                [ ( arguments, body ) ]
+                context
 
         _ ->
             ( [], context )
-
-
-reportAndAddToScopesToAdd names context =
-    ( [], context )
 
 
 type alias ScopeNames =
