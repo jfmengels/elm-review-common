@@ -165,10 +165,16 @@ reservedElmKeywords =
 expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitor node context =
     case Node.value node of
-        Expression.CaseExpression _ ->
+        Expression.CaseExpression { cases } ->
             let
                 errors =
-                    List.concatMap (\( pattern, _ ) -> []) []
+                    List.concatMap
+                        (\( pattern, _ ) ->
+                            pattern
+                                |> getDeclaredVariableNames
+                                |> List.filterMap (error {- TODO -} Set.empty)
+                        )
+                        cases
             in
             ( errors, context )
 
