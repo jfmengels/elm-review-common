@@ -233,18 +233,21 @@ expressionVisitorHelp node context =
             let
                 names : List ( Range, String )
                 names =
-                    List.concatMap
-                        (\( pattern, _ ) ->
-                            getDeclaredVariableNames pattern
-                        )
-                        cases
+                    cases
+                        |> List.concatMap
+                            (\( pattern, _ ) ->
+                                getDeclaredVariableNames pattern
+                            )
+
+                scopesToAdd =
+                    Dict.empty
 
                 newScopes : Scopes
                 newScopes =
                     Tuple.mapFirst (Set.union (names |> List.map Tuple.second |> Set.fromList)) context.scopes
             in
             ( List.filterMap (error context.scopes) names
-            , { context | scopes = newScopes }
+            , { context | scopesToAdd = Dict.union scopesToAdd context.scopesToAdd }
             )
 
         _ ->
