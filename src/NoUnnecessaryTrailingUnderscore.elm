@@ -110,18 +110,17 @@ declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Cont
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
-            ( function.declaration
+            function.declaration
                 |> Node.value
                 |> .arguments
                 |> argumentErrors context.scopes
-            , context
-            )
+                |> Tuple.mapSecond (\scopes -> { context | scopes = scopes })
 
         _ ->
             ( [], context )
 
 
-argumentErrors : Scopes -> List (Node Pattern.Pattern) -> List (Rule.Error {})
+argumentErrors : Scopes -> List (Node Pattern.Pattern) -> ( List (Rule.Error {}), Scopes )
 argumentErrors scopes arguments =
     let
         argNames : List ( Range, String )
@@ -138,7 +137,9 @@ argumentErrors scopes arguments =
         newScopes =
             Tuple.mapFirst (Set.union argNamesInScope) scopes
     in
-    List.filterMap (error newScopes) argNames
+    ( List.filterMap (error newScopes) argNames
+    , newScopes
+    )
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
