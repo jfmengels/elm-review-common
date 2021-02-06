@@ -180,7 +180,11 @@ expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Contex
 expressionVisitor node context =
     case Node.value node of
         Expression.CaseExpression _ ->
-            ( [], context )
+            let
+                errors =
+                    List.concatMap (\case_ -> []) []
+            in
+            ( errors, context )
 
         _ ->
             ( [], context )
