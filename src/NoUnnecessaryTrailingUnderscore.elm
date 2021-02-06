@@ -171,9 +171,10 @@ getDeclaredVariableNames pattern =
         Pattern.NamedPattern _ patterns ->
             List.concatMap getDeclaredVariableNames patterns
 
+        Pattern.RecordPattern fields ->
+            List.map (\field -> ( Node.range field, Node.value field )) fields
+
         _ ->
-            -- We're ignoring record pattern because this is not where the name has really been assigned.
-            -- This might create some false negatives, but that's fine.
             []
 
 
