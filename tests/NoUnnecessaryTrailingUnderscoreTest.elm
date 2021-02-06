@@ -24,7 +24,7 @@ a value_ = 1
         , test "should not report an error when argument does not have a trailing _" <|
             \() ->
                 """module A exposing (..)
-a value = 1
+a value va_lue = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
