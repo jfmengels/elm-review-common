@@ -51,14 +51,22 @@ elm-review --template jfmengels/elm-review-common/example --rules NoUnnecessaryT
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoUnnecessaryTrailingUnderscore" ()
+    Rule.newModuleRuleSchema "NoUnnecessaryTrailingUnderscore" ( Set.empty, [] )
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
-    ()
+    Stack NamesInScope
+
+
+type alias Stack comparable =
+    ( Set comparable, List (Set comparable) )
+
+
+type alias NamesInScope =
+    Set String
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
