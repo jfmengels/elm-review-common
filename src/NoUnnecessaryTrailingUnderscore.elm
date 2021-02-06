@@ -94,18 +94,18 @@ declarationVisitor node context =
 argumentErrors : List (Node Pattern.Pattern) -> List (Rule.Error {})
 argumentErrors arguments =
     let
+        getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
+        getDeclaredVariableNames arg =
+            case Node.value arg of
+                Pattern.VarPattern name ->
+                    [ ( Node.range arg, name ) ]
+
+                _ ->
+                    []
+
         argNames : List ( Range, String )
         argNames =
-            List.concatMap
-                (\arg ->
-                    case Node.value arg of
-                        Pattern.VarPattern name ->
-                            [ ( Node.range arg, name ) ]
-
-                        _ ->
-                            []
-                )
-                arguments
+            List.concatMap getDeclaredVariableNames arguments
 
         argNamesInScope : Set String
         argNamesInScope =
