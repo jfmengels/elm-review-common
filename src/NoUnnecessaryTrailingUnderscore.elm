@@ -138,9 +138,25 @@ declarationVisitor node context =
                 newScopes : Scopes
                 newScopes =
                     Tuple.mapFirst (Set.union argNamesInScope) context.scopes
+
+                bodyRange : RangeLike
+                bodyRange =
+                    function.declaration
+                        |> Node.value
+                        |> .expression
+                        |> Node.range
+                        |> rangeToRangeLike
+
+                scopesToAdd : Dict RangeLike (Set String)
+                scopesToAdd =
+                    arguments
+                        |> List.concatMap getDeclaredVariableNames
+                        |> List.map .name
+                        |> Set.fromList
+                        |> Dict.singleton bodyRange
             in
             ( List.filterMap (error newScopes) argNames
-            , { context | scopes = newScopes }
+            , { context | scopesToAdd = scopesToAdd }
             )
 
         _ ->
@@ -324,7 +340,7 @@ isDefinedInScope ( top, rest ) name =
     List.any (Set.member name) (top :: rest)
 
 
-rangeToRangeLike : Range -> List Int
+rangeToRangeLike : Range -> RangeLike
 rangeToRangeLike range =
     [ range.start.row
     , range.start.column
