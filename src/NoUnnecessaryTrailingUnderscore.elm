@@ -141,9 +141,9 @@ getDeclaredVariableNames pattern =
         --
         --Pattern.ListPattern patterns ->
         --    List.concatMap getDeclaredVariableNames patterns
-        --
-        --Pattern.NamedPattern _ patterns ->
-        --    List.concatMap getDeclaredVariableNames patterns
+        Pattern.NamedPattern _ patterns ->
+            List.concatMap getDeclaredVariableNames patterns
+
         _ ->
             -- We're ignore record pattern because this is not where the name has really been assigned.
             -- This might create some false negatives, but that's fine.

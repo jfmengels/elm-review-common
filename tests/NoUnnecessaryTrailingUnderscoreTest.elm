@@ -124,4 +124,17 @@ a (value1_, value2_) = 1
                             , under = "value2_"
                             }
                         ]
+        , test "should report an error when arguments in uncons pattern has unnecessary trailing _" <|
+            \() ->
+                """module A exposing (..)
+a (Foo value_) = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value_"
+                            }
+                        ]
         ]
