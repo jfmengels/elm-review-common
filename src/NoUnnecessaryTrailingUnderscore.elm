@@ -59,48 +59,55 @@ rule =
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
-            let
-                argNames : List ( Range, String )
-                argNames =
-                    function.declaration
-                        |> Node.value
-                        |> .arguments
-                        |> List.filterMap
-                            (\arg ->
-                                case Node.value arg of
-                                    Pattern.VarPattern name ->
-                                        Just ( Node.range arg, name )
-
-                                    _ ->
-                                        Nothing
-                            )
-
-                argNamesInScope : Set String
-                argNamesInScope =
-                    argNames
-                        |> List.map Tuple.second
-                        |> Set.fromList
-            in
-            ( argNames
-                |> List.filter
-                    (\( _, name ) ->
-                        String.endsWith "_" name
-                            && not (Set.member (String.dropRight 1 name) argNamesInScope)
-                            && not (Set.member (String.dropRight 1 name) reservedElmKeywords)
-                    )
-                |> List.map
-                    (\( range, name ) ->
-                        Rule.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
-                            }
-                            range
-                    )
+            ( argumentErrors
+                (function.declaration
+                    |> Node.value
+                    |> .arguments
+                )
             , context
             )
 
         _ ->
             ( [], context )
+
+
+argumentErrors : List (Node Pattern.Pattern) -> List (Rule.Error {})
+argumentErrors arguments =
+    let
+        argNames : List ( Range, String )
+        argNames =
+            List.filterMap
+                (\arg ->
+                    case Node.value arg of
+                        Pattern.VarPattern name ->
+                            Just ( Node.range arg, name )
+
+                        _ ->
+                            Nothing
+                )
+                arguments
+
+        argNamesInScope : Set String
+        argNamesInScope =
+            argNames
+                |> List.map Tuple.second
+                |> Set.fromList
+    in
+    argNames
+        |> List.filter
+            (\( _, name ) ->
+                String.endsWith "_" name
+                    && not (Set.member (String.dropRight 1 name) argNamesInScope)
+                    && not (Set.member (String.dropRight 1 name) reservedElmKeywords)
+            )
+        |> List.map
+            (\( range, name ) ->
+                Rule.error
+                    { message = "REPLACEME"
+                    , details = [ "REPLACEME" ]
+                    }
+                    range
+            )
 
 
 reservedElmKeywords : Set String
