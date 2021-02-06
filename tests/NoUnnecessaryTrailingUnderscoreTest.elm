@@ -259,6 +259,15 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report when another name without the _ is defined" <|
+            \() ->
+                """module A exposing (..)
+a =
+    case b of
+      (value, value_) -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         , test "should not report record fields in patterns in function argument" <|
             \() ->
                 """module A exposing (..)
