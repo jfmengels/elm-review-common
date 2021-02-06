@@ -250,7 +250,16 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
-        , test "should not report record fields in patterns" <|
+        , test "should not report record fields in patterns in case pattern" <|
+            \() ->
+                """module A exposing (..)
+a =
+    case b of
+      {value_} -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should not report record fields in patterns in function argument" <|
             \() ->
                 """module A exposing (..)
 a {value_} = 1
