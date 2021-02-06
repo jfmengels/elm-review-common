@@ -233,11 +233,11 @@ expressionVisitorHelp node context =
             let
                 namesToReport : List ( Range, String )
                 namesToReport =
-                    cases
-                        |> List.concatMap
-                            (\( pattern, _ ) ->
-                                getDeclaredVariableNames pattern
-                            )
+                    List.concatMap
+                        (\( pattern, _ ) ->
+                            getDeclaredVariableNames pattern
+                        )
+                        cases
 
                 scopesToAdd : Dict RangeLike (Set String)
                 scopesToAdd =
