@@ -231,8 +231,16 @@ expressionVisitorHelp node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
             let
-                names : List ( Range, String )
-                names =
+                namesToAdd : List ( Range, String )
+                namesToAdd =
+                    cases
+                        |> List.concatMap
+                            (\( pattern, _ ) ->
+                                getDeclaredVariableNames pattern
+                            )
+
+                namesToReport : List ( Range, String )
+                namesToReport =
                     cases
                         |> List.concatMap
                             (\( pattern, _ ) ->
@@ -244,9 +252,9 @@ expressionVisitorHelp node context =
 
                 newScopes : Scopes
                 newScopes =
-                    Tuple.mapFirst (Set.union (names |> List.map Tuple.second |> Set.fromList)) context.scopes
+                    Tuple.mapFirst (Set.union (namesToAdd |> List.map Tuple.second |> Set.fromList)) context.scopes
             in
-            ( List.filterMap (error context.scopes) names
+            ( List.filterMap (error context.scopes) namesToAdd
             , { context | scopesToAdd = Dict.union scopesToAdd context.scopesToAdd }
             )
 
