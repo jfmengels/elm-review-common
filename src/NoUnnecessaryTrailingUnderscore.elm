@@ -67,13 +67,16 @@ declarationVisitor node context =
                             |> Node.value
                             |> .arguments
                         )
+
+                functionName =
+                    function.declaration |> Node.value |> .name |> Node.range
             in
             ( if True then
                 Rule.error
                     { message = "REPLACEME"
                     , details = [ "REPLACEME" ]
                     }
-                    (function.declaration |> Node.value |> .name |> Node.range)
+                    functionName
                     :: argErrors
 
               else
