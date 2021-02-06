@@ -266,4 +266,18 @@ a {value_} = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not consider arguments from other functions as in scope" <|
+            \() ->
+                """module A exposing (..)
+a value = 1
+b value_ = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value_"
+                            }
+                        ]
         ]
