@@ -117,14 +117,7 @@ argumentErrors arguments =
                     && not (Set.member (String.dropRight 1 name) argNamesInScope)
                     && not (Set.member name reservedElmKeywords)
             )
-        |> List.map
-            (\( range, name ) ->
-                Rule.error
-                    { message = "REPLACEME"
-                    , details = [ "REPLACEME" ]
-                    }
-                    range
-            )
+        |> List.map error
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
@@ -188,3 +181,12 @@ expressionVisitor node context =
 
         _ ->
             ( [], context )
+
+
+error : ( Range, String ) -> Rule.Error {}
+error ( range, name ) =
+    Rule.error
+        { message = "REPLACEME"
+        , details = [ "REPLACEME" ]
+        }
+        range
