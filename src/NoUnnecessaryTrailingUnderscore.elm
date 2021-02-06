@@ -74,7 +74,7 @@ declarationVisitor node context =
                         |> Node.value
                         |> .name
             in
-            ( if String.endsWith "_" (Node.value functionName) then
+            ( if String.endsWith "_" (Node.value functionName) && not (Set.member (Node.value functionName) reservedElmKeywords) then
                 Rule.error
                     { message = "REPLACEME"
                     , details = [ "REPLACEME" ]
