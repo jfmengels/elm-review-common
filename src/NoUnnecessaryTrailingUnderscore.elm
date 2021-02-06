@@ -122,12 +122,31 @@ argumentErrors arguments =
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
-getDeclaredVariableNames arg =
-    case Node.value arg of
+getDeclaredVariableNames pattern =
+    case Node.value pattern of
         Pattern.VarPattern name ->
-            [ ( Node.range arg, name ) ]
+            [ ( Node.range pattern, name ) ]
 
+        --Pattern.ParenthesizedPattern subPattern ->
+        --    getDeclaredVariableNames subPattern
+        --
+        --Pattern.AsPattern subPattern name ->
+        --    ( Node.range name, Node.value name ) :: getDeclaredVariableNames subPattern
+        --
+        --Pattern.TuplePattern patterns ->
+        --    List.concatMap getDeclaredVariableNames patterns
+        --
+        --Pattern.UnConsPattern left right ->
+        --    List.concatMap getDeclaredVariableNames [ left, right ]
+        --
+        --Pattern.ListPattern patterns ->
+        --    List.concatMap getDeclaredVariableNames patterns
+        --
+        --Pattern.NamedPattern _ patterns ->
+        --    List.concatMap getDeclaredVariableNames patterns
         _ ->
+            -- We're ignore record pattern because this is not where the name has really been assigned.
+            -- This might create some false negatives, but that's fine.
             []
 
 
