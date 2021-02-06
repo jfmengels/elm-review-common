@@ -110,14 +110,7 @@ argumentErrors arguments =
                 |> List.map Tuple.second
                 |> Set.fromList
     in
-    argNames
-        |> List.filter
-            (\( _, name ) ->
-                String.endsWith "_" name
-                    && not (Set.member (String.dropRight 1 name) argNamesInScope)
-                    && not (Set.member name reservedElmKeywords)
-            )
-        |> List.map error
+    List.filterMap (error argNamesInScope) argNames
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
@@ -183,10 +176,20 @@ expressionVisitor node context =
             ( [], context )
 
 
-error : ( Range, String ) -> Rule.Error {}
-error ( range, name ) =
-    Rule.error
-        { message = "REPLACEME"
-        , details = [ "REPLACEME" ]
-        }
-        range
+error : Set String -> ( Range, String ) -> Maybe (Rule.Error {})
+error namesInScope ( range, name ) =
+    if
+        String.endsWith "_" name
+            && not (Set.member (String.dropRight 1 name) namesInScope)
+            && not (Set.member name reservedElmKeywords)
+    then
+        Just
+            (Rule.error
+                { message = "REPLACEME"
+                , details = [ "REPLACEME" ]
+                }
+                range
+            )
+
+    else
+        Nothing
