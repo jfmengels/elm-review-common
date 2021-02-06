@@ -163,6 +163,10 @@ declarationVisitor node context =
             ( [], context )
 
 
+reportAndAddToScopesToAdd names context =
+    ( [], context )
+
+
 type alias ScopeNames =
     { name : String
     , range : Range
