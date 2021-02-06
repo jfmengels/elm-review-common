@@ -239,6 +239,11 @@ expressionVisitorHelp node context =
                 (List.map (Tuple.mapFirst List.singleton) cases)
                 context
 
+        Expression.LambdaExpression { args, expression } ->
+            report
+                [ ( args, expression ) ]
+                context
+
         _ ->
             ( [], context )
 
