@@ -136,7 +136,7 @@ argumentErrors scopes arguments =
 
         newScopes : Scopes
         newScopes =
-            scopes
+            Tuple.mapFirst (Set.union argNamesInScope) scopes
     in
     List.filterMap (error newScopes) argNames
 
