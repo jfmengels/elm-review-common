@@ -137,4 +137,19 @@ a (Foo value_) = 1
                             , under = "value_"
                             }
                         ]
+        , test "should report an error when variables from case expression patterns has unnecessary trailing _" <|
+            \() ->
+                """module A exposing (..)
+a =
+  case b of
+    value_ -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value_"
+                            }
+                        ]
         ]
