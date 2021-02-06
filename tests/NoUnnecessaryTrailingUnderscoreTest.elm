@@ -210,4 +210,15 @@ a value =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report an error if a argument is already named without the _ in a case declaration" <|
+            \() ->
+                """module A exposing (..)
+a =
+    case b of
+      value -> 1
+        case b of
+          value_ -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
