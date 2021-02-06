@@ -243,7 +243,7 @@ expressionVisitorHelp node context =
                 newScopes =
                     Tuple.mapFirst (Set.union (names |> List.map Tuple.second |> Set.fromList)) context.scopes
             in
-            ( List.filterMap (error newScopes) names
+            ( List.filterMap (error context.scopes) names
             , { context | scopes = newScopes }
             )
 
