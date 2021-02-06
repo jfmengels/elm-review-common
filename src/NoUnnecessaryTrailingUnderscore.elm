@@ -82,7 +82,12 @@ declarationVisitor node context =
                         |> Set.fromList
             in
             ( argNames
-                |> List.filter (\( _, name ) -> String.endsWith "_" name && not (Set.member (String.dropRight 1 name) argNamesInScope))
+                |> List.filter
+                    (\( _, name ) ->
+                        String.endsWith "_" name
+                            && not (Set.member (String.dropRight 1 name) argNamesInScope)
+                            && not (Set.member (String.dropRight 1 name) reservedElmKeywords)
+                    )
                 |> List.map
                     (\( range, name ) ->
                         Rule.error
@@ -96,6 +101,26 @@ declarationVisitor node context =
 
         _ ->
             ( [], context )
+
+
+reservedElmKeywords : Set String
+reservedElmKeywords =
+    Set.fromList
+        [ "if"
+        , "then"
+        , "else"
+        , "case"
+        , "of"
+        , "let"
+        , "in"
+        , "type"
+        , "module"
+        , "where"
+        , "import"
+        , "exposing"
+        , "as"
+        , "port"
+        ]
 
 
 expressionVisitor node context =
