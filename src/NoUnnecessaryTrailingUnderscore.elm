@@ -68,7 +68,11 @@ declarationVisitor node context =
                             |> .arguments
                         )
             in
-            ( argErrors
+            ( if True then
+                argErrors
+
+              else
+                argErrors
             , context
             )
 
