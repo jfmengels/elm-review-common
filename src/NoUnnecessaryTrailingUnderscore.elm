@@ -59,11 +59,16 @@ rule =
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
-            ( argumentErrors
-                (function.declaration
-                    |> Node.value
-                    |> .arguments
-                )
+            let
+                argErrors : List (Rule.Error {})
+                argErrors =
+                    argumentErrors
+                        (function.declaration
+                            |> Node.value
+                            |> .arguments
+                        )
+            in
+            ( argErrors
             , context
             )
 
