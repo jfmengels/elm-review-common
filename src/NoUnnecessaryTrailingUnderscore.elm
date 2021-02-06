@@ -263,23 +263,25 @@ expressionVisitorHelp : Node Expression -> Context -> ( List (Rule.Error {}), Co
 expressionVisitorHelp node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
-            report cases context
+            report
+                (List.map (Tuple.mapFirst List.singleton) cases)
+                context
 
         _ ->
             ( [], context )
 
 
-report : List ( Node Pattern.Pattern, Node a ) -> Context -> ( List (Rule.Error {}), Context )
+report : List ( List (Node Pattern.Pattern), Node a ) -> Context -> ( List (Rule.Error {}), Context )
 report cases context =
     let
         scopesToAdd : List { errors : List (Rule.Error {}), scopesToAdd : ( RangeLike, Set String ) }
         scopesToAdd =
             List.map
-                (\( pattern, expression ) ->
+                (\( patterns, expression ) ->
                     let
                         declaredVariables : List ScopeNames
                         declaredVariables =
-                            getDeclaredVariableNames pattern
+                            List.concatMap getDeclaredVariableNames patterns
 
                         names : Set String
                         names =
