@@ -150,20 +150,26 @@ declarationVisitor node context =
 type alias ScopeNames =
     { name : String
     , range : Range
+    , origin : NameOrigin
     }
+
+
+type NameOrigin
+    = FromRecord
+    | NotFromRecord
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ScopeNames
 getDeclaredVariableNames pattern =
     case Node.value pattern of
         Pattern.VarPattern name ->
-            [ { name = name, range = Node.range pattern } ]
+            [ { name = name, range = Node.range pattern, origin = NotFromRecord } ]
 
         Pattern.ParenthesizedPattern subPattern ->
             getDeclaredVariableNames subPattern
 
         Pattern.AsPattern subPattern name ->
-            { name = Node.value name, range = Node.range name } :: getDeclaredVariableNames subPattern
+            { name = Node.value name, range = Node.range name, origin = NotFromRecord } :: getDeclaredVariableNames subPattern
 
         Pattern.TuplePattern patterns ->
             List.concatMap getDeclaredVariableNames patterns
@@ -178,7 +184,7 @@ getDeclaredVariableNames pattern =
             List.concatMap getDeclaredVariableNames patterns
 
         Pattern.RecordPattern fields ->
-            List.map (\field -> { name = Node.value field, range = Node.range field }) fields
+            List.map (\field -> { name = Node.value field, range = Node.range field, origin = FromRecord }) fields
 
         _ ->
             []
