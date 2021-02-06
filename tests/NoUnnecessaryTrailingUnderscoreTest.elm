@@ -302,4 +302,18 @@ a = \\value_ -> 1
                             , under = "value_"
                             }
                         ]
+        , test "should report names from let declarations" <|
+            \() ->
+                """module A exposing (..)
+a = let value_ = 1
+    in 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value_"
+                            }
+                        ]
         ]
