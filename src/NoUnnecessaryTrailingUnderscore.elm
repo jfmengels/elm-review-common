@@ -51,18 +51,25 @@ elm-review --template jfmengels/elm-review-common/example --rules NoUnnecessaryT
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoUnnecessaryTrailingUnderscore" ( Set.empty, [] )
+    Rule.newModuleRuleSchema "NoUnnecessaryTrailingUnderscore" initialContext
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
-    Stack String
+    { scopes : Stack String
+    }
 
 
 type alias Stack comparable =
     ( Set comparable, List (Set comparable) )
+
+
+initialContext : Context
+initialContext =
+    { scopes = ( Set.empty, [] )
+    }
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
@@ -178,7 +185,7 @@ expressionVisitor node context =
                         (\( pattern, _ ) ->
                             pattern
                                 |> getDeclaredVariableNames
-                                |> List.filterMap (error context)
+                                |> List.filterMap (error context.scopes)
                         )
                         cases
             in
@@ -188,11 +195,11 @@ expressionVisitor node context =
             ( [], context )
 
 
-error : Context -> ( Range, String ) -> Maybe (Rule.Error {})
-error context ( range, name ) =
+error : Stack String -> ( Range, String ) -> Maybe (Rule.Error {})
+error scopes ( range, name ) =
     if
         String.endsWith "_" name
-            && not (isDefinedInScope context (String.dropRight 1 name))
+            && not (isDefinedInScope scopes (String.dropRight 1 name))
             && not (Set.member name reservedElmKeywords)
     then
         Just
@@ -207,6 +214,6 @@ error context ( range, name ) =
         Nothing
 
 
-isDefinedInScope : Context -> String -> Bool
+isDefinedInScope : Stack String -> String -> Bool
 isDefinedInScope ( top, rest ) name =
     List.any (Set.member name) (top :: rest)
