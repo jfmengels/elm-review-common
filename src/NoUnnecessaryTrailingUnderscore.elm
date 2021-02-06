@@ -11,6 +11,7 @@ import Elm.Syntax.Node as Node exposing (Node)
 import Elm.Syntax.Pattern as Pattern
 import Elm.Syntax.Range exposing (Range)
 import Review.Rule as Rule exposing (Rule)
+import Set exposing (Set)
 
 
 {-| Reports... REPLACEME
@@ -73,9 +74,15 @@ declarationVisitor node context =
                                     _ ->
                                         Nothing
                             )
+
+                argNamesInScope : Set String
+                argNamesInScope =
+                    argNames
+                        |> List.map Tuple.second
+                        |> Set.fromList
             in
             ( argNames
-                |> List.filter (Tuple.second >> String.endsWith "_")
+                |> List.filter (\( _, name ) -> String.endsWith "_" name && not (Set.member (String.dropRight 1 name) argNamesInScope))
                 |> List.map
                     (\( range, name ) ->
                         Rule.error
