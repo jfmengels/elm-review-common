@@ -263,42 +263,47 @@ expressionVisitorHelp : Node Expression -> Context -> ( List (Rule.Error {}), Co
 expressionVisitorHelp node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
-            let
-                scopesToAdd : List { errors : List (Rule.Error {}), scopesToAdd : ( RangeLike, Set String ) }
-                scopesToAdd =
-                    List.map
-                        (\( pattern, expression ) ->
-                            let
-                                declaredVariables : List ScopeNames
-                                declaredVariables =
-                                    getDeclaredVariableNames pattern
-
-                                names : Set String
-                                names =
-                                    declaredVariables
-                                        |> List.map .name
-                                        |> Set.fromList
-                            in
-                            { errors = List.filterMap (error (addNewScope names context.scopes)) declaredVariables
-                            , scopesToAdd =
-                                ( rangeToRangeLike (Node.range expression)
-                                , names
-                                )
-                            }
-                        )
-                        cases
-            in
-            ( List.concatMap .errors scopesToAdd
-            , { context
-                | scopesToAdd =
-                    Dict.union
-                        (scopesToAdd |> List.map .scopesToAdd |> Dict.fromList)
-                        context.scopesToAdd
-              }
-            )
+            report cases context
 
         _ ->
             ( [], context )
+
+
+report : List ( Node Pattern.Pattern, Node a ) -> Context -> ( List (Rule.Error {}), Context )
+report cases context =
+    let
+        scopesToAdd : List { errors : List (Rule.Error {}), scopesToAdd : ( RangeLike, Set String ) }
+        scopesToAdd =
+            List.map
+                (\( pattern, expression ) ->
+                    let
+                        declaredVariables : List ScopeNames
+                        declaredVariables =
+                            getDeclaredVariableNames pattern
+
+                        names : Set String
+                        names =
+                            declaredVariables
+                                |> List.map .name
+                                |> Set.fromList
+                    in
+                    { errors = List.filterMap (error (addNewScope names context.scopes)) declaredVariables
+                    , scopesToAdd =
+                        ( rangeToRangeLike (Node.range expression)
+                        , names
+                        )
+                    }
+                )
+                cases
+    in
+    ( List.concatMap .errors scopesToAdd
+    , { context
+        | scopesToAdd =
+            Dict.union
+                (scopesToAdd |> List.map .scopesToAdd |> Dict.fromList)
+                context.scopesToAdd
+      }
+    )
 
 
 addNewScope : Set String -> Scopes -> Scopes
