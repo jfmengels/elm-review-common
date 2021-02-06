@@ -58,15 +58,11 @@ rule =
 
 
 type alias Context =
-    Stack NamesInScope
+    Stack String
 
 
 type alias Stack comparable =
     ( Set comparable, List (Set comparable) )
-
-
-type alias NamesInScope =
-    Set String
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
@@ -118,7 +114,7 @@ argumentErrors arguments =
                 |> List.map Tuple.second
                 |> Set.fromList
     in
-    List.filterMap (error argNamesInScope) argNames
+    List.filterMap (error ( argNamesInScope, [] {- TODO -} )) argNames
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
@@ -182,7 +178,7 @@ expressionVisitor node context =
                         (\( pattern, _ ) ->
                             pattern
                                 |> getDeclaredVariableNames
-                                |> List.filterMap (error {- TODO -} Set.empty)
+                                |> List.filterMap (error context)
                         )
                         cases
             in
@@ -192,11 +188,11 @@ expressionVisitor node context =
             ( [], context )
 
 
-error : Set String -> ( Range, String ) -> Maybe (Rule.Error {})
-error namesInScope ( range, name ) =
+error : Context -> ( Range, String ) -> Maybe (Rule.Error {})
+error context ( range, name ) =
     if
         String.endsWith "_" name
-            && not (Set.member (String.dropRight 1 name) namesInScope)
+            && not (isDefinedInScope context (String.dropRight 1 name))
             && not (Set.member name reservedElmKeywords)
     then
         Just
@@ -209,3 +205,8 @@ error namesInScope ( range, name ) =
 
     else
         Nothing
+
+
+isDefinedInScope : Context -> String -> Bool
+isDefinedInScope ( top, rest ) name =
+    Set.member name top
