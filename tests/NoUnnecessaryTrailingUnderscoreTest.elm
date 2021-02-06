@@ -250,4 +250,11 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report record fields in patterns" <|
+            \() ->
+                """module A exposing (..)
+a {value_} = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
