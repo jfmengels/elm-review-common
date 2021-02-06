@@ -201,4 +201,13 @@ value = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report an error if a argument is already named without the _" <|
+            \() ->
+                """module A exposing (..)
+a value =
+    case b of
+      value_ -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
