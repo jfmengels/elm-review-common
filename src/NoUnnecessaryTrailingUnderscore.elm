@@ -110,36 +110,33 @@ declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Cont
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration function ->
-            function.declaration
-                |> Node.value
-                |> .arguments
-                |> argumentErrors context.scopes
-                |> Tuple.mapSecond (\scopes -> { context | scopes = scopes })
+            let
+                arguments : List (Node Pattern.Pattern)
+                arguments =
+                    function.declaration
+                        |> Node.value
+                        |> .arguments
+
+                argNames : List ( Range, String )
+                argNames =
+                    List.concatMap getDeclaredVariableNames arguments
+
+                argNamesInScope : Set String
+                argNamesInScope =
+                    argNames
+                        |> List.map Tuple.second
+                        |> Set.fromList
+
+                newScopes : Scopes
+                newScopes =
+                    Tuple.mapFirst (Set.union argNamesInScope) context.scopes
+            in
+            ( List.filterMap (error newScopes) argNames
+            , { context | scopes = newScopes }
+            )
 
         _ ->
             ( [], context )
-
-
-argumentErrors : Scopes -> List (Node Pattern.Pattern) -> ( List (Rule.Error {}), Scopes )
-argumentErrors scopes arguments =
-    let
-        argNames : List ( Range, String )
-        argNames =
-            List.concatMap getDeclaredVariableNames arguments
-
-        argNamesInScope : Set String
-        argNamesInScope =
-            argNames
-                |> List.map Tuple.second
-                |> Set.fromList
-
-        newScopes : Scopes
-        newScopes =
-            Tuple.mapFirst (Set.union argNamesInScope) scopes
-    in
-    ( List.filterMap (error newScopes) argNames
-    , newScopes
-    )
 
 
 getDeclaredVariableNames : Node Pattern.Pattern -> List ( Range, String )
