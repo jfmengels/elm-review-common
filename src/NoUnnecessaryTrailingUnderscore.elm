@@ -68,6 +68,7 @@ declarationVisitor node context =
                             |> .arguments
                         )
 
+                functionName : Node String
                 functionName =
                     function.declaration
                         |> Node.value
