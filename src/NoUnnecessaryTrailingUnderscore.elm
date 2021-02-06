@@ -264,27 +264,22 @@ expressionVisitorHelp node context =
     case Node.value node of
         Expression.CaseExpression { cases } ->
             let
-                namesToReport : List ScopeNames
-                namesToReport =
-                    List.concatMap
-                        (\( pattern, _ ) ->
-                            getDeclaredVariableNames pattern
-                        )
-                        cases
-
                 scopesToAdd : List { errors : List (Rule.Error {}), scopesToAdd : ( RangeLike, Set String ) }
                 scopesToAdd =
                     List.map
                         (\( pattern, expression ) ->
                             let
+                                declaredVariables : List ScopeNames
+                                declaredVariables =
+                                    getDeclaredVariableNames pattern
+
                                 names : Set String
                                 names =
-                                    pattern
-                                        |> getDeclaredVariableNames
+                                    declaredVariables
                                         |> List.map .name
                                         |> Set.fromList
                             in
-                            { errors = List.filterMap (error (addNewScope names context.scopes)) namesToReport
+                            { errors = List.filterMap (error (addNewScope names context.scopes)) declaredVariables
                             , scopesToAdd =
                                 ( rangeToRangeLike (Node.range expression)
                                 , names
