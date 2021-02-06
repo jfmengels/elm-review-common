@@ -7,6 +7,7 @@ module NoUnnecessaryTrailingUnderscore exposing (rule)
 -}
 
 import Elm.Syntax.Declaration as Declaration
+import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
 import Elm.Syntax.Pattern as Pattern
 import Elm.Syntax.Range exposing (Range)
@@ -172,5 +173,8 @@ reservedElmKeywords =
 
 expressionVisitor node context =
     case Node.value node of
+        Expression.CaseExpression _ ->
+            ( [], context )
+
         _ ->
             ( [], context )
