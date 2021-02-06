@@ -272,7 +272,7 @@ expressionVisitorHelp node context =
 
 
 report : List ( List (Node Pattern.Pattern), Node a ) -> Context -> ( List (Rule.Error {}), Context )
-report cases context =
+report patternsAndBody context =
     let
         scopesToAdd : List { errors : List (Rule.Error {}), scopesToAdd : ( RangeLike, Set String ) }
         scopesToAdd =
@@ -296,7 +296,7 @@ report cases context =
                         )
                     }
                 )
-                cases
+                patternsAndBody
     in
     ( List.concatMap .errors scopesToAdd
     , { context
