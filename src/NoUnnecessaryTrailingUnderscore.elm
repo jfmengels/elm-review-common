@@ -272,22 +272,34 @@ expressionVisitorHelp node context =
                         )
                         cases
 
-                scopesToAdd : Dict RangeLike (Set String)
+                scopesToAdd : List { errors : List (Rule.Error {}), scopesToAdd : ( RangeLike, Set String ) }
                 scopesToAdd =
-                    cases
-                        |> List.map
-                            (\( pattern, expression ) ->
+                    List.map
+                        (\( pattern, expression ) ->
+                            let
+                                names : Set String
+                                names =
+                                    pattern
+                                        |> getDeclaredVariableNames
+                                        |> List.map .name
+                                        |> Set.fromList
+                            in
+                            { errors = List.filterMap (error (addNewScope names context.scopes)) namesToReport
+                            , scopesToAdd =
                                 ( rangeToRangeLike (Node.range expression)
-                                , pattern
-                                    |> getDeclaredVariableNames
-                                    |> List.map .name
-                                    |> Set.fromList
+                                , names
                                 )
-                            )
-                        |> Dict.fromList
+                            }
+                        )
+                        cases
             in
-            ( List.filterMap (error context.scopes) namesToReport
-            , { context | scopesToAdd = Dict.union scopesToAdd context.scopesToAdd }
+            ( List.concatMap .errors scopesToAdd
+            , { context
+                | scopesToAdd =
+                    Dict.union
+                        (scopesToAdd |> List.map .scopesToAdd |> Dict.fromList)
+                        context.scopesToAdd
+              }
             )
 
         _ ->
