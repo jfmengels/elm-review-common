@@ -118,7 +118,7 @@ argumentErrors arguments =
             (\( _, name ) ->
                 String.endsWith "_" name
                     && not (Set.member (String.dropRight 1 name) argNamesInScope)
-                    && not (Set.member (String.dropRight 1 name) reservedElmKeywords)
+                    && not (Set.member name reservedElmKeywords)
             )
         |> List.map
             (\( range, name ) ->
@@ -133,20 +133,20 @@ argumentErrors arguments =
 reservedElmKeywords : Set String
 reservedElmKeywords =
     Set.fromList
-        [ "if"
-        , "then"
-        , "else"
-        , "case"
-        , "of"
-        , "let"
-        , "in"
-        , "type"
-        , "module"
-        , "where"
-        , "import"
-        , "exposing"
-        , "as"
-        , "port"
+        [ "if_"
+        , "then_"
+        , "else_"
+        , "case_"
+        , "of_"
+        , "let_"
+        , "in_"
+        , "type_"
+        , "module_"
+        , "where_"
+        , "import_"
+        , "exposing_"
+        , "as_"
+        , "port_"
         ]
 
 
