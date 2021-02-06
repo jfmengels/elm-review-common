@@ -182,7 +182,7 @@ expressionVisitor node context =
         Expression.CaseExpression _ ->
             let
                 errors =
-                    List.concatMap (\case_ -> []) []
+                    List.concatMap (\( pattern, _ ) -> []) []
             in
             ( errors, context )
 
