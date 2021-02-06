@@ -289,4 +289,17 @@ b value_ = 1
                             , under = "value_"
                             }
                         ]
+        , test "should report names from anonymous functions" <|
+            \() ->
+                """module A exposing (..)
+a = \\value_ -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value_"
+                            }
+                        ]
         ]
