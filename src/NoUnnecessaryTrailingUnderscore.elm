@@ -171,4 +171,6 @@ reservedElmKeywords =
 
 
 expressionVisitor node context =
-    ( [], context )
+    case Node.value node of
+        _ ->
+            ( [], context )
