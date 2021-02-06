@@ -130,9 +130,9 @@ getDeclaredVariableNames pattern =
         Pattern.ParenthesizedPattern subPattern ->
             getDeclaredVariableNames subPattern
 
-        --Pattern.AsPattern subPattern name ->
-        --    ( Node.range name, Node.value name ) :: getDeclaredVariableNames subPattern
-        --
+        Pattern.AsPattern subPattern name ->
+            ( Node.range name, Node.value name ) :: getDeclaredVariableNames subPattern
+
         --Pattern.TuplePattern patterns ->
         --    List.concatMap getDeclaredVariableNames patterns
         --

@@ -88,4 +88,22 @@ a (value_) = 1
                             , under = "value_"
                             }
                         ]
+        , test "should report an error when arguments in alias has unnecessary trailing _" <|
+            \() ->
+                """module A exposing (..)
+a (value1_ as value2_) = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value1_"
+                            }
+                        , Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value2_"
+                            }
+                        ]
         ]
