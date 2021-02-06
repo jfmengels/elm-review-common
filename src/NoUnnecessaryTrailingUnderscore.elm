@@ -138,7 +138,7 @@ getDeclaredVariableNames pattern =
             List.concatMap getDeclaredVariableNames patterns
 
         _ ->
-            -- We're ignore record pattern because this is not where the name has really been assigned.
+            -- We're ignoring record pattern because this is not where the name has really been assigned.
             -- This might create some false negatives, but that's fine.
             []
 
