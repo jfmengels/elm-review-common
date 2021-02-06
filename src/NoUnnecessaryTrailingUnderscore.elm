@@ -133,9 +133,9 @@ getDeclaredVariableNames pattern =
         Pattern.AsPattern subPattern name ->
             ( Node.range name, Node.value name ) :: getDeclaredVariableNames subPattern
 
-        --Pattern.TuplePattern patterns ->
-        --    List.concatMap getDeclaredVariableNames patterns
-        --
+        Pattern.TuplePattern patterns ->
+            List.concatMap getDeclaredVariableNames patterns
+
         --Pattern.UnConsPattern left right ->
         --    List.concatMap getDeclaredVariableNames [ left, right ]
         --
