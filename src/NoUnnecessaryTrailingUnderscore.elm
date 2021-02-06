@@ -202,14 +202,21 @@ expressionVisitor node context =
                         )
                         cases
 
-                errors : List (Rule.Error {})
-                errors =
-                    List.filterMap (error context.scopes) names
+                newScopes : Scopes
+                newScopes =
+                    Tuple.mapFirst (Set.union (names |> List.map Tuple.second |> Set.fromList)) context.scopes
             in
-            ( errors, context )
+            ( List.filterMap (error newScopes) names
+            , { context | scopes = newScopes }
+            )
 
         _ ->
             ( [], context )
+
+
+addNewScope : Set String -> Scopes -> Scopes
+addNewScope set ( head, tail ) =
+    ( set, head :: tail )
 
 
 error : Scopes -> ( Range, String ) -> Maybe (Rule.Error {})
