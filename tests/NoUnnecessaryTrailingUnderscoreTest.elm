@@ -239,4 +239,15 @@ a =
                             , under = "value_"
                             }
                         ]
+        , test "should record names from record in scope" <|
+            \() ->
+                """module A exposing (..)
+a =
+    case b of
+      {value} ->
+        case b of
+          value_ -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
