@@ -131,8 +131,9 @@ getDeclaredVariableNames pattern =
         Pattern.UnConsPattern left right ->
             List.concatMap getDeclaredVariableNames [ left, right ]
 
-        --Pattern.ListPattern patterns ->
-        --    List.concatMap getDeclaredVariableNames patterns
+        Pattern.ListPattern patterns ->
+            List.concatMap getDeclaredVariableNames patterns
+
         Pattern.NamedPattern _ patterns ->
             List.concatMap getDeclaredVariableNames patterns
 

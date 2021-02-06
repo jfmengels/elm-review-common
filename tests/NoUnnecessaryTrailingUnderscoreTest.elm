@@ -172,4 +172,24 @@ a =
                             , under = "value2_"
                             }
                         ]
+        , test "should report an error for list patterns" <|
+            \() ->
+                """module A exposing (..)
+a =
+  case b of
+    [value1_ , value2_] -> 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value1_"
+                            }
+                        , Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "value2_"
+                            }
+                        ]
         ]
