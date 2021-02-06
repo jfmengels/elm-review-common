@@ -56,6 +56,7 @@ rule =
         |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
+        |> Rule.withExpressionExitVisitor expressionExitVisitor
         |> Rule.fromModuleRuleSchema
 
 
@@ -211,6 +212,20 @@ expressionVisitor node context =
     expressionVisitorHelp node newContext
 
 
+expressionExitVisitor : Node Expression -> Context -> ( List nothing, Context )
+expressionExitVisitor node context =
+    let
+        newContext : Context
+        newContext =
+            if Dict.member (Node.range node |> rangeToRangeLike) context.scopesToAdd then
+                { context | scopes = popScope context.scopes }
+
+            else
+                context
+    in
+    ( [], newContext )
+
+
 expressionVisitorHelp : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitorHelp node context =
     case Node.value node of
@@ -239,6 +254,16 @@ expressionVisitorHelp node context =
 addNewScope : Set String -> Scopes -> Scopes
 addNewScope set ( head, tail ) =
     ( set, head :: tail )
+
+
+popScope : Scopes -> Scopes
+popScope ( head, tail ) =
+    case tail of
+        [] ->
+            ( head, tail )
+
+        newHead :: newTail ->
+            ( newHead, newTail )
 
 
 error : Scopes -> ( Range, String ) -> Maybe (Rule.Error {})
