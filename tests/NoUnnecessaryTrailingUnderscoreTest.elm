@@ -192,4 +192,13 @@ a =
                             , under = "value2_"
                             }
                         ]
+        , test "should not report an error if a top-level function is already named without the _" <|
+            \() ->
+                """module A exposing (..)
+a value_ = 1
+
+value = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
