@@ -89,14 +89,11 @@ declarationListVisitor declarations context =
                 (\node ->
                     case Node.value node of
                         Declaration.FunctionDeclaration function ->
-                            let
-                                functionName : Node String
-                                functionName =
-                                    function.declaration
-                                        |> Node.value
-                                        |> .name
-                            in
-                            Just (Node.value functionName)
+                            function.declaration
+                                |> Node.value
+                                |> .name
+                                |> Node.value
+                                |> Just
 
                         _ ->
                             Nothing
