@@ -94,16 +94,12 @@ declarationListVisitor declarations emptyContext =
                                 |> Node.value
                                 |> .name
                     in
-                    ( if String.endsWith "_" (Node.value functionName) && not (Set.member (Node.value functionName) reservedElmKeywords) then
-                        Rule.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
-                            }
-                            (Node.range functionName)
-                            :: errors
+                    ( case reportFunction function of
+                        Just newError ->
+                            newError :: errors
 
-                      else
-                        errors
+                        Nothing ->
+                            errors
                     , { context | scopes = Tuple.mapFirst (Set.insert (Node.value functionName)) context.scopes }
                     )
 
