@@ -251,6 +251,28 @@ expressionVisitorHelp node context =
             ( [], context )
 
 
+reportFunction : Expression.Function -> Maybe (Rule.Error {})
+reportFunction function =
+    let
+        functionName : Node String
+        functionName =
+            function.declaration
+                |> Node.value
+                |> .name
+    in
+    if String.endsWith "_" (Node.value functionName) && not (Set.member (Node.value functionName) reservedElmKeywords) then
+        Just
+            (Rule.error
+                { message = "REPLACEME"
+                , details = [ "REPLACEME" ]
+                }
+                (Node.range functionName)
+            )
+
+    else
+        Nothing
+
+
 report : List ( List (Node Pattern.Pattern), Node a ) -> Context -> ( List (Rule.Error {}), Context )
 report patternsAndBody context =
     let
