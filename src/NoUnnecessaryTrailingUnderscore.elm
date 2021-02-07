@@ -82,32 +82,36 @@ initialContext =
 
 
 declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
-declarationListVisitor declarations emptyContext =
-    List.foldl
-        (\node ( errors, context ) ->
-            case Node.value node of
-                Declaration.FunctionDeclaration function ->
-                    let
-                        functionName : Node String
-                        functionName =
-                            function.declaration
-                                |> Node.value
-                                |> .name
-                    in
-                    ( case reportFunction function of
-                        Just newError ->
-                            newError :: errors
+declarationListVisitor declarations context =
+    let
+        ( newErrors, scopeToAdd ) =
+            List.foldl
+                (\node ( errors, namesToAddToScope ) ->
+                    case Node.value node of
+                        Declaration.FunctionDeclaration function ->
+                            let
+                                functionName : Node String
+                                functionName =
+                                    function.declaration
+                                        |> Node.value
+                                        |> .name
+                            in
+                            ( case reportFunction function of
+                                Just newError ->
+                                    newError :: errors
 
-                        Nothing ->
-                            errors
-                    , { context | scopes = Tuple.mapFirst (Set.insert (Node.value functionName)) context.scopes }
-                    )
+                                Nothing ->
+                                    errors
+                            , Set.insert (Node.value functionName) namesToAddToScope
+                            )
 
-                _ ->
-                    ( [], context )
-        )
-        ( [], emptyContext )
-        declarations
+                        _ ->
+                            ( [], namesToAddToScope )
+                )
+                ( [], Set.empty )
+                declarations
+    in
+    ( newErrors, { context | scopes = Tuple.mapFirst (Set.union scopeToAdd) context.scopes } )
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
