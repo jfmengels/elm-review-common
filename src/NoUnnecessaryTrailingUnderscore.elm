@@ -251,6 +251,22 @@ expressionVisitorHelp node context =
                 context
 
         Expression.LetExpression { declarations, expression } ->
+            let
+                _ =
+                    report
+                        (List.concatMap
+                            (\declaration ->
+                                case Node.value declaration of
+                                    Expression.LetFunction function ->
+                                        []
+
+                                    Expression.LetDestructuring pattern _ ->
+                                        []
+                            )
+                            declarations
+                        )
+                        context
+            in
             ( reportErrorsForLet context.scopes declarations
             , context
             )
