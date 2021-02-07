@@ -271,7 +271,18 @@ reportErrorsForLet scopes declarations =
                             []
 
                 Expression.LetDestructuring pattern subExpression ->
-                    []
+                    let
+                        declaredVariables : List ScopeNames
+                        declaredVariables =
+                            getDeclaredVariableNames pattern
+
+                        names : Set String
+                        names =
+                            declaredVariables
+                                |> List.map .name
+                                |> Set.fromList
+                    in
+                    List.filterMap (error (addNewScope names scopes)) declaredVariables
         )
         declarations
 
