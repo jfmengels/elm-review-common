@@ -108,7 +108,7 @@ declarationListVisitor declarations context =
                 (\node ->
                     case Node.value node of
                         Declaration.FunctionDeclaration function ->
-                            reportFunction function
+                            reportFunction ( Set.empty, [] ) function
 
                         _ ->
                             Nothing
@@ -289,7 +289,7 @@ reportErrorsForLet scopes declarations =
         (\node ->
             case Node.value node of
                 Expression.LetFunction function ->
-                    case reportFunction function of
+                    case reportFunction scopes function of
                         Just newError ->
                             [ newError ]
 
@@ -313,22 +313,30 @@ reportErrorsForLet scopes declarations =
         declarations
 
 
-reportFunction : Expression.Function -> Maybe (Rule.Error {})
-reportFunction function =
+reportFunction : Scopes -> Expression.Function -> Maybe (Rule.Error {})
+reportFunction scopes function =
     let
-        functionName : Node String
-        functionName =
+        functionNameNode : Node String
+        functionNameNode =
             function.declaration
                 |> Node.value
                 |> .name
+
+        functionName : String
+        functionName =
+            Node.value functionNameNode
     in
-    if String.endsWith "_" (Node.value functionName) && not (Set.member (Node.value functionName) reservedElmKeywords) then
+    if
+        String.endsWith "_" functionName
+            && not (isDefinedInScope scopes (String.dropRight 1 functionName))
+            && not (Set.member functionName reservedElmKeywords)
+    then
         Just
             (Rule.error
                 { message = "REPLACEME"
                 , details = [ "REPLACEME" ]
                 }
-                (Node.range functionName)
+                (Node.range functionNameNode)
             )
 
     else
