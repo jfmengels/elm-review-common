@@ -251,7 +251,16 @@ expressionVisitorHelp node context =
                 --    List.concatMap getDeclaredVariableNames patterns
                 declaredVariables : List ScopeNames
                 declaredVariables =
-                    List.concatMap (\declaration -> []) declarations
+                    List.concatMap
+                        (\declaration ->
+                            case Node.value declaration of
+                                Expression.LetFunction function ->
+                                    []
+
+                                Expression.LetDestructuring pattern expr ->
+                                    []
+                        )
+                        declarations
 
                 names : Set String
                 names =
