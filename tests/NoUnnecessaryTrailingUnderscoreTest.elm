@@ -330,4 +330,12 @@ a = let (Value value_) = 1
                             , under = "value_"
                             }
                         ]
+        , test "should not report names from let declaration patterns when the pattern is a record pattern" <|
+            \() ->
+                """module A exposing (..)
+a = let {value_} = 1
+    in 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
