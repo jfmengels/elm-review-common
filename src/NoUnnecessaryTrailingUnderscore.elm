@@ -246,13 +246,20 @@ expressionVisitorHelp node context =
 
         Expression.LetExpression { declarations, expression } ->
             let
-                -- TODO Need to pop this from scope?
+                --declaredVariables : List ScopeNames
+                --declaredVariables =
+                --    List.concatMap getDeclaredVariableNames patterns
+                names : Set String
+                names =
+                    declaredVariables
+                        |> List.map .name
+                        |> Set.fromList
+
+                declaredVariables : List ScopeNames
                 declaredVariables =
                     List.concatMap (\declaration -> []) declarations
-                        |> Set.fromList
             in
-            ( -- List.concatMap .errors scopesToAdd
-              []
+            ( List.filterMap (error (addNewScope names context.scopes)) declaredVariables
             , { context
                 | scopes = {- addNewScope declaredVariables -} context.scopes
 
