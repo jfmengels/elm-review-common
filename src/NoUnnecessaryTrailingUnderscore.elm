@@ -245,41 +245,7 @@ expressionVisitorHelp node context =
                 context
 
         Expression.LetExpression { declarations, expression } ->
-            let
-                --declaredVariables : List ScopeNames
-                --declaredVariables =
-                --    List.concatMap getDeclaredVariableNames patterns
-                declaredVariables : List ScopeNames
-                declaredVariables =
-                    List.concatMap
-                        (\declaration ->
-                            case Node.value declaration of
-                                Expression.LetFunction function ->
-                                    []
-
-                                Expression.LetDestructuring pattern expr ->
-                                    []
-                        )
-                        declarations
-
-                names : Set String
-                names =
-                    declaredVariables
-                        |> List.map .name
-                        |> Set.fromList
-            in
-            ( List.filterMap (error (addNewScope names context.scopes)) declaredVariables
-            , { context
-                | scopes = {- addNewScope declaredVariables -} context.scopes
-
-                -- TODO
-                , scopesToAdd = context.scopesToAdd
-
-                --Dict.union
-                --    (scopesToAdd |> List.map .scopesToAdd |> Dict.fromList)
-                --    context.scopesToAdd
-              }
-            )
+            ( [], context )
 
         _ ->
             ( [], context )
