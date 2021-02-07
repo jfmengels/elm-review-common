@@ -372,4 +372,18 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report names in a let declaration body when name would clash with let declaration value" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        value = 1
+        value2 =
+          let value_ = 1
+          in 1
+    in
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
