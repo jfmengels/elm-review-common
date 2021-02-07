@@ -251,7 +251,9 @@ expressionVisitorHelp node context =
                 context
 
         Expression.LetExpression { declarations, expression } ->
-            ( reportErrorsForLet context.scopes declarations, context )
+            ( reportErrorsForLet context.scopes declarations
+            , context
+            )
 
         _ ->
             ( [], context )
