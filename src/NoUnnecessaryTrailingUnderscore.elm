@@ -251,10 +251,24 @@ expressionVisitorHelp node context =
                 context
 
         Expression.LetExpression { declarations, expression } ->
-            ( [], context )
+            ( reportErrorsForLet declarations, context )
 
         _ ->
             ( [], context )
+
+
+reportErrorsForLet : List (Node Expression.LetDeclaration) -> List (Rule.Error {})
+reportErrorsForLet declarations =
+    List.filterMap
+        (\node ->
+            case Node.value node of
+                Expression.LetFunction function ->
+                    reportFunction function
+
+                _ ->
+                    Nothing
+        )
+        declarations
 
 
 reportFunction : Expression.Function -> Maybe (Rule.Error {})
