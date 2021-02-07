@@ -84,7 +84,8 @@ initialContext =
 declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
 declarationListVisitor declarations context =
     let
-        scopeToAdd =
+        namesToAdd : Set String
+        namesToAdd =
             List.filterMap
                 (\node ->
                     case Node.value node of
@@ -101,7 +102,8 @@ declarationListVisitor declarations context =
                 declarations
                 |> Set.fromList
 
-        newErrors2 =
+        errors : List (Rule.Error {})
+        errors =
             List.filterMap
                 (\node ->
                     case Node.value node of
@@ -113,7 +115,7 @@ declarationListVisitor declarations context =
                 )
                 declarations
     in
-    ( newErrors2, { context | scopes = Tuple.mapFirst (Set.union scopeToAdd) context.scopes } )
+    ( errors, { context | scopes = Tuple.mapFirst (Set.union namesToAdd) context.scopes } )
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
