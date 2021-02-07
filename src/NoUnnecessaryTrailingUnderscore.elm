@@ -252,6 +252,10 @@ expressionVisitorHelp node context =
 
         Expression.LetExpression { declarations, expression } ->
             let
+                namesFromLetDeclarations : Set String
+                namesFromLetDeclarations =
+                    Set.fromList (getNamesFromLetDeclarations declarations)
+
                 ( errors, newContext ) =
                     report
                         (List.concatMap
@@ -273,14 +277,14 @@ expressionVisitorHelp node context =
                             )
                             declarations
                         )
-                        context
+                        { context | scopes = addNewScope namesFromLetDeclarations context.scopes }
             in
             ( reportErrorsForLet context.scopes declarations ++ errors
             , { newContext
                 | scopesToAdd =
                     Dict.insert
                         (rangeToRangeLike (Node.range expression))
-                        (Set.fromList (getNamesFromLetDeclarations declarations))
+                        namesFromLetDeclarations
                         newContext.scopesToAdd
               }
             )
