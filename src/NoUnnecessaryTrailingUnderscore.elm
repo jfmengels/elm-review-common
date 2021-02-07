@@ -268,7 +268,7 @@ expressionVisitorHelp node context =
                                           )
                                         ]
 
-                                    Expression.LetDestructuring pattern _ ->
+                                    Expression.LetDestructuring _ _ ->
                                         []
                             )
                             declarations
