@@ -258,7 +258,15 @@ expressionVisitorHelp node context =
                             (\declaration ->
                                 case Node.value declaration of
                                     Expression.LetFunction function ->
-                                        []
+                                        let
+                                            functionImplementation : Expression.FunctionImplementation
+                                            functionImplementation =
+                                                Node.value function.declaration
+                                        in
+                                        [ ( functionImplementation.arguments
+                                          , functionImplementation.expression
+                                          )
+                                        ]
 
                                     Expression.LetDestructuring pattern _ ->
                                         []
