@@ -115,7 +115,9 @@ declarationListVisitor declarations context =
                 )
                 declarations
     in
-    ( errors, { context | scopes = Tuple.mapFirst (Set.union namesToAdd) context.scopes } )
+    ( errors
+    , { context | scopes = Tuple.mapFirst (Set.union namesToAdd) context.scopes }
+    )
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
