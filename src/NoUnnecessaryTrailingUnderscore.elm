@@ -245,8 +245,25 @@ expressionVisitorHelp node context =
                 context
 
         Expression.LetExpression { declarations, expression } ->
-            {- TODO -}
-            ( [], context )
+            let
+                -- TODO Need to pop this from scope?
+                declaredVariables =
+                    List.concatMap (\declaration -> []) declarations
+                        |> Set.fromList
+            in
+            ( -- List.concatMap .errors scopesToAdd
+              []
+            , { context
+                | scopes = {- addNewScope declaredVariables -} context.scopes
+
+                -- TODO
+                , scopesToAdd = context.scopesToAdd
+
+                --Dict.union
+                --    (scopesToAdd |> List.map .scopesToAdd |> Dict.fromList)
+                --    context.scopesToAdd
+              }
+            )
 
         _ ->
             ( [], context )
