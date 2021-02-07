@@ -251,14 +251,14 @@ expressionVisitorHelp node context =
                 context
 
         Expression.LetExpression { declarations, expression } ->
-            ( reportErrorsForLet declarations, context )
+            ( reportErrorsForLet context.scopes declarations, context )
 
         _ ->
             ( [], context )
 
 
-reportErrorsForLet : List (Node Expression.LetDeclaration) -> List (Rule.Error {})
-reportErrorsForLet declarations =
+reportErrorsForLet : Scopes -> List (Node Expression.LetDeclaration) -> List (Rule.Error {})
+reportErrorsForLet scopes declarations =
     List.filterMap
         (\node ->
             case Node.value node of
