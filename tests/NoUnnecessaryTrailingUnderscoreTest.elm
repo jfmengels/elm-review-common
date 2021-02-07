@@ -352,4 +352,13 @@ a = let fn value_ = 1
                             , under = "value_"
                             }
                         ]
+        , test "should not function names from let expressions that would clash with others" <|
+            \() ->
+                """module A exposing (..)
+a value =
+    let value_ = 1
+    in value_
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
