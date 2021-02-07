@@ -252,7 +252,7 @@ expressionVisitorHelp node context =
 
         Expression.LetExpression { declarations, expression } ->
             let
-                _ =
+                ( errors, newContext ) =
                     report
                         (List.concatMap
                             (\declaration ->
@@ -267,8 +267,8 @@ expressionVisitorHelp node context =
                         )
                         context
             in
-            ( reportErrorsForLet context.scopes declarations
-            , context
+            ( reportErrorsForLet context.scopes declarations ++ errors
+            , newContext
             )
 
         _ ->
