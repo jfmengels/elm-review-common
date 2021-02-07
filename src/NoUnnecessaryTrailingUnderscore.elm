@@ -249,15 +249,15 @@ expressionVisitorHelp node context =
                 --declaredVariables : List ScopeNames
                 --declaredVariables =
                 --    List.concatMap getDeclaredVariableNames patterns
+                declaredVariables : List ScopeNames
+                declaredVariables =
+                    List.concatMap (\declaration -> []) declarations
+
                 names : Set String
                 names =
                     declaredVariables
                         |> List.map .name
                         |> Set.fromList
-
-                declaredVariables : List ScopeNames
-                declaredVariables =
-                    List.concatMap (\declaration -> []) declarations
             in
             ( List.filterMap (error (addNewScope names context.scopes)) declaredVariables
             , { context
