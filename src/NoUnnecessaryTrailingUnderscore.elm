@@ -270,7 +270,7 @@ reportErrorsForLet scopes declarations =
                         Nothing ->
                             []
 
-                Expression.LetDestructuring pattern subExpression ->
+                Expression.LetDestructuring pattern _ ->
                     let
                         declaredVariables : List ScopeNames
                         declaredVariables =
