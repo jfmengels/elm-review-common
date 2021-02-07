@@ -259,14 +259,19 @@ expressionVisitorHelp node context =
 
 reportErrorsForLet : Scopes -> List (Node Expression.LetDeclaration) -> List (Rule.Error {})
 reportErrorsForLet scopes declarations =
-    List.filterMap
+    List.concatMap
         (\node ->
             case Node.value node of
                 Expression.LetFunction function ->
-                    reportFunction function
+                    case reportFunction function of
+                        Just newError ->
+                            [ newError ]
+
+                        Nothing ->
+                            []
 
                 Expression.LetDestructuring pattern subExpression ->
-                    Nothing
+                    []
         )
         declarations
 
