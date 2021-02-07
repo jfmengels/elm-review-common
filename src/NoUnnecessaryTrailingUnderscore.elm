@@ -276,11 +276,35 @@ expressionVisitorHelp node context =
                         context
             in
             ( reportErrorsForLet context.scopes declarations ++ errors
-            , newContext
+            , { newContext
+                | scopesToAdd =
+                    Dict.insert
+                        (rangeToRangeLike (Node.range expression))
+                        (Set.fromList (getNamesFromLetDeclarations declarations))
+                        newContext.scopesToAdd
+              }
             )
 
         _ ->
             ( [], context )
+
+
+getNamesFromLetDeclarations : List (Node Expression.LetDeclaration) -> List String
+getNamesFromLetDeclarations declarations =
+    List.concatMap
+        (\declaration ->
+            case Node.value declaration of
+                Expression.LetFunction function ->
+                    [ function.declaration
+                        |> Node.value
+                        |> .name
+                        |> Node.value
+                    ]
+
+                Expression.LetDestructuring pattern _ ->
+                    List.map .name (getDeclaredVariableNames pattern)
+        )
+        declarations
 
 
 reportErrorsForLet : Scopes -> List (Node Expression.LetDeclaration) -> List (Rule.Error {})

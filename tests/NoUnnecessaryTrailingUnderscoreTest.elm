@@ -352,12 +352,23 @@ a = let fn value_ = 1
                             , under = "value_"
                             }
                         ]
-        , test "should not function names from let expressions that would clash with others" <|
+        , test "should not report function names from let expressions that would clash with others" <|
             \() ->
                 """module A exposing (..)
 a value =
     let value_ = 1
     in value_
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should not report names in a let body when name would clash with a let declaration value" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let value = 1
+    in
+      let value_ = 1
+      in 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
