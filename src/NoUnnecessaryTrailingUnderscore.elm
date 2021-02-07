@@ -84,7 +84,7 @@ initialContext =
 declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
 declarationListVisitor declarations context =
     let
-        ( newErrors, scopeToAdd ) =
+        ( _, scopeToAdd ) =
             List.foldl
                 (\node ( errors, namesToAddToScope ) ->
                     case Node.value node of
@@ -110,8 +110,20 @@ declarationListVisitor declarations context =
                 )
                 ( [], Set.empty )
                 declarations
+
+        newErrors2 =
+            List.filterMap
+                (\node ->
+                    case Node.value node of
+                        Declaration.FunctionDeclaration function ->
+                            reportFunction function
+
+                        _ ->
+                            Nothing
+                )
+                declarations
     in
-    ( newErrors, { context | scopes = Tuple.mapFirst (Set.union scopeToAdd) context.scopes } )
+    ( newErrors2, { context | scopes = Tuple.mapFirst (Set.union scopeToAdd) context.scopes } )
 
 
 declarationVisitor : Node Declaration -> Context -> ( List (Rule.Error {}), Context )
