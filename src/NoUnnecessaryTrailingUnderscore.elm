@@ -265,7 +265,7 @@ reportErrorsForLet declarations =
                 Expression.LetFunction function ->
                     reportFunction function
 
-                _ ->
+                Expression.LetDestructuring pattern subExpression ->
                     Nothing
         )
         declarations
