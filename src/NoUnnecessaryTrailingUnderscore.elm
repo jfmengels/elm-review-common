@@ -84,9 +84,9 @@ initialContext =
 declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
 declarationListVisitor declarations context =
     let
-        ( _, scopeToAdd ) =
-            List.foldl
-                (\node ( errors, namesToAddToScope ) ->
+        scopeToAdd =
+            List.filterMap
+                (\node ->
                     case Node.value node of
                         Declaration.FunctionDeclaration function ->
                             let
@@ -96,20 +96,13 @@ declarationListVisitor declarations context =
                                         |> Node.value
                                         |> .name
                             in
-                            ( case reportFunction function of
-                                Just newError ->
-                                    newError :: errors
-
-                                Nothing ->
-                                    errors
-                            , Set.insert (Node.value functionName) namesToAddToScope
-                            )
+                            Just (Node.value functionName)
 
                         _ ->
-                            ( [], namesToAddToScope )
+                            Nothing
                 )
-                ( [], Set.empty )
                 declarations
+                |> Set.fromList
 
         newErrors2 =
             List.filterMap
