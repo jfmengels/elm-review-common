@@ -41,12 +41,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check if package needs to be published
+        uses: dillonkearns/elm-publish-action@v1
+        id: publish
+        with:
+          dry-run: true
+          path-to-elm: ./node_modules/.bin/elm
+
       - name: Check that examples are up to date
+        if: steps.publish.outputs.is-publishable == 'true'
         run: node elm-review-package-tests/check-examples-were-updated.js
 
       # Runs a single command using the runners shell
       - name: Elm Publish
-        uses: dillonkearns/elm-publish-action@master
+        if: steps.publish.outputs.is-publishable == 'true'
+        uses: dillonkearns/elm-publish-action@v1
         with:
           # Token provided by GitHub
           github-token: ${{ secrets.GITHUB_TOKEN }}
