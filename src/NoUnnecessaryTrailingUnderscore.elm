@@ -108,7 +108,12 @@ declarationListVisitor declarations context =
                 (\node ->
                     case Node.value node of
                         Declaration.FunctionDeclaration function ->
-                            reportFunction ( Set.empty, [] ) function
+                            reportFunction
+                                ( Set.empty, [] )
+                                function
+                                { message = "REPLACEME"
+                                , details = [ "REPLACEME" ]
+                                }
 
                         _ ->
                             Nothing
@@ -317,7 +322,13 @@ reportErrorsForLet scopes declarations =
         (\node ->
             case Node.value node of
                 Expression.LetFunction function ->
-                    case reportFunction scopes function of
+                    case
+                        reportFunction scopes
+                            function
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            }
+                    of
                         Just newError ->
                             [ newError ]
 
@@ -341,8 +352,8 @@ reportErrorsForLet scopes declarations =
         declarations
 
 
-reportFunction : Scopes -> Expression.Function -> Maybe (Rule.Error {})
-reportFunction scopes function =
+reportFunction : Scopes -> Expression.Function -> { message : String, details : List String } -> Maybe (Rule.Error {})
+reportFunction scopes function messageAndDetails =
     let
         functionNameNode : Node String
         functionNameNode =
@@ -361,9 +372,7 @@ reportFunction scopes function =
     then
         Just
             (Rule.error
-                { message = "REPLACEME"
-                , details = [ "REPLACEME" ]
-                }
+                messageAndDetails
                 (Node.range functionNameNode)
             )
 
