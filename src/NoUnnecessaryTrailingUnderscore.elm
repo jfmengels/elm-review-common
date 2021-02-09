@@ -375,11 +375,19 @@ reportFunction namesOnTheSameLevel scopes function messageAndDetails =
             && not (isDefinedInScope scopes (String.dropRight 1 functionName))
             && not (Set.member functionName reservedElmKeywords)
     then
-        Just
-            (Rule.error
-                messageAndDetails
-                (Node.range functionNameNode)
-            )
+        if Set.member (String.dropRight 1 functionName) namesOnTheSameLevel then
+            Just
+                (Rule.error
+                    messageAndDetails
+                    (Node.range functionNameNode)
+                )
+
+        else
+            Just
+                (Rule.error
+                    messageAndDetails
+                    (Node.range functionNameNode)
+                )
 
     else
         Nothing
