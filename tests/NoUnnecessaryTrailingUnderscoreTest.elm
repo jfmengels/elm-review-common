@@ -5,6 +5,16 @@ import Review.Test
 import Test exposing (Test, describe, test)
 
 
+message : String
+message =
+    "REPLACEME"
+
+
+details : List String
+details =
+    [ "REPLACEME" ]
+
+
 all : Test
 all =
     describe "NoUnnecessaryTrailingUnderscore"
@@ -16,8 +26,8 @@ a value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -50,8 +60,8 @@ a_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "a_"
                             }
                         ]
@@ -83,8 +93,8 @@ a (value_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -96,13 +106,13 @@ a (value1_ as value2_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value2_"
                             }
                         ]
@@ -114,13 +124,13 @@ a (value1_, value2_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value2_"
                             }
                         ]
@@ -132,8 +142,8 @@ a (Foo value_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -147,8 +157,8 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -162,13 +172,13 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value2_"
                             }
                         ]
@@ -182,13 +192,13 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value2_"
                             }
                         ]
@@ -234,8 +244,8 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -284,8 +294,8 @@ b value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -297,8 +307,8 @@ a = \\value_ -> 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -311,8 +321,8 @@ a = let value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -325,8 +335,8 @@ a = let (Value value_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
@@ -347,8 +357,8 @@ a = let fn value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details
                             , under = "value_"
                             }
                         ]
