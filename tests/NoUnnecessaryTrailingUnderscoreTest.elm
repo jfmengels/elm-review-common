@@ -76,6 +76,20 @@ a_ = 1
                             , under = "a_"
                             }
                         ]
+        , test "should report an error when a top-level variable has a trailing _, even if it would clash" <|
+            \() ->
+                """module A exposing (..)
+a = 1
+a_ = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = messageForTopLevel
+                            , details = detailsForTopLevel
+                            , under = "a_"
+                            }
+                        ]
         , test "should not report an error when a top-level variable has a trailing _ whose name is like a reserved keyword" <|
             \() ->
                 """module A exposing (..)
