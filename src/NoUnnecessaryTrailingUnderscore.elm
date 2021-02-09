@@ -286,7 +286,7 @@ expressionVisitorHelp node context =
                         )
                         { context | scopes = addNewScope namesFromLetDeclarations context.scopes }
             in
-            ( reportErrorsForLet context.scopes declarations ++ errors
+            ( reportErrorsForLet namesFromLetDeclarations context.scopes declarations ++ errors
             , { newContext
                 | scopesToAdd =
                     Dict.insert
@@ -318,8 +318,8 @@ getNamesFromLetDeclarations declarations =
         declarations
 
 
-reportErrorsForLet : Scopes -> List (Node Expression.LetDeclaration) -> List (Rule.Error {})
-reportErrorsForLet scopes declarations =
+reportErrorsForLet : Set String -> Scopes -> List (Node Expression.LetDeclaration) -> List (Rule.Error {})
+reportErrorsForLet namesFromLetDeclarations scopes declarations =
     List.concatMap
         (\node ->
             case Node.value node of
