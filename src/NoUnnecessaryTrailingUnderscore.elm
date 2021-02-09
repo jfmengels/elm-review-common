@@ -325,7 +325,8 @@ reportErrorsForLet scopes declarations =
             case Node.value node of
                 Expression.LetFunction function ->
                     case
-                        reportFunction scopes
+                        reportFunction
+                            scopes
                             function
                             { message = "REPLACEME"
                             , details = [ "REPLACEME" ]
