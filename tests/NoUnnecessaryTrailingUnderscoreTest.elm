@@ -407,8 +407,11 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
-                            , details = details
+                            { message = "value_ should not end with an underscore"
+                            , details =
+                                [ "It seems that it has been used to prevent shadowing issues with a variable on the same level, but this is confusing. When should \"value_\" be used and when should \"value\" be used?"
+                                , "Please rename this variable in a way that makes it more explicit when or how each should be used."
+                                ]
                             , under = "value_"
                             }
                         ]

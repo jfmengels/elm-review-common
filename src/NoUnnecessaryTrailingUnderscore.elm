@@ -369,16 +369,25 @@ reportFunction namesOnTheSameLevel scopes function messageAndDetails =
         functionName : String
         functionName =
             Node.value functionNameNode
+
+        functionNameWithoutUnderscore : String
+        functionNameWithoutUnderscore =
+            String.dropRight 1 functionName
     in
     if
         String.endsWith "_" functionName
-            && not (isDefinedInScope scopes (String.dropRight 1 functionName))
+            && not (isDefinedInScope scopes functionNameWithoutUnderscore)
             && not (Set.member functionName reservedElmKeywords)
     then
-        if Set.member (String.dropRight 1 functionName) namesOnTheSameLevel then
+        if Set.member functionNameWithoutUnderscore namesOnTheSameLevel then
             Just
                 (Rule.error
-                    messageAndDetails
+                    { message = functionName ++ " should not end with an underscore"
+                    , details =
+                        [ "It seems that it has been used to prevent shadowing issues with a variable on the same level, but this is confusing. When should \"" ++ functionName ++ "\" be used and when should \"" ++ functionNameWithoutUnderscore ++ "\" be used?"
+                        , "Please rename this variable in a way that makes it more explicit when or how each should be used."
+                        ]
+                    }
                     (Node.range functionNameNode)
                 )
 
