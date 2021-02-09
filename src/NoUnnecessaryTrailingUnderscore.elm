@@ -109,7 +109,8 @@ declarationListVisitor declarations context =
                     case Node.value node of
                         Declaration.FunctionDeclaration function ->
                             reportFunction
-                                ( Set.empty, [] )
+                                Set.empty
+                                context.scopes
                                 function
                                 { message = "Top-level declaration names should not end with an underscore"
                                 , details =
@@ -326,6 +327,7 @@ reportErrorsForLet namesFromLetDeclarations scopes declarations =
                 Expression.LetFunction function ->
                     case
                         reportFunction
+                            namesFromLetDeclarations
                             scopes
                             function
                             { message = "REPLACEME"
@@ -355,8 +357,8 @@ reportErrorsForLet namesFromLetDeclarations scopes declarations =
         declarations
 
 
-reportFunction : Scopes -> Expression.Function -> { message : String, details : List String } -> Maybe (Rule.Error {})
-reportFunction scopes function messageAndDetails =
+reportFunction : Set String -> Scopes -> Expression.Function -> { message : String, details : List String } -> Maybe (Rule.Error {})
+reportFunction namesOnTheSameLevel scopes function messageAndDetails =
     let
         functionNameNode : Node String
         functionNameNode =
