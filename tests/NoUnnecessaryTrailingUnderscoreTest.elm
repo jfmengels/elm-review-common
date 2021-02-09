@@ -396,6 +396,22 @@ a value =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should report function names from let expressions even if it would clash with a name on the same-level" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let value = 1
+        value_ = 1
+    in 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details
+                            , under = "value_"
+                            }
+                        ]
         , test "should not report names in a let body when name would clash with a let declaration value" <|
             \() ->
                 """module A exposing (..)
