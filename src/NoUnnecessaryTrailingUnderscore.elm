@@ -111,8 +111,10 @@ declarationListVisitor declarations context =
                             reportFunction
                                 ( Set.empty, [] )
                                 function
-                                { message = "REPLACEME"
-                                , details = [ "REPLACEME" ]
+                                { message = "Top-level declaration names should not end with an underscore"
+                                , details =
+                                    [ "A trailing underscore \"_\" is often used to prevent shadowing issues, but top-level declarations should not resolve these issues in that manner."
+                                    ]
                                 }
 
                         _ ->

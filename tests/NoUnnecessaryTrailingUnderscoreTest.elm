@@ -15,6 +15,17 @@ details =
     [ "REPLACEME" ]
 
 
+messageForTopLevel : String
+messageForTopLevel =
+    "Top-level declaration names should not end with an underscore"
+
+
+detailsForTopLevel : List String
+detailsForTopLevel =
+    [ "A trailing underscore \"_\" is often used to prevent shadowing issues, but top-level declarations should not resolve these issues in that manner."
+    ]
+
+
 all : Test
 all =
     describe "NoUnnecessaryTrailingUnderscore"
@@ -60,8 +71,8 @@ a_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
-                            , details = details
+                            { message = messageForTopLevel
+                            , details = detailsForTopLevel
                             , under = "a_"
                             }
                         ]
