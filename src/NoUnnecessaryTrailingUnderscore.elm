@@ -325,14 +325,20 @@ reportErrorsForLet namesFromLetDeclarations scopes declarations =
         (\node ->
             case Node.value node of
                 Expression.LetFunction function ->
+                    let
+                        functionName : String
+                        functionName =
+                            function.declaration
+                                |> Node.value
+                                |> .name
+                                |> Node.value
+                    in
                     case
                         reportFunction
                             namesFromLetDeclarations
                             scopes
                             function
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
-                            }
+                            (defaultErrorAndMessage functionName)
                     of
                         Just newError ->
                             [ newError ]
@@ -464,14 +470,22 @@ error scopes { range, name, origin } =
     then
         Just
             (Rule.error
-                { message = "REPLACEME"
-                , details = [ "REPLACEME" ]
-                }
+                (defaultErrorAndMessage name)
                 range
             )
 
     else
         Nothing
+
+
+defaultErrorAndMessage : String -> { message : String, details : List String }
+defaultErrorAndMessage name =
+    { message = name ++ " should not end with an underscore"
+    , details =
+        [ "It looks like this was used to avoid a shadowing issue, but the variable it would have clashed with is not present in the scope of where this variable was declared anymore. You should rename the variable and remove the underscore."
+        , "Note that this may not be a safe change, in that renaming may clash with a value declared deeper in the expression, but I think it's less confusing to have the nested variable have a trailing underscore rather than the variable declared higher-up."
+        ]
+    }
 
 
 shouldNameBeReported : NameOrigin -> Bool

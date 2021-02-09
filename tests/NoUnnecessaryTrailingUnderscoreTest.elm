@@ -12,7 +12,9 @@ message =
 
 details : List String
 details =
-    [ "REPLACEME" ]
+    [ "It looks like this was used to avoid a shadowing issue, but the variable it would have clashed with is not present in the scope of where this variable was declared anymore. You should rename the variable and remove the underscore."
+    , "Note that this may not be a safe change, in that renaming may clash with a value declared deeper in the expression, but I think it's less confusing to have the nested variable have a trailing underscore rather than the variable declared higher-up."
+    ]
 
 
 messageForTopLevel : String
@@ -37,7 +39,7 @@ a value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -118,7 +120,7 @@ a (value_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -131,12 +133,12 @@ a (value1_ as value2_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value1_ should not end with an underscore"
                             , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = message
+                            { message = "value2_ should not end with an underscore"
                             , details = details
                             , under = "value2_"
                             }
@@ -149,12 +151,12 @@ a (value1_, value2_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value1_ should not end with an underscore"
                             , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = message
+                            { message = "value2_ should not end with an underscore"
                             , details = details
                             , under = "value2_"
                             }
@@ -167,7 +169,7 @@ a (Foo value_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -182,7 +184,7 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -197,12 +199,12 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value1_ should not end with an underscore"
                             , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = message
+                            { message = "value2_ should not end with an underscore"
                             , details = details
                             , under = "value2_"
                             }
@@ -217,12 +219,12 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value1_ should not end with an underscore"
                             , details = details
                             , under = "value1_"
                             }
                         , Review.Test.error
-                            { message = message
+                            { message = "value2_ should not end with an underscore"
                             , details = details
                             , under = "value2_"
                             }
@@ -269,7 +271,7 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -319,7 +321,7 @@ b value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -332,7 +334,7 @@ a = \\value_ -> 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -346,7 +348,7 @@ a = let value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -360,7 +362,7 @@ a = let (Value value_) = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
@@ -382,7 +384,7 @@ a = let fn value_ = 1
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = message
+                            { message = "value_ should not end with an underscore"
                             , details = details
                             , under = "value_"
                             }
