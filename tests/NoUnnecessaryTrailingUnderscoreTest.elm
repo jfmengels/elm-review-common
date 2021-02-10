@@ -5,11 +5,6 @@ import Review.Test
 import Test exposing (Test, describe, test)
 
 
-message : String
-message =
-    "REPLACEME"
-
-
 details : List String
 details =
     [ "It looks like this was used to avoid a shadowing issue, but the variable it would have clashed with is not present in the scope of where this variable was declared anymore. You should rename the variable and remove the underscore."
