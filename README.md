@@ -5,7 +5,7 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoUnnecessaryTrailingUnderscore`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoUnnecessaryTrailingUnderscore) - Reports REPLACEME.
+- [`NoUnnecessaryTrailingUnderscore`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoUnnecessaryTrailingUnderscore) - Reports unnecessary or suboptimal trailing underscores in variable names.
 - [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoExposingEverything) - Forbids exporting everything from a module.
 - [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoImportingEverything) - Forbids importing everything from a module.
 - [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.

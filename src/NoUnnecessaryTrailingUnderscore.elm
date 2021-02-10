@@ -16,29 +16,114 @@ import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
 
-{-| Reports... REPLACEME
+{-| Reports unnecessary or suboptimal trailing underscores in variable names.
 
     config =
         [ NoUnnecessaryTrailingUnderscore.rule
         ]
 
+I don't know how widespread this usage is, but I tend to append variable names with `_` to avoid [shadowing conflicts](https://github.com/elm/compiler/blob/9d97114702bf6846cab622a2203f60c2d4ebedf2/hints/shadowing.md), for instance like this:
+
+    viewName name =
+      case name of
+        Just name_ -> ...
+        Nothing -> ...
+
+Obviously when I am able to figure out a better name for one of the two variables, I go for that. In this case, I may rename the argument to `viewName` to `maybeName` for instance.
+
+But I notice that relatively often, the need for having the trailing underscore disappears, because I changed some code and the variable name that required me to add a trailing underscore has also disappeared. When that happens, the trailing underscore becomes a distraction and I find it nicer to rename the variable to not have that underscore.
+
+This rule does not propose a fix for the issues (at least for now). I recommend renaming the variables through your IDE, as that will be a simpler and safer process.
+That said, as we'll see in the following sections and examples, these renames may end up in shadowing issues, so please do these renames with a compiler running next to (or `elm-test --watch` for the changes happening in test files) to notice problems early on.
+
 
 ## Fail
 
+
+### 1. Unneeded trailing underscore
+
+When a variable has a trailing underscore that could be removed without an issue.
+
+    viewName maybeName =
+        case maybeName of
+            Just name_ ->
+                name_
+
+
+### 2. Top-level declarations containing an underscore
+
+This rule reports top-level declarations containing an underscore, even when removing the underscore would cause a shadowing conflict.
+The idea here is that if you have both `viewName` and `viewName_`, someone who looks at the code may have a hard time figuring which function they should use and what the differences are between the two.
+
+    viewName_ name = ...
+
+When `viewName_` is only used inside `viewName`, an alternative name that you could go for is appending `Help`, such as `viewNameHelp`, which I've seen regularly often in several packages and codebases.
+
+
+### 3. Let declarations on the same level where one has an underscore and one doesn't
+
     a =
-        "REPLACEME example to replace"
+        let
+            name =
+                "Jeroen"
+
+            name_ =
+                "Engels"
+        in
+        name ++ " " ++ name_
+
+Very similar to the previous point, we report `name_` because this name is too confusing in the sense that readers won't know which one to use when.
+In such instances, I believe there are clear benefits from spending a little bit of time figuring out a better name.
+
+Here is another instance where a better name could be given.
+
+    a =
+        let
+            model =
+                { a = 1, b = 2 }
+
+            model_ =
+                { model | b = model.b + 1 }
+        in
+        doSomething model_
+
+In this example, even simple naming schemes like `initialModel` and `modelWithUpdatedB`, or `modelStep1` and `modelStep2` would be an improvement over a trailing underscore. I'm sure you can find even better names for your specific use-case!
+
+
+### 4. When an underscore is used to avoid a shadowing conflict with a more deeply nested variable
+
+    view model_ =
+        case model_ of
+            Loaded model ->
+                text model.name
+
+In this case, `model_` has a trailing underscore to avoid a conflict with `model` declared in a deeper scope.
+I tend to find constructs like these to be an indication that either
+
+  - one or both of those variables have a bad name for what they're represent (`model` could be `loadedModel`?)
+  - if they represent the same type, again we have an issue where it's not clear when one should be used over the other
 
 
 ## Success
 
-    a =
-        "REPLACEME example to replace"
+We don't report errors when there is a reasonable use-case for adding a trailing underscore, or when a variable does not have a trailing underscore.
+
+    viewName name =
+        case name of
+            Just name_ ->
+                name_
 
 
 ## When (not) to enable this rule
 
-This rule is useful when REPLACEME.
-This rule is not useful when REPLACEME.
+This is a pretty personal rule that I'd like to enforce on my own projects.
+I have not yet tested it extensively, but I feel like it could bring some value and bring me some sense of satisfaction when I know that the project adheres to this rule.
+
+I feel comfortable enough with asking people making pull requests to the projects I maintain to make changes in order to follow this rule.
+But I will probably not enforce this rule in a project where my team is bigger, because this may be too big of a source of frustration for my colleagues, especially if they tend to notice problems in the CI and no way to autofix the issues.
+
+I recommend AGAINST enforcing this rule if you do not agree with the choices I have made, or if you do not have that habit of adding trailing underscores.
+If you see some value in it, you may still want to use this rule to detect places where naming could be improved and make improvements to these places, but not end up enforcing it.
 
 
 ## Try it out
