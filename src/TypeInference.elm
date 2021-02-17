@@ -135,7 +135,8 @@ addProjectVisitors schema =
 
 moduleVisitor : Rule.ModuleRuleSchema schemaState (OuterModuleContext a) -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } (OuterModuleContext a)
 moduleVisitor schema =
-    schema |> Rule.withDeclarationListVisitor declarationListVisitor
+    schema
+        |> Rule.withDeclarationListVisitor declarationListVisitor
 
 
 
