@@ -437,4 +437,13 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report errors when name would clash with implicitly imported functions from elm/core's Basics" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let min_ = 1
+    in 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]

@@ -7,11 +7,15 @@ module NoUnnecessaryTrailingUnderscore exposing (rule)
 -}
 
 import Dict exposing (Dict)
+import Elm.Docs
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
+import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Node as Node exposing (Node)
 import Elm.Syntax.Pattern as Pattern
 import Elm.Syntax.Range exposing (Range)
+import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
@@ -138,6 +142,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoUnnecessaryT
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoUnnecessaryTrailingUnderscore" initialContext
+        |> Rule.withDependenciesModuleVisitor dependenciesVisitor
         |> Rule.withDeclarationListVisitor declarationListVisitor
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
@@ -146,7 +151,8 @@ rule =
 
 
 type alias Context =
-    { scopes : Scopes
+    { modulesFromDependencies : Dict String Elm.Docs.Module
+    , scopes : Scopes
     , scopesToAdd : Dict RangeLike (Set String)
     }
 
@@ -161,9 +167,37 @@ type alias RangeLike =
 
 initialContext : Context
 initialContext =
-    { scopes = ( Set.empty, [] )
+    { modulesFromDependencies = Dict.empty
+    , scopes = ( Set.empty, [] )
     , scopesToAdd = Dict.empty
     }
+
+
+
+-- DEPENDENCIES VISITOR
+
+
+dependenciesVisitor : Dict String Dependency -> Context -> Context
+dependenciesVisitor dependencies context =
+    case Dict.get "elm/core" dependencies of
+        Just elmCore ->
+            let
+                elmCoreBasicsFunctions : Set String
+                elmCoreBasicsFunctions =
+                    elmCore
+                        |> Dependency.modules
+                        |> List.filter (\module_ -> module_.name == "Basics")
+                        |> List.concatMap (\module_ -> List.map .name module_.values)
+                        |> Set.fromList
+            in
+            { context | scopes = ( elmCoreBasicsFunctions, [] ) }
+
+        Nothing ->
+            context
+
+
+
+-- DECLARATION LIST VISITOR
 
 
 declarationListVisitor : List (Node Declaration) -> Context -> ( List (Rule.Error {}), Context )
