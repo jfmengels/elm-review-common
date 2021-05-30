@@ -28,6 +28,8 @@ import Set exposing (Set)
 
 {-| Reports types that should be exposed but are not.
 
+🔧 Running with `--fix` will automatically remove all the reported errors.
+
 If a type is not exposed then it can be impossible to annotate functions or values that use them outside of the module. Affected types may be used in exposed function signatures, type aliases or other custom types.
 
     import NoMissingTypeExpose

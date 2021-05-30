@@ -5,11 +5,11 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoExposingEverything) - Forbids exporting everything from a module.
+- [🔧 `NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoExposingEverything "Provides automatic fixes") - Forbids exporting everything from a module.
 - [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoImportingEverything) - Forbids importing everything from a module.
 - [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
 - [`NoMissingTypeAnnotationInLetIn`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoMissingTypeAnnotationInLetIn) - Reports `let in` declarations that do not have a type annotation.
-- [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoMissingTypeExpose) - Reports types that should be exposed but are not.
+- [🔧 `NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.3/NoMissingTypeExpose "Provides automatic fixes") - Reports types that should be exposed but are not.
 
 
 ## Configuration
