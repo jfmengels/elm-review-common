@@ -6,6 +6,8 @@ module NoEarlyLet exposing (rule)
 
 -}
 
+import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.Node as Node exposing (Node)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -45,6 +47,25 @@ elm-review --template jfmengels/elm-review-common/example --rules NoEarlyLet
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoEarlyLet" ()
-        -- Add your visitors
+    Rule.newModuleRuleSchema "NoEarlyLet" initialContext
+        |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
+
+
+type alias Context =
+    {}
+
+
+initialContext : Context
+initialContext =
+    {}
+
+
+expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
+expressionVisitor node context =
+    case Node.value node of
+        Expression.LetExpression _ ->
+            ( [], context )
+
+        _ ->
+            ( [], context )
