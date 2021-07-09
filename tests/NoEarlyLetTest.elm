@@ -31,6 +31,7 @@ a b c d =
                             , details = [ "REPLACEME" ]
                             , under = "z"
                             }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
                         ]
         , test "should not report a let declaration is used in multiple branches" <|
             \() ->

@@ -80,7 +80,13 @@ createError : Node Expression.LetDeclaration -> Maybe (Rule.Error {})
 createError node =
     case Node.value node of
         Expression.LetFunction { declaration } ->
-            Nothing
+            Just
+                (Rule.error
+                    { message = "REPLACEME"
+                    , details = [ "REPLACEME" ]
+                    }
+                    (declaration |> Node.value |> .name |> Node.range)
+                )
 
         _ ->
             Nothing
