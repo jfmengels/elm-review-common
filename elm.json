@@ -5,6 +5,7 @@
     "license": "BSD-3-Clause",
     "version": "1.0.4",
     "exposed-modules": [
+        "NoEarlyLet",
         "NoExposingEverything",
         "NoImportingEverything",
         "NoMissingTypeAnnotation",
