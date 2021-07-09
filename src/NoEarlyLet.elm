@@ -64,8 +64,23 @@ initialContext =
 expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitor node context =
     case Node.value node of
-        Expression.LetExpression _ ->
-            ( [], context )
+        Expression.LetExpression { declarations } ->
+            let
+                errors : List (Rule.Error {})
+                errors =
+                    List.filterMap createError declarations
+            in
+            ( errors, context )
 
         _ ->
             ( [], context )
+
+
+createError : Node Expression.LetDeclaration -> Maybe (Rule.Error {})
+createError node =
+    case Node.value node of
+        Expression.LetFunction { declaration } ->
+            Nothing
+
+        _ ->
+            Nothing
