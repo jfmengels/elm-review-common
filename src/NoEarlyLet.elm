@@ -48,6 +48,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoEarlyLet
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoEarlyLet" initialContext
+        |> Rule.withExpressionEnterVisitor expressionEnterVisitor
         |> Rule.withExpressionExitVisitor expressionExitVisitor
         |> Rule.fromModuleRuleSchema
 
@@ -59,6 +60,21 @@ type alias Context =
 initialContext : Context
 initialContext =
     {}
+
+
+expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
+expressionEnterVisitor node context =
+    case Node.value node of
+        Expression.LetExpression { declarations } ->
+            let
+                errors : List (Rule.Error {})
+                errors =
+                    List.filterMap createError declarations
+            in
+            ( [], context )
+
+        _ ->
+            ( [], context )
 
 
 expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
