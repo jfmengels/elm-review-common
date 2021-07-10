@@ -54,12 +54,14 @@ rule =
 
 
 type alias Context =
-    {}
+    { letDeclarations : List String
+    }
 
 
 initialContext : Context
 initialContext =
-    {}
+    { letDeclarations = []
+    }
 
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
