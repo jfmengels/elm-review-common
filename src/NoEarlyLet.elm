@@ -90,7 +90,7 @@ expressionExitVisitor node context =
                     let
                         errors : List (Rule.Error {})
                         errors =
-                            List.map createError2 head
+                            List.map createError head
                     in
                     ( errors, { context | letDeclarations = tail } )
 
@@ -112,8 +112,8 @@ collectDeclarations node =
             []
 
 
-createError2 : Node String -> Rule.Error {}
-createError2 node =
+createError : Node String -> Rule.Error {}
+createError node =
     Rule.error
         { message = "REPLACEME"
         , details = [ "REPLACEME" ]
