@@ -72,7 +72,8 @@ initialContext =
 
 type Branch
     = Branch
-        { used : List String
+        { letDeclarations : List (List (Node String))
+        , used : List String
         , branches : RangeDict Branch
         }
 
