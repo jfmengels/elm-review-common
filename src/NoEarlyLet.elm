@@ -57,7 +57,7 @@ rule =
 
 type alias Context =
     { letDeclarations : List (List (Node String))
-    , branches : Branch
+    , branch : Branch
     , currentBranching : List Range
     }
 
@@ -65,7 +65,7 @@ type alias Context =
 initialContext : Context
 initialContext =
     { letDeclarations = []
-    , branches =
+    , branch =
         Branch
             { letDeclarations = []
             , used = []
@@ -117,13 +117,13 @@ expressionEnterVisitor node context =
                     updateCurrentBranch
                         (\b -> { b | letDeclarations = letDeclarations ++ b.letDeclarations })
                         context.currentBranching
-                        context.branches
+                        context.branch
 
                 letDeclarations : List (Node String)
                 letDeclarations =
                     List.concatMap collectDeclarations declarations
             in
-            ( [], { context | branches = branch } )
+            ( [], { context | branch = branch } )
 
         _ ->
             ( [], context )
