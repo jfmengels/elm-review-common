@@ -55,12 +55,14 @@ rule =
 
 type alias Context =
     { letDeclarations : List (List String)
+    , used : List String
     }
 
 
 initialContext : Context
 initialContext =
     { letDeclarations = [ [ "z" ] ]
+    , used = []
     }
 
 
