@@ -66,10 +66,11 @@ initialContext : Context
 initialContext =
     { letDeclarations = []
     , branches =
-        { letDeclarations = []
-        , used = []
-        , branches = RangeDict.empty
-        }
+        Branch
+            { letDeclarations = []
+            , used = []
+            , branches = RangeDict.empty
+            }
     , currentBranching = []
     }
 
@@ -80,6 +81,23 @@ type Branch
         , used : List String
         , branches : RangeDict Branch
         }
+
+
+updateCurrentBranch : (Branch -> Branch) -> List Range -> Branch -> Branch
+updateCurrentBranch updateFn currentBranching (Branch branch) =
+    case currentBranching of
+        [] ->
+            updateFn (Branch branch)
+
+        range :: restOfBranching ->
+            Branch
+                { branch
+                    | branches =
+                        RangeDict.modify
+                            range
+                            (updateCurrentBranch updateFn restOfBranching)
+                            branch.branches
+                }
 
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )

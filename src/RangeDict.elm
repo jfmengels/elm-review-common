@@ -1,4 +1,4 @@
-module RangeDict exposing (RangeDict, empty, fromList, get, insert, member)
+module RangeDict exposing (RangeDict, empty, fromList, get, insert, member, modify)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Range exposing (Range)
@@ -16,6 +16,21 @@ empty =
 insert : Range -> v -> RangeDict v -> RangeDict v
 insert range =
     Dict.insert (rangeAsString range)
+
+
+modify : Range -> (v -> v) -> RangeDict v -> RangeDict v
+modify range mapper dict =
+    let
+        key : String
+        key =
+            rangeAsString range
+    in
+    case Dict.get key dict of
+        Just value ->
+            Dict.insert (rangeAsString range) (mapper value) dict
+
+        Nothing ->
+            dict
 
 
 fromList : List ( Range, v ) -> RangeDict v
