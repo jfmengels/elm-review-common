@@ -80,7 +80,7 @@ type Branch
 
 
 type alias BranchData =
-    { letDeclarations : List (List (Node String))
+    { letDeclarations : List (Node String)
     , used : List String
     , branches : RangeDict Branch
     }
@@ -115,7 +115,7 @@ expressionEnterVisitor node context =
                 branch : Branch
                 branch =
                     updateCurrentBranch
-                        (\b -> { b | letDeclarations = letDeclarations :: b.letDeclarations })
+                        (\b -> { b | letDeclarations = letDeclarations ++ b.letDeclarations })
                         context.currentBranching
                         context.branches
 
