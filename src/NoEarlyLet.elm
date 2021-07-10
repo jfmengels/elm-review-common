@@ -133,6 +133,7 @@ expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Co
 expressionExitVisitor node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
+            -- TODO Report for current branch from branch data
             case context.letDeclarations of
                 head :: tail ->
                     let
