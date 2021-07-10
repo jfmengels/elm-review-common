@@ -7,7 +7,7 @@ module NoEarlyLet exposing (rule)
 -}
 
 import Elm.Syntax.Expression as Expression exposing (Expression)
-import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Node as Node exposing (Node(..))
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -54,14 +54,14 @@ rule =
 
 
 type alias Context =
-    { letDeclarations : List (List String)
+    { letDeclarations : List (List (Node String))
     , used : List String
     }
 
 
 initialContext : Context
 initialContext =
-    { letDeclarations = [ [ "z" ] ]
+    { letDeclarations = [ [ Node { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } } "z" ] ]
     , used = []
     }
 
@@ -88,7 +88,9 @@ expressionExitVisitor node context =
             let
                 errors : List (Rule.Error {})
                 errors =
-                    List.filterMap createError declarations
+                    context.letDeclarations
+                        |> List.concatMap identity
+                        |> List.map createError2
             in
             ( errors, context )
 
@@ -110,3 +112,12 @@ createError node =
 
         _ ->
             Nothing
+
+
+createError2 : Node String -> Rule.Error {}
+createError2 node =
+    Rule.error
+        { message = "REPLACEME"
+        , details = [ "REPLACEME" ]
+        }
+        (Node.range node)
