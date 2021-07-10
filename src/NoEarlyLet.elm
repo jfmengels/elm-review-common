@@ -69,6 +69,9 @@ initialContext =
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
 expressionEnterVisitor node context =
     case Node.value node of
+        Expression.FunctionOrValue [] name ->
+            ( [], { context | used = name :: context.used } )
+
         Expression.LetExpression { declarations } ->
             let
                 letDeclarations : List (Node String)
