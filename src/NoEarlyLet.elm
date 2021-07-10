@@ -60,7 +60,7 @@ type alias Context =
 
 initialContext : Context
 initialContext =
-    { letDeclarations = []
+    { letDeclarations = [ "z" ]
     }
 
 
