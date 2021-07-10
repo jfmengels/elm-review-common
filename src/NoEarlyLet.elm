@@ -57,7 +57,7 @@ rule =
 
 type alias Context =
     { letDeclarations : List (List (Node String))
-    , branches : RangeDict Branch
+    , branches : Branch
     , currentBranching : List Range
     }
 
@@ -65,7 +65,11 @@ type alias Context =
 initialContext : Context
 initialContext =
     { letDeclarations = []
-    , branches = RangeDict.empty
+    , branches =
+        { letDeclarations = []
+        , used = []
+        , branches = RangeDict.empty
+        }
     , currentBranching = []
     }
 
