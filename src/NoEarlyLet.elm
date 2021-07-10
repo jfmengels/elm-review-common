@@ -85,14 +85,17 @@ expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Co
 expressionExitVisitor node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
-            let
-                errors : List (Rule.Error {})
-                errors =
-                    context.letDeclarations
-                        |> List.concatMap identity
-                        |> List.map createError2
-            in
-            ( errors, context )
+            case context.letDeclarations of
+                head :: tail ->
+                    let
+                        errors : List (Rule.Error {})
+                        errors =
+                            List.map createError2 head
+                    in
+                    ( errors, { context | letDeclarations = tail } )
+
+                _ ->
+                    ( [], context )
 
         _ ->
             ( [], context )
