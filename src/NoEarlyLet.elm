@@ -76,18 +76,21 @@ initialContext =
 
 
 type Branch
-    = Branch
-        { letDeclarations : List (List (Node String))
-        , used : List String
-        , branches : RangeDict Branch
-        }
+    = Branch BranchData
 
 
-updateCurrentBranch : (Branch -> Branch) -> List Range -> Branch -> Branch
+type alias BranchData =
+    { letDeclarations : List (List (Node String))
+    , used : List String
+    , branches : RangeDict Branch
+    }
+
+
+updateCurrentBranch : (BranchData -> BranchData) -> List Range -> Branch -> Branch
 updateCurrentBranch updateFn currentBranching (Branch branch) =
     case currentBranching of
         [] ->
-            updateFn (Branch branch)
+            Branch (updateFn branch)
 
         range :: restOfBranching ->
             Branch
