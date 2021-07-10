@@ -112,11 +112,18 @@ expressionEnterVisitor node context =
 
         Expression.LetExpression { declarations } ->
             let
+                branch : Branch
+                branch =
+                    updateCurrentBranch
+                        (\b -> { b | letDeclarations = letDeclarations :: b.letDeclarations })
+                        context.currentBranching
+                        context.branches
+
                 letDeclarations : List (Node String)
                 letDeclarations =
                     List.concatMap collectDeclarations declarations
             in
-            ( [], { context | letDeclarations = letDeclarations :: context.letDeclarations } )
+            ( [], { context | branches = branch } )
 
         _ ->
             ( [], context )
