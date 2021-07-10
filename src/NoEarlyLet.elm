@@ -71,11 +71,11 @@ expressionEnterVisitor node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
             let
-                errors : List (Rule.Error {})
-                errors =
-                    List.filterMap createError declarations
+                letDeclarations : List (Node String)
+                letDeclarations =
+                    List.concatMap collectDeclarations declarations
             in
-            ( [], context )
+            ( [], { context | letDeclarations = letDeclarations :: context.letDeclarations } )
 
         _ ->
             ( [], context )
@@ -98,20 +98,15 @@ expressionExitVisitor node context =
             ( [], context )
 
 
-createError : Node Expression.LetDeclaration -> Maybe (Rule.Error {})
-createError node =
+collectDeclarations : Node Expression.LetDeclaration -> List (Node String)
+collectDeclarations node =
     case Node.value node of
         Expression.LetFunction { declaration } ->
-            Just
-                (Rule.error
-                    { message = "REPLACEME"
-                    , details = [ "REPLACEME" ]
-                    }
-                    (declaration |> Node.value |> .name |> Node.range)
-                )
+            [ (Node.value declaration).name ]
 
-        _ ->
-            Nothing
+        Expression.LetDestructuring _ _ ->
+            -- TODO
+            []
 
 
 createError2 : Node String -> Rule.Error {}
