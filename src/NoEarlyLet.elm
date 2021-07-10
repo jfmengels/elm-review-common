@@ -61,7 +61,7 @@ type alias Context =
 
 initialContext : Context
 initialContext =
-    { letDeclarations = [ [ Node { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } } "z" ] ]
+    { letDeclarations = []
     , used = []
     }
 
