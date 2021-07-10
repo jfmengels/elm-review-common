@@ -8,6 +8,8 @@ module NoEarlyLet exposing (rule)
 
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
+import Elm.Syntax.Range exposing (Range)
+import RangeDict exposing (RangeDict)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -55,22 +57,32 @@ rule =
 
 type alias Context =
     { letDeclarations : List (List (Node String))
-    , used : List String
+    , branches : RangeDict Branch
+    , currentBranching : List Range
     }
 
 
 initialContext : Context
 initialContext =
     { letDeclarations = []
-    , used = []
+    , branches = RangeDict.empty
+    , currentBranching = []
     }
+
+
+type Branch
+    = Branch
+        { used : List String
+        , branches : RangeDict Branch
+        }
 
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
 expressionEnterVisitor node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
-            ( [], { context | used = name :: context.used } )
+            --( [], { context | used = name :: context.used } )
+            ( [], context )
 
         Expression.LetExpression { declarations } ->
             let
