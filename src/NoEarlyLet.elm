@@ -8,7 +8,7 @@ module NoEarlyLet exposing (rule)
 
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
-import Elm.Syntax.Range exposing (Location, Range)
+import Elm.Syntax.Range as Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Rule)
@@ -92,6 +92,7 @@ type alias BranchData =
 type alias Declared =
     { name : String
     , reportRange : Range
+    , removeRange : Range
     }
 
 
@@ -167,8 +168,12 @@ expressionEnterVisitorHelp node context =
             in
             { context | branch = branch }
 
-        Expression.LetExpression { declarations } ->
+        Expression.LetExpression { declarations, expression } ->
             let
+                isDeclarationAlone : Bool
+                isDeclarationAlone =
+                    List.length declarations == 1
+
                 letDeclarations : List Declared
                 letDeclarations =
                     declarations
@@ -177,6 +182,15 @@ expressionEnterVisitorHelp node context =
                             (\nameNode ->
                                 { name = Node.value nameNode
                                 , reportRange = Node.range nameNode
+                                , removeRange =
+                                    if isDeclarationAlone then
+                                        { start = (Node.range node).start
+                                        , end = (Node.range expression).end
+                                        }
+
+                                    else
+                                        -- TODO
+                                        Range.emptyRange
                                 }
                             )
 
