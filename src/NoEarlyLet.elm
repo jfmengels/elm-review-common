@@ -70,18 +70,19 @@ initialContext =
     Rule.initContextCreator
         (\extractSourceCode () ->
             { extractSourceCode = extractSourceCode
-            , branch = newBranch
+            , branch = newBranch (InsertNewLet { row = 0, column = 0 })
             , currentBranching = []
             }
         )
         |> Rule.withSourceCodeExtractor
 
 
-newBranch : Branch
-newBranch =
+newBranch : LetInsertPosition -> Branch
+newBranch insertionLocation =
     Branch
         { letDeclarations = []
         , used = []
+        , insertionLocation = insertionLocation
         , branches = RangeDict.empty
         }
 
@@ -93,8 +94,13 @@ type Branch
 type alias BranchData =
     { letDeclarations : List Declared
     , used : List String
+    , insertionLocation : LetInsertPosition
     , branches : RangeDict Branch
     }
+
+
+type LetInsertPosition
+    = InsertNewLet Location
 
 
 type alias Declared =
@@ -136,16 +142,25 @@ getCurrentBranch currentBranching (Branch branch) =
 declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
 declarationVisitor node context =
     case Node.value node of
-        Declaration.FunctionDeclaration _ ->
+        Declaration.FunctionDeclaration { declaration } ->
             ( []
             , { extractSourceCode = context.extractSourceCode
-              , branch = newBranch
+              , branch = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression))
               , currentBranching = []
               }
             )
 
         _ ->
             ( [], context )
+
+
+figureOutInsertionLocation : Node Expression -> LetInsertPosition
+figureOutInsertionLocation node =
+    case Node.value node of
+        -- TODO
+        --Expression.LetBlock _ -> InsertNewLet (Node.range node)
+        _ ->
+            InsertNewLet (Node.range node).start
 
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
@@ -249,7 +264,7 @@ fullLines range =
     }
 
 
-addBranches : List (Node a) -> Context -> Context
+addBranches : List (Node Expression) -> Context -> Context
 addBranches nodes context =
     let
         branch : Branch
@@ -262,14 +277,19 @@ addBranches nodes context =
     { context | branch = branch }
 
 
-insertNewBranches : List (Node a) -> RangeDict Branch -> RangeDict Branch
+insertNewBranches : List (Node Expression) -> RangeDict Branch -> RangeDict Branch
 insertNewBranches nodes rangeDict =
     case nodes of
         [] ->
             rangeDict
 
         node :: tail ->
-            insertNewBranches tail (RangeDict.insert (Node.range node) newBranch rangeDict)
+            insertNewBranches tail
+                (RangeDict.insert
+                    (Node.range node)
+                    (newBranch (figureOutInsertionLocation node))
+                    rangeDict
+                )
 
 
 expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
@@ -367,10 +387,6 @@ isUsingName name branch =
 
     else
         NoUse
-
-
-type LetInsertPosition
-    = InsertNewLet Location
 
 
 createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
