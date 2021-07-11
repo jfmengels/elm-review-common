@@ -208,7 +208,8 @@ expressionExitVisitorHelp node context =
         Expression.LetExpression { declarations } ->
             case getCurrentBranch context.currentBranching context.branch of
                 Just (Branch branch) ->
-                    List.map createError branch.letDeclarations
+                    branch.letDeclarations
+                        |> List.map createError
 
                 Nothing ->
                     []
