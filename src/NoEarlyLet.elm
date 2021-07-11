@@ -103,6 +103,17 @@ updateCurrentBranch updateFn currentBranching (Branch branch) =
                 }
 
 
+getCurrentBranch : List Range -> Branch -> Maybe Branch
+getCurrentBranch currentBranching (Branch branch) =
+    case currentBranching of
+        [] ->
+            Just (Branch branch)
+
+        range :: restOfBranching ->
+            RangeDict.get range branch.branches
+                |> Maybe.andThen (getCurrentBranch restOfBranching)
+
+
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
 expressionEnterVisitor node context =
     case Node.value node of
