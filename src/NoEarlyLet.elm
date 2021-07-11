@@ -190,22 +190,22 @@ expressionExitVisitor node context =
             else
                 context
     in
-    expressionExitVisitorHelp node newContext
+    ( expressionExitVisitorHelp node context, newContext )
 
 
-expressionExitVisitorHelp : Node Expression -> Context -> ( List (Rule.Error {}), Context )
+expressionExitVisitorHelp : Node Expression -> Context -> List (Rule.Error {})
 expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
             case getCurrentBranch context.currentBranching context.branch of
                 Just (Branch branch) ->
-                    ( List.map createError branch.letDeclarations, context )
+                    List.map createError branch.letDeclarations
 
                 Nothing ->
-                    ( [], context )
+                    []
 
         _ ->
-            ( [], context )
+            []
 
 
 collectDeclarations : Node Expression.LetDeclaration -> List (Node String)
