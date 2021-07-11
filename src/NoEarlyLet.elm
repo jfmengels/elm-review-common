@@ -179,7 +179,7 @@ expressionEnterVisitorHelp node context =
                     declarations
                         |> List.concatMap collectDeclarations
                         |> List.map
-                            (\nameNode ->
+                            (\( nameNode, declaration ) ->
                                 { name = Node.value nameNode
                                 , reportRange = Node.range nameNode
                                 , removeRange =
@@ -189,7 +189,8 @@ expressionEnterVisitorHelp node context =
                                         }
 
                                     else
-                                        -- TODO
+                                        -- TODO add test
+                                        -- Node.range declaration
                                         Range.emptyRange
                                 }
                             )
@@ -283,13 +284,13 @@ expressionExitVisitorHelp node context =
             []
 
 
-collectDeclarations : Node Expression.LetDeclaration -> List (Node String)
+collectDeclarations : Node Expression.LetDeclaration -> List ( Node String, Node Expression.LetDeclaration )
 collectDeclarations node =
     case Node.value node of
         Expression.LetFunction { declaration } ->
             -- TODO Add support for let functions? but need to check name clashes...
             if List.isEmpty (Node.value declaration).arguments then
-                [ (Node.value declaration).name ]
+                [ ( (Node.value declaration).name, node ) ]
 
             else
                 []
