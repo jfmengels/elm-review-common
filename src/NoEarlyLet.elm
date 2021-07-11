@@ -149,6 +149,17 @@ expressionEnterVisitorHelp node context =
             in
             { context | branch = branch }
 
+        Expression.RecordUpdateExpression name _ ->
+            let
+                branch : Branch
+                branch =
+                    updateCurrentBranch
+                        (\b -> { b | used = Node.value name :: b.used })
+                        context.currentBranching
+                        context.branch
+            in
+            { context | branch = branch }
+
         Expression.LetExpression { declarations } ->
             let
                 letDeclarations : List (Node String)

@@ -33,6 +33,27 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
                         ]
+        , test "should report a let declaration that could be computed in a if branch (referenced by record update expression)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = {a = 1}
+  in
+  if b then
+    {z | a = 2}
+  else
+    {a = 3}
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                        ]
         , test "should not report let functions" <|
             \() ->
                 -- TODO later?
