@@ -139,8 +139,15 @@ expressionEnterVisitorHelp : Node Expression -> Context -> ( List nothing, Conte
 expressionEnterVisitorHelp node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
-            --( [], { context | used = name :: context.used } )
-            ( [], context )
+            let
+                branch : Branch
+                branch =
+                    updateCurrentBranch
+                        (\b -> { b | used = name :: b.used })
+                        context.currentBranching
+                        context.branch
+            in
+            ( [], { context | branch = branch } )
 
         Expression.LetExpression { declarations } ->
             let
