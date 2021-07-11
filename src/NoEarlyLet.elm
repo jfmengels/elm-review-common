@@ -189,12 +189,12 @@ expressionEnterVisitorHelp node context =
 expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionExitVisitor node context =
     ( expressionExitVisitorHelp node context
-    , popCurrentNodeFromBRanching (Node.range node) context
+    , popCurrentNodeFromBranching (Node.range node) context
     )
 
 
-popCurrentNodeFromBRanching : Range -> Context -> Context
-popCurrentNodeFromBRanching range context =
+popCurrentNodeFromBranching : Range -> Context -> Context
+popCurrentNodeFromBranching range context =
     if getLastListItem context.currentBranching == Just range then
         { context | currentBranching = List.filter (\n -> n /= range) context.currentBranching }
 
