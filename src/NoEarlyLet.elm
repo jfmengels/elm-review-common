@@ -222,6 +222,7 @@ expressionExitVisitor node context =
 
 popCurrentNodeFromBranching : Range -> Context -> Context
 popCurrentNodeFromBranching range context =
+    -- TODO improve. Make currentbranching an array?
     if getLastListItem context.currentBranching == Just range then
         { context | currentBranching = List.filter (\n -> n /= range) context.currentBranching }
 
