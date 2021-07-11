@@ -322,7 +322,6 @@ expressionExitVisitorHelp node context =
 
                             else
                                 canBeMovedToCloserLocation branch declaration.name
-                                    |> Maybe.map InsertNewLet
                                     |> Maybe.map (createError context declaration)
                         )
                         branch.letDeclarations
@@ -350,10 +349,10 @@ collectDeclarations node =
             []
 
 
-canBeMovedToCloserLocation : BranchData -> String -> Maybe Location
+canBeMovedToCloserLocation : BranchData -> String -> Maybe LetInsertPosition
 canBeMovedToCloserLocation branch name =
     let
-        relevantUsages : List Range
+        relevantUsages : List LetInsertPosition
         relevantUsages =
             branch.branches
                 |> RangeDict.toList
@@ -361,15 +360,15 @@ canBeMovedToCloserLocation branch name =
                     (\( range, Branch b ) ->
                         case isUsingName name b of
                             DirectUse ->
-                                Just range
+                                Just b.insertionLocation
 
                             NoUse ->
                                 Nothing
                     )
     in
     case relevantUsages of
-        [ range ] ->
-            Just range.start
+        [ location ] ->
+            Just location
 
         _ ->
             Nothing
