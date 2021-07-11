@@ -6,9 +6,10 @@ module NoEarlyLet exposing (rule)
 
 -}
 
+import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
-import Elm.Syntax.Range as Range exposing (Location, Range)
+import Elm.Syntax.Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Rule)
@@ -51,6 +52,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoEarlyLet
 rule : Rule
 rule =
     Rule.newModuleRuleSchemaUsingContextCreator "NoEarlyLet" initialContext
+        |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionEnterVisitor
         |> Rule.withExpressionExitVisitor expressionExitVisitor
         |> Rule.fromModuleRuleSchema
@@ -129,6 +131,21 @@ getCurrentBranch currentBranching (Branch branch) =
         range :: restOfBranching ->
             RangeDict.get range branch.branches
                 |> Maybe.andThen (getCurrentBranch restOfBranching)
+
+
+declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
+declarationVisitor node context =
+    case Node.value node of
+        Declaration.FunctionDeclaration _ ->
+            ( []
+            , { extractSourceCode = context.extractSourceCode
+              , branch = newBranch
+              , currentBranching = []
+              }
+            )
+
+        _ ->
+            ( [], context )
 
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )

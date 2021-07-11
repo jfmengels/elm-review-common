@@ -236,4 +236,20 @@ a b c d =
     {a = 3}
 """ |> String.replace "$" " ")
                         ]
+        , test "should not be confused by what happens in other declarations" <|
+            \() ->
+                """module A exposing (..)
+first =
+  case A of
+    A -> z
+
+second =
+    let
+        z = let x = 1 in x
+        y = z
+    in
+    y
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
