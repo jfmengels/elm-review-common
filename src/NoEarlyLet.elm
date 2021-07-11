@@ -50,23 +50,29 @@ elm-review --template jfmengels/elm-review-common/example --rules NoEarlyLet
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoEarlyLet" initialContext
+    Rule.newModuleRuleSchemaUsingContextCreator "NoEarlyLet" initialContext
         |> Rule.withExpressionEnterVisitor expressionEnterVisitor
         |> Rule.withExpressionExitVisitor expressionExitVisitor
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
-    { branch : Branch
+    { extractSourceCode : Range -> String
+    , branch : Branch
     , currentBranching : List Range
     }
 
 
-initialContext : Context
+initialContext : Rule.ContextCreator () Context
 initialContext =
-    { branch = newBranch
-    , currentBranching = []
-    }
+    Rule.initContextCreator
+        (\extractSourceCode () ->
+            { extractSourceCode = extractSourceCode
+            , branch = newBranch
+            , currentBranching = []
+            }
+        )
+        |> Rule.withSourceCodeExtractor
 
 
 newBranch : Branch
