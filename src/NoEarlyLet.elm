@@ -83,9 +83,15 @@ type Branch
 
 
 type alias BranchData =
-    { letDeclarations : List (Node String)
+    { letDeclarations : List Declared
     , used : List String
     , branches : RangeDict Branch
+    }
+
+
+type alias Declared =
+    { name : String
+    , reportRange : Range
     }
 
 
@@ -163,9 +169,16 @@ expressionEnterVisitorHelp node context =
 
         Expression.LetExpression { declarations } ->
             let
-                letDeclarations : List (Node String)
+                letDeclarations : List Declared
                 letDeclarations =
-                    List.concatMap collectDeclarations declarations
+                    declarations
+                        |> List.concatMap collectDeclarations
+                        |> List.map
+                            (\nameNode ->
+                                { name = Node.value nameNode
+                                , reportRange = Node.range nameNode
+                                }
+                            )
 
                 branch : Branch
                 branch =
@@ -237,18 +250,17 @@ expressionExitVisitorHelp node context =
         Expression.LetExpression { declarations } ->
             case getCurrentBranch context.currentBranching context.branch of
                 Just (Branch branch) ->
-                    branch.letDeclarations
-                        |> List.filterMap
-                            (\name ->
-                                if List.member (Node.value name) branch.used then
-                                    Nothing
+                    List.filterMap
+                        (\declaration ->
+                            if List.member declaration.name branch.used then
+                                Nothing
 
-                                else
-                                    canBeMovedToCloserLocation branch (Node.value name)
-                                        |> Maybe.map InsertNewLet
-                                        |> Maybe.map (Tuple.pair name)
-                            )
-                        |> List.map createError
+                            else
+                                canBeMovedToCloserLocation branch declaration.name
+                                    |> Maybe.map InsertNewLet
+                                    |> Maybe.map (createError declaration)
+                        )
+                        branch.letDeclarations
 
                 Nothing ->
                     []
@@ -320,13 +332,13 @@ type LetInsertPosition
     = InsertNewLet Location
 
 
-createError : ( Node String, LetInsertPosition ) -> Rule.Error {}
-createError ( node, InsertNewLet insertLocation ) =
+createError : Declared -> LetInsertPosition -> Rule.Error {}
+createError declared (InsertNewLet insertLocation) =
     Rule.errorWithFix
         { message = "REPLACEME"
         , details = [ "REPLACEME" ]
         }
-        (Node.range node)
+        declared.reportRange
         [ Fix.insertAt insertLocation
             """let
       z = 1
