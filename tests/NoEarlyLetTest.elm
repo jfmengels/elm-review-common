@@ -33,6 +33,16 @@ a b c d =
                                 , under = "z"
                                 }
                                 |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                                |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  if b then
+    let
+      z = 1
+    in
+    z
+  else
+    1
+"""
                             ]
         , test "should report a let declaration that could be computed in a if branch (referenced by record update expression)" <|
             \() ->
