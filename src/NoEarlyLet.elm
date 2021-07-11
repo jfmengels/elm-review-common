@@ -315,11 +315,12 @@ isUsingName name branch =
 
 createError : Node String -> Rule.Error {}
 createError node =
-    Rule.error
+    Rule.errorWithFix
         { message = "REPLACEME"
         , details = [ "REPLACEME" ]
         }
         (Node.range node)
+        []
 
 
 getLastListItem : List a -> Maybe a
