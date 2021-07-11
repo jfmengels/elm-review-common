@@ -200,4 +200,40 @@ a b c d =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should only remove the moved let declaration when there are other let declarations there" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    y = 1
+    z = {a = 1}
+  in
+  if b then
+    {z | a = 2}
+  else
+    {a = 3}
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                            |> Review.Test.whenFixed ("""module A exposing (..)
+a b c d =
+  let
+    y = 1
+    in
+  if b then
+    let
+          z = {a = 1}
+       $
+    in
+    {z | a = 2}
+  else
+    {a = 3}
+""" |> String.replace "$" " ")
+                        ]
         ]

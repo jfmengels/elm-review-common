@@ -197,9 +197,7 @@ expressionEnterVisitorHelp node context =
                                         }
 
                                     else
-                                        -- TODO add test
-                                        -- Node.range declaration
-                                        Range.emptyRange
+                                        Node.range declaration
                                 }
                             )
 
