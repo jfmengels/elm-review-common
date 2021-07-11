@@ -1,4 +1,4 @@
-module RangeDict exposing (RangeDict, empty, fromList, get, insert, member, modify)
+module RangeDict exposing (RangeDict, empty, fromList, get, insert, member, modify, toList)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Range exposing (Range)
@@ -40,6 +40,21 @@ fromList values =
         |> Dict.fromList
 
 
+toList : RangeDict v -> List ( Range, v )
+toList rangeDict =
+    rangeDict
+        |> Dict.toList
+        |> List.filterMap
+            (\( key, v ) ->
+                case undoRange key of
+                    Just range ->
+                        Just ( range, v )
+
+                    Nothing ->
+                        Nothing
+            )
+
+
 get : Range -> RangeDict v -> Maybe v
 get range =
     Dict.get (rangeAsString range)
@@ -59,3 +74,16 @@ rangeAsString range =
     ]
         |> List.map String.fromInt
         |> String.join "_"
+
+
+undoRange : String -> Maybe Range
+undoRange key =
+    case String.split "_" key |> List.filterMap String.toInt of
+        [ startRow, startColumn, endRow, endColumn ] ->
+            Just
+                { start = { row = startRow, column = startColumn }
+                , end = { row = endRow, column = endColumn }
+                }
+
+        _ ->
+            Nothing
