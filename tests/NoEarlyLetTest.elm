@@ -12,9 +12,10 @@ import Test exposing (Test, describe, test)
 all : Test
 all =
     describe "NoEarlyLet"
-        [ test "should report a let declaration that could be computed in a if branch" <|
-            \() ->
-                """module A exposing (..)
+        [ Test.only <|
+            test "should report a let declaration that could be computed in a if branch" <|
+                \() ->
+                    """module A exposing (..)
 a b c d =
   let
     z = 1
@@ -24,15 +25,15 @@ a b c d =
   else
     1
 """
-                    |> Review.Test.run rule
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
-                            , under = "z"
-                            }
-                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
-                        ]
+                        |> Review.Test.run rule
+                        |> Review.Test.expectErrors
+                            [ Review.Test.error
+                                { message = "REPLACEME"
+                                , details = [ "REPLACEME" ]
+                                , under = "z"
+                                }
+                                |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            ]
         , test "should report a let declaration that could be computed in a if branch (referenced by record update expression)" <|
             \() ->
                 """module A exposing (..)
