@@ -73,4 +73,45 @@ a b c d =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should report a let declaration that could be computed in a case branch" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = 1
+  in
+  case b of
+    A ->
+        1
+    B ->
+        z
+    C ->
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                        ]
+        , test "should not report a let declaration is used in multiple case branches" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = 1
+  in
+  case b of
+    A ->
+        z
+    B ->
+        z
+    C ->
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
