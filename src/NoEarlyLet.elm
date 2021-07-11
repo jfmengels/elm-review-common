@@ -276,36 +276,29 @@ collectDeclarations node =
 canBeMovedToCloserLocation : BranchData -> String -> Maybe Location
 canBeMovedToCloserLocation branch name =
     let
-        nameUses : List NameUse
-        nameUses =
+        relevantUsages : List Range
+        relevantUsages =
             branch.branches
                 |> RangeDict.toList
-                |> List.map
+                |> List.filterMap
                     (\( range, Branch b ) ->
-                        isUsingName name b
+                        case isUsingName name b of
+                            DirectUse ->
+                                Just range
+
+                            IndirectUse ->
+                                Just range
+
+                            NoUse ->
+                                Nothing
                     )
-
-        relevantUsages : List NameUse
-        relevantUsages =
-            List.filter
-                (\use ->
-                    case use of
-                        DirectUse ->
-                            True
-
-                        IndirectUse ->
-                            True
-
-                        NoUse ->
-                            False
-                )
-                nameUses
     in
-    if List.length relevantUsages == 1 then
-        Just { row = 6, column = 99999 }
+    case relevantUsages of
+        [ range ] ->
+            Just range.start
 
-    else
-        Nothing
+        _ ->
+            Nothing
 
 
 type NameUse
