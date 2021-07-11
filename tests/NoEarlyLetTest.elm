@@ -36,8 +36,8 @@ a b c d =
 a b c d =
   if b then
     let
-          z = 1
-       $
+      z = 1
+   $
     in
     z
   else
@@ -68,8 +68,8 @@ a b c d =
 a b c d =
   if b then
     let
-          z = {a = 1}
-       $
+      z = {a = 1}
+   $
     in
     {z | a = 2}
   else
@@ -175,8 +175,8 @@ a b c d =
         1
     B ->
         let
-              z = 1
-           $
+          z = 1
+       $
         in
         z
     C ->
@@ -228,8 +228,8 @@ a b c d =
     in
   if b then
     let
-          z = {a = 1}
-       $
+      z = {a = 1}
+   $
     in
     {z | a = 2}
   else

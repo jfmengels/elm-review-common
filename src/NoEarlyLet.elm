@@ -383,7 +383,7 @@ wrapInLet column source =
     in
     [ [ "let" ]
     , stripSharedPadding source
-        |> List.map (\line -> padding ++ "    " ++ line)
+        |> List.map (\line -> padding ++ line)
     , [ padding ++ "in", padding ]
     ]
         |> List.concat
