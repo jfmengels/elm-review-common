@@ -56,16 +56,14 @@ rule =
 
 
 type alias Context =
-    { letDeclarations : List (List (Node String))
-    , branch : Branch
+    { branch : Branch
     , currentBranching : List Range
     }
 
 
 initialContext : Context
 initialContext =
-    { letDeclarations = []
-    , branch = newBranch
+    { branch = newBranch
     , currentBranching = []
     }
 
