@@ -282,7 +282,7 @@ expressionExitVisitorHelp node context =
                             else
                                 canBeMovedToCloserLocation branch declaration.name
                                     |> Maybe.map InsertNewLet
-                                    |> Maybe.map (createError declaration)
+                                    |> Maybe.map (createError context declaration)
                         )
                         branch.letDeclarations
 
@@ -356,8 +356,8 @@ type LetInsertPosition
     = InsertNewLet Location
 
 
-createError : Declared -> LetInsertPosition -> Rule.Error {}
-createError declared (InsertNewLet insertLocation) =
+createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
+createError context declared (InsertNewLet insertLocation) =
     Rule.errorWithFix
         { message = "REPLACEME"
         , details = [ "REPLACEME" ]
