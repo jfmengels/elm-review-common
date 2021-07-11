@@ -237,8 +237,7 @@ expressionExitVisitorHelp node context =
             case getCurrentBranch context.currentBranching context.branch of
                 Just (Branch branch) ->
                     branch.letDeclarations
-                        |> List.filter (Node.value >> (\name -> not (List.member name branch.used)))
-                        |> List.filter (Node.value >> canBeMovedToCloserLocation branch)
+                        |> List.filter (Node.value >> (\name -> not (List.member name branch.used) && canBeMovedToCloserLocation branch name))
                         |> List.map createError
 
                 Nothing ->
