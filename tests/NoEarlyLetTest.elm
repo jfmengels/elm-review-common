@@ -83,6 +83,20 @@ a b c d =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report a let declaration if it's unused" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = 1
+  in
+  if b then
+    1
+  else
+    2
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         , test "should not report a let declaration is used next to where it was declared" <|
             \() ->
                 """module A exposing (..)
