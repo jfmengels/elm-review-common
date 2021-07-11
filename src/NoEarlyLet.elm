@@ -8,7 +8,7 @@ module NoEarlyLet exposing (rule)
 
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
-import Elm.Syntax.Range exposing (Range)
+import Elm.Syntax.Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Rule)
@@ -238,7 +238,16 @@ expressionExitVisitorHelp node context =
             case getCurrentBranch context.currentBranching context.branch of
                 Just (Branch branch) ->
                     branch.letDeclarations
-                        |> List.filter (Node.value >> (\name -> not (List.member name branch.used) && canBeMovedToCloserLocation branch name))
+                        |> List.filterMap
+                            (\name ->
+                                if List.member (Node.value name) branch.used then
+                                    Nothing
+
+                                else
+                                    canBeMovedToCloserLocation branch (Node.value name)
+                                        |> Maybe.map InsertNewLet
+                                        |> Maybe.map (Tuple.pair name)
+                            )
                         |> List.map createError
 
                 Nothing ->
@@ -264,7 +273,7 @@ collectDeclarations node =
             []
 
 
-canBeMovedToCloserLocation : BranchData -> String -> Bool
+canBeMovedToCloserLocation : BranchData -> String -> Maybe Location
 canBeMovedToCloserLocation branch name =
     let
         nameUses : List NameUse
@@ -293,10 +302,10 @@ canBeMovedToCloserLocation branch name =
                 nameUses
     in
     if List.length relevantUsages == 1 then
-        True
+        Just { row = 6, column = 99999 }
 
     else
-        False
+        Nothing
 
 
 type NameUse
@@ -314,18 +323,22 @@ isUsingName name branch =
         NoUse
 
 
-createError : Node String -> Rule.Error {}
-createError node =
+type LetInsertPosition
+    = InsertNewLet Location
+
+
+createError : ( Node String, LetInsertPosition ) -> Rule.Error {}
+createError ( node, InsertNewLet insertLocation ) =
     Rule.errorWithFix
         { message = "REPLACEME"
         , details = [ "REPLACEME" ]
         }
         (Node.range node)
-        [ Fix.insertAt { row = 6, column = 99999 }
-            """
-    let
+        [ Fix.insertAt insertLocation
+            """let
       z = 1
-    in"""
+    in
+    """
         ]
 
 
