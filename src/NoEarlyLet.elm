@@ -210,6 +210,7 @@ expressionExitVisitorHelp node context =
                 Just (Branch branch) ->
                     branch.letDeclarations
                         |> List.filter (Node.value >> (\name -> List.member name branch.used))
+                        |> List.filter (Node.value >> canBeMovedToCloserLocation branch)
                         |> List.map createError
 
                 Nothing ->
@@ -228,6 +229,11 @@ collectDeclarations node =
         Expression.LetDestructuring _ _ ->
             -- TODO
             []
+
+
+canBeMovedToCloserLocation : BranchData -> String -> Bool
+canBeMovedToCloserLocation branch name =
+    False
 
 
 createError : Node String -> Rule.Error {}
