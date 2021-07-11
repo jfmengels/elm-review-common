@@ -64,16 +64,17 @@ a b c d =
                                 , under = "z"
                                 }
                                 |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
-                                |> Review.Test.whenFixed """module A exposing (..)
+                                |> Review.Test.whenFixed ("""module A exposing (..)
 a b c d =
   if b then
     let
-      z = {a = 1}
+          z = {a = 1}
+       $
     in
     {z | a = 2}
   else
     {a = 3}
-"""
+""" |> String.replace "$" " ")
                             ]
         , test "should not report let functions" <|
             \() ->
