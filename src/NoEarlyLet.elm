@@ -394,13 +394,11 @@ stripSharedPadding source =
         lines =
             String.lines source
 
-        linesWithBlanks : List Int
-        linesWithBlanks =
-            List.map (String.toList >> countBlanks 0) lines
-
         sharedPadding : Int
         sharedPadding =
-            List.minimum linesWithBlanks
+            lines
+                |> List.map (String.toList >> countBlanks 0)
+                |> List.minimum
                 |> Maybe.withDefault 4
     in
     List.map (String.dropLeft sharedPadding) lines
