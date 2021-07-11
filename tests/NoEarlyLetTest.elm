@@ -103,9 +103,8 @@ a b c d =
 a b c d =
   if b then
     let
-        z = {a = 1}
-     $
-      y = 1
+          z = {a = 1}
+          y = 1
     in
     {z | a = 2}
   else

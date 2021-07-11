@@ -101,6 +101,7 @@ type alias BranchData =
 
 type LetInsertPosition
     = InsertNewLet Location
+    | InsertExistingLet Location
 
 
 type alias Declared =
@@ -157,8 +158,15 @@ declarationVisitor node context =
 figureOutInsertionLocation : Node Expression -> LetInsertPosition
 figureOutInsertionLocation node =
     case Node.value node of
-        -- TODO
-        --Expression.LetBlock _ -> InsertNewLet (Node.range node)
+        Expression.LetExpression { declarations } ->
+            case declarations of
+                first :: _ ->
+                    InsertExistingLet (Node.range first).start
+
+                [] ->
+                    -- Should not happen
+                    InsertNewLet (Node.range node).start
+
         _ ->
             InsertNewLet (Node.range node).start
 
@@ -389,17 +397,31 @@ isUsingName name branch =
 
 
 createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
-createError context declared (InsertNewLet insertLocation) =
+createError context declared letInsertPosition =
     Rule.errorWithFix
         { message = "REPLACEME"
         , details = [ "REPLACEME" ]
         }
         declared.reportRange
-        [ Fix.removeRange declared.removeRange
-        , context.extractSourceCode declared.declarationRange
-            |> wrapInLet declared.reportRange.start.column insertLocation.column
-            |> Fix.insertAt insertLocation
-        ]
+        (fix context declared letInsertPosition)
+
+
+fix : Context -> Declared -> LetInsertPosition -> List Fix
+fix context declared letInsertPosition =
+    case letInsertPosition of
+        InsertNewLet insertLocation ->
+            [ Fix.removeRange declared.removeRange
+            , context.extractSourceCode declared.declarationRange
+                |> wrapInLet declared.reportRange.start.column insertLocation.column
+                |> Fix.insertAt insertLocation
+            ]
+
+        InsertExistingLet insertLocation ->
+            [ Fix.removeRange declared.removeRange
+            , context.extractSourceCode declared.declarationRange
+                |> insertInLet declared.reportRange.start.column insertLocation.column
+                |> Fix.insertAt insertLocation
+            ]
 
 
 wrapInLet : Int -> Int -> String -> String
@@ -417,6 +439,32 @@ wrapInLet initialPosition column source =
     ]
         |> List.concat
         |> String.join "\n"
+
+
+insertInLet : Int -> Int -> String -> String
+insertInLet initialPosition column source =
+    (stripSharedPadding source
+        |> List.map (\line -> String.repeat (column - initialPosition) " " ++ line)
+        |> String.join "\n"
+    )
+        ++ String.repeat (column + 1) " "
+
+
+stripSharedPadding : String -> List String
+stripSharedPadding source =
+    let
+        lines : List String
+        lines =
+            String.lines source
+
+        sharedPadding : Int
+        sharedPadding =
+            lines
+                |> List.map (String.toList >> countBlanks 0)
+                |> List.minimum
+                |> Maybe.withDefault 4
+    in
+    List.map (String.dropLeft sharedPadding) lines
 
 
 countBlanks : Int -> List Char -> Int
