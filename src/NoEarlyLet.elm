@@ -118,6 +118,11 @@ getCurrentBranch currentBranching (Branch branch) =
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
 expressionEnterVisitor node context =
+    expressionEnterVisitorHelp node context
+
+
+expressionEnterVisitorHelp : Node Expression -> Context -> ( List nothing, Context )
+expressionEnterVisitorHelp node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
             --( [], { context | used = name :: context.used } )
