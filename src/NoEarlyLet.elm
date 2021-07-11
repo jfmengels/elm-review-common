@@ -118,7 +118,21 @@ getCurrentBranch currentBranching (Branch branch) =
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
 expressionEnterVisitor node context =
-    expressionEnterVisitorHelp node context
+    let
+        newContext : Context
+        newContext =
+            case getCurrentBranch context.currentBranching context.branch of
+                Just (Branch branch) ->
+                    if RangeDict.member (Node.range node) branch.branches then
+                        { context | currentBranching = context.currentBranching ++ [ Node.range node ] }
+
+                    else
+                        context
+
+                Nothing ->
+                    context
+    in
+    expressionEnterVisitorHelp node newContext
 
 
 expressionEnterVisitorHelp : Node Expression -> Context -> ( List nothing, Context )
@@ -167,6 +181,20 @@ expressionEnterVisitorHelp node context =
 
 expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionExitVisitor node context =
+    let
+        newContext : Context
+        newContext =
+            if getLastListItem context.currentBranching == Just (Node.range node) then
+                { context | currentBranching = List.filter (\n -> n /= Node.range node) context.currentBranching }
+
+            else
+                context
+    in
+    expressionExitVisitorHelp node newContext
+
+
+expressionExitVisitorHelp : Node Expression -> Context -> ( List (Rule.Error {}), Context )
+expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
             case getCurrentBranch context.currentBranching context.branch of
@@ -198,3 +226,16 @@ createError node =
         , details = [ "REPLACEME" ]
         }
         (Node.range node)
+
+
+getLastListItem : List a -> Maybe a
+getLastListItem list =
+    case list of
+        [] ->
+            Nothing
+
+        [ a ] ->
+            Just a
+
+        _ :: _ :: rest ->
+            getLastListItem rest
