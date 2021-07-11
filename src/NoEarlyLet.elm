@@ -65,14 +65,18 @@ type alias Context =
 initialContext : Context
 initialContext =
     { letDeclarations = []
-    , branch =
-        Branch
-            { letDeclarations = []
-            , used = []
-            , branches = RangeDict.empty
-            }
+    , branch = newBranch
     , currentBranching = []
     }
+
+
+newBranch : Branch
+newBranch =
+    Branch
+        { letDeclarations = []
+        , used = []
+        , branches = RangeDict.empty
+        }
 
 
 type Branch
@@ -133,6 +137,24 @@ expressionEnterVisitor node context =
                 letDeclarations : List (Node String)
                 letDeclarations =
                     List.concatMap collectDeclarations declarations
+            in
+            ( [], { context | branch = branch } )
+
+        Expression.IfBlock _ then_ else_ ->
+            let
+                branch : Branch
+                branch =
+                    updateCurrentBranch
+                        (\b ->
+                            { b
+                                | branches =
+                                    b.branches
+                                        |> RangeDict.insert (Node.range then_) newBranch
+                                        |> RangeDict.insert (Node.range else_) newBranch
+                            }
+                        )
+                        context.currentBranching
+                        context.branch
             in
             ( [], { context | branch = branch } )
 
