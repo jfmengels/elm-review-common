@@ -233,7 +233,52 @@ collectDeclarations node =
 
 canBeMovedToCloserLocation : BranchData -> String -> Bool
 canBeMovedToCloserLocation branch name =
-    False
+    let
+        nameUses : List NameUse
+        nameUses =
+            branch.branches
+                |> RangeDict.toList
+                |> List.map
+                    (\( range, Branch b ) ->
+                        isUsingName name b
+                    )
+
+        relevantUsages : List NameUse
+        relevantUsages =
+            List.filter
+                (\use ->
+                    case use of
+                        DirectUse ->
+                            True
+
+                        IndirectUse ->
+                            True
+
+                        NoUse ->
+                            False
+                )
+                nameUses
+    in
+    if List.length relevantUsages == 1 then
+        True
+
+    else
+        False
+
+
+type NameUse
+    = DirectUse
+    | IndirectUse
+    | NoUse
+
+
+isUsingName : String -> BranchData -> NameUse
+isUsingName name branch =
+    if List.member name branch.used then
+        DirectUse
+
+    else
+        NoUse
 
 
 createError : Node String -> Rule.Error {}
