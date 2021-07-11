@@ -404,7 +404,6 @@ stripSharedPadding source =
             lines
                 |> List.map (String.toList >> countBlanks 0)
                 |> List.minimum
-                |> Debug.log "shared padding"
                 |> Maybe.withDefault 4
     in
     List.map (String.dropLeft sharedPadding) lines
