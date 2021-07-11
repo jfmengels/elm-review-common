@@ -12,7 +12,7 @@ import Test exposing (Test, describe, test)
 all : Test
 all =
     describe "NoEarlyLet"
-        [ test "should report a let declaration that could be computed in a branch" <|
+        [ test "should report a let declaration that could be computed in a if branch" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -33,7 +33,7 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
                         ]
-        , test "should not report a let declaration is used in multiple branches" <|
+        , test "should not report a let declaration is used in multiple if branches" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -59,6 +59,17 @@ a b c d =
     y
   else
     y + 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should not report a let declaration without branches" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = 1
+  in
+  z
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
