@@ -43,9 +43,10 @@ a b c d =
     1
 """
                         ]
-        , test "should report a let declaration that could be computed in a if branch (referenced by record update expression)" <|
-            \() ->
-                """module A exposing (..)
+        , Test.only <|
+            test "should report a let declaration that could be computed in a if branch (referenced by record update expression)" <|
+                \() ->
+                    """module A exposing (..)
 a b c d =
   let
     z = {a = 1}
@@ -55,15 +56,15 @@ a b c d =
   else
     {a = 3}
 """
-                    |> Review.Test.run rule
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
-                            , under = "z"
-                            }
-                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
-                            |> Review.Test.whenFixed """module A exposing (..)
+                        |> Review.Test.run rule
+                        |> Review.Test.expectErrors
+                            [ Review.Test.error
+                                { message = "REPLACEME"
+                                , details = [ "REPLACEME" ]
+                                , under = "z"
+                                }
+                                |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                                |> Review.Test.whenFixed """module A exposing (..)
 a b c d =
   if b then
     let
@@ -73,7 +74,7 @@ a b c d =
   else
     {a = 3}
 """
-                        ]
+                            ]
         , test "should not report let functions" <|
             \() ->
                 -- TODO later?
