@@ -378,17 +378,45 @@ createError context declared (InsertNewLet insertLocation) =
 
 wrapInLet : Int -> String -> String
 wrapInLet column source =
+    [ [ "let" ]
+    , stripSharedPadding source
+    , [ "in", "" ]
+    ]
+        |> List.concat
+        |> List.map (String.padLeft column ' ')
+        |> String.join "\n"
+
+
+stripSharedPadding : String -> List String
+stripSharedPadding source =
     let
-        padding : String
-        padding =
-            String.repeat column " "
+        lines : List String
+        lines =
+            String.lines source
+
+        linesWithBlanks : List Int
+        linesWithBlanks =
+            List.map (String.toList >> countBlanks 0) lines
+
+        sharedPadding : Int
+        sharedPadding =
+            List.minimum linesWithBlanks
+                |> Maybe.withDefault 4
     in
-    padding
-        ++ "let\n"
-        ++ source
-        ++ padding
-        ++ "in\n"
-        ++ padding
+    List.map (String.dropLeft sharedPadding) lines
+
+
+countBlanks : Int -> List Char -> Int
+countBlanks count chars =
+    case chars of
+        [] ->
+            count
+
+        ' ' :: rest ->
+            countBlanks (count + 1) rest
+
+        _ ->
+            count
 
 
 getLastListItem : List a -> Maybe a
