@@ -144,16 +144,16 @@ expressionEnterVisitorHelp node context =
 
         Expression.LetExpression { declarations } ->
             let
+                letDeclarations : List (Node String)
+                letDeclarations =
+                    List.concatMap collectDeclarations declarations
+
                 branch : Branch
                 branch =
                     updateCurrentBranch
                         (\b -> { b | letDeclarations = letDeclarations ++ b.letDeclarations })
                         context.currentBranching
                         context.branch
-
-                letDeclarations : List (Node String)
-                letDeclarations =
-                    List.concatMap collectDeclarations declarations
             in
             ( [], { context | branch = branch } )
 
