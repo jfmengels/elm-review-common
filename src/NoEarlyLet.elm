@@ -226,10 +226,10 @@ expressionEnterVisitorHelp node context =
                     declarations
                         |> List.concatMap collectDeclarations
                         |> List.map
-                            (\( nameNode, declaration ) ->
+                            (\( nameNode, expressionRange, declaration ) ->
                                 { name = Node.value nameNode
                                 , reportRange = Node.range nameNode
-                                , declarationRange = fullLines (Node.range declaration)
+                                , declarationRange = fullLines { start = (Node.range declaration).start, end = expressionRange.end }
                                 , removeRange =
                                     if isDeclarationAlone then
                                         { start = (Node.range node).start
@@ -237,7 +237,9 @@ expressionEnterVisitorHelp node context =
                                         }
 
                                     else
-                                        Node.range declaration
+                                        { start = { row = (Node.range declaration).start.row, column = 1 }
+                                        , end = expressionRange.end
+                                        }
                                 }
                             )
 
@@ -341,13 +343,22 @@ expressionExitVisitorHelp node context =
             []
 
 
-collectDeclarations : Node Expression.LetDeclaration -> List ( Node String, Node Expression.LetDeclaration )
+collectDeclarations : Node Expression.LetDeclaration -> List ( Node String, Range, Node Expression.LetDeclaration )
 collectDeclarations node =
     case Node.value node of
-        Expression.LetFunction { declaration } ->
+        Expression.LetFunction letFunction ->
+            let
+                declaration : Expression.FunctionImplementation
+                declaration =
+                    Node.value letFunction.declaration
+            in
             -- TODO Add support for let functions? but need to check name clashes...
-            if List.isEmpty (Node.value declaration).arguments then
-                [ ( (Node.value declaration).name, node ) ]
+            if List.isEmpty declaration.arguments then
+                [ ( declaration.name
+                  , Node.range declaration.expression
+                  , node
+                  )
+                ]
 
             else
                 []
@@ -419,7 +430,7 @@ fix context declared letInsertPosition =
         InsertExistingLet insertLocation ->
             [ Fix.removeRange declared.removeRange
             , context.extractSourceCode declared.declarationRange
-                |> insertInLet declared.reportRange.start.column insertLocation.column
+                |> insertInLet insertLocation.column
                 |> Fix.insertAt insertLocation
             ]
 
@@ -441,30 +452,16 @@ wrapInLet initialPosition column source =
         |> String.join "\n"
 
 
-insertInLet : Int -> Int -> String -> String
-insertInLet initialPosition column source =
-    (stripSharedPadding source
-        |> List.map (\line -> String.repeat (column - initialPosition) " " ++ line)
+insertInLet : Int -> String -> String
+insertInLet column source =
+    (source
+        |> String.trim
+        |> String.lines
+        |> List.map (\line -> String.repeat 1 " " ++ line)
         |> String.join "\n"
     )
-        ++ String.repeat (column + 1) " "
-
-
-stripSharedPadding : String -> List String
-stripSharedPadding source =
-    let
-        lines : List String
-        lines =
-            String.lines source
-
-        sharedPadding : Int
-        sharedPadding =
-            lines
-                |> List.map (String.toList >> countBlanks 0)
-                |> List.minimum
-                |> Maybe.withDefault 4
-    in
-    List.map (String.dropLeft sharedPadding) lines
+        ++ "\n"
+        ++ String.repeat column " "
 
 
 countBlanks : Int -> List Char -> Int

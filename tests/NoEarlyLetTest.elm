@@ -32,17 +32,16 @@ a b c d =
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
-                            |> Review.Test.whenFixed ("""module A exposing (..)
+                            |> Review.Test.whenFixed """module A exposing (..)
 a b c d =
   if b then
     let
         z = 1
-     $
     in
     z
   else
     1
-""" |> String.replace "$" " ")
+"""
                         ]
         , test "should report a let declaration that could be computed in a if branch (referenced by record update expression)" <|
             \() ->
@@ -64,17 +63,16 @@ a b c d =
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
-                            |> Review.Test.whenFixed ("""module A exposing (..)
+                            |> Review.Test.whenFixed """module A exposing (..)
 a b c d =
   if b then
     let
         z = {a = 1}
-     $
     in
     {z | a = 2}
   else
     {a = 3}
-""" |> String.replace "$" " ")
+"""
                         ]
         , test "should add to an existing let block instead of inserting a new let block" <|
             \() ->
@@ -99,17 +97,17 @@ a b c d =
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
-                            |> Review.Test.whenFixed ("""module A exposing (..)
+                            |> Review.Test.whenFixed """module A exposing (..)
 a b c d =
   if b then
     let
-          z = {a = 1}
-          y = 1
+       z = {a = 1}
+       y = 1
     in
     {z | a = 2}
   else
     {a = 3}
-""" |> String.replace "$" " ")
+"""
                         ]
         , test "should not report let functions" <|
             \() ->
@@ -203,7 +201,7 @@ a b c d =
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
-                            |> Review.Test.whenFixed ("""module A exposing (..)
+                            |> Review.Test.whenFixed """module A exposing (..)
 a b c d =
   case b of
     A ->
@@ -211,12 +209,11 @@ a b c d =
     B ->
         let
             z = 1
-         $
         in
         z
     C ->
         1
-""" |> String.replace "$" " ")
+"""
                         ]
         , test "should not report a let declaration is used in multiple case branches" <|
             \() ->
@@ -256,20 +253,20 @@ a b c d =
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
-                            |> Review.Test.whenFixed ("""module A exposing (..)
+                            |> Review.Test.whenFixed """module A exposing (..)
 a b c d =
   let
     y = 1
-    in
+
+  in
   if b then
     let
         z = {a = 1}
-     $
     in
     {z | a = 2}
   else
     {a = 3}
-""" |> String.replace "$" " ")
+"""
                         ]
         , test "should not be confused by what happens in other declarations" <|
             \() ->
