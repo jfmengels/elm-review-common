@@ -286,4 +286,30 @@ second =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report when a declaration is used in a branch of a sibling's declaration" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        z = 1
+        viewInput =
+            let
+                submitOnEnter =
+                    if True then
+                        z
+
+                    else
+                        1
+            in
+            submitOnEnter
+
+        viewButtonRow =
+                z
+    in
+    1
+
+a = 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
