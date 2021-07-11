@@ -343,9 +343,6 @@ canBeMovedToCloserLocation branch name =
                             DirectUse ->
                                 Just range
 
-                            IndirectUse ->
-                                Just range
-
                             NoUse ->
                                 Nothing
                     )
@@ -360,7 +357,6 @@ canBeMovedToCloserLocation branch name =
 
 type NameUse
     = DirectUse
-    | IndirectUse
     | NoUse
 
 
