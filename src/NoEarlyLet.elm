@@ -92,6 +92,7 @@ type alias BranchData =
 type alias Declared =
     { name : String
     , reportRange : Range
+    , declarationRange : Range
     , removeRange : Range
     }
 
@@ -182,6 +183,7 @@ expressionEnterVisitorHelp node context =
                             (\( nameNode, declaration ) ->
                                 { name = Node.value nameNode
                                 , reportRange = Node.range nameNode
+                                , declarationRange = fullLines (Node.range declaration)
                                 , removeRange =
                                     if isDeclarationAlone then
                                         { start = (Node.range node).start
@@ -217,6 +219,13 @@ expressionEnterVisitorHelp node context =
 
         _ ->
             context
+
+
+fullLines : Range -> Range
+fullLines range =
+    { start = { row = range.start.row, column = 1 }
+    , end = { row = range.end.row + 1, column = 1 }
+    }
 
 
 addBranches : List (Node a) -> Context -> Context
