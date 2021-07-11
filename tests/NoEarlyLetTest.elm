@@ -48,4 +48,19 @@ a b c d =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report a let declaration is used next to where it was declared" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = 1
+    y = z * 2
+  in
+  if b then
+    y
+  else
+    y + 1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
