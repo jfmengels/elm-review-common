@@ -240,7 +240,12 @@ collectDeclarations : Node Expression.LetDeclaration -> List (Node String)
 collectDeclarations node =
     case Node.value node of
         Expression.LetFunction { declaration } ->
-            [ (Node.value declaration).name ]
+            -- TODO Add support for let functions? but need to check name clashes...
+            if List.isEmpty (Node.value declaration).arguments then
+                [ (Node.value declaration).name ]
+
+            else
+                []
 
         Expression.LetDestructuring _ _ ->
             -- TODO

@@ -33,6 +33,21 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
                         ]
+        , test "should not report let functions" <|
+            \() ->
+                -- TODO later?
+                """module A exposing (..)
+a b c d =
+  let
+    z n = 1
+  in
+  if b then
+    z 1
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         , test "should not report a let declaration is used in multiple if branches" <|
             \() ->
                 """module A exposing (..)
