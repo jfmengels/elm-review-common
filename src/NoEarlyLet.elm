@@ -10,6 +10,7 @@ import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Range exposing (Range)
 import RangeDict exposing (RangeDict)
+import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -320,7 +321,12 @@ createError node =
         , details = [ "REPLACEME" ]
         }
         (Node.range node)
-        []
+        [ Fix.insertAt { row = 6, column = 99999 }
+            """
+    let
+      z = 1
+    in"""
+        ]
 
 
 getLastListItem : List a -> Maybe a
