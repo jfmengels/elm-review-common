@@ -181,16 +181,18 @@ expressionEnterVisitorHelp node context =
 
 expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionExitVisitor node context =
-    let
-        newContext : Context
-        newContext =
-            if getLastListItem context.currentBranching == Just (Node.range node) then
-                { context | currentBranching = List.filter (\n -> n /= Node.range node) context.currentBranching }
+    ( expressionExitVisitorHelp node context
+    , popCurrentNodeFromBRanching (Node.range node) context
+    )
 
-            else
-                context
-    in
-    ( expressionExitVisitorHelp node context, newContext )
+
+popCurrentNodeFromBRanching : Range -> Context -> Context
+popCurrentNodeFromBRanching range context =
+    if getLastListItem context.currentBranching == Just range then
+        { context | currentBranching = List.filter (\n -> n /= range) context.currentBranching }
+
+    else
+        context
 
 
 expressionExitVisitorHelp : Node Expression -> Context -> List (Rule.Error {})
