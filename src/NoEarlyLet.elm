@@ -144,17 +144,11 @@ expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Co
 expressionExitVisitor node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
-            -- TODO Report for current branch from branch data
-            case context.letDeclarations of
-                head :: tail ->
-                    let
-                        errors : List (Rule.Error {})
-                        errors =
-                            List.map createError head
-                    in
-                    ( errors, { context | letDeclarations = tail } )
+            case getCurrentBranch context.currentBranching context.branch of
+                Just (Branch branch) ->
+                    ( List.map createError branch.letDeclarations, context )
 
-                _ ->
+                Nothing ->
                     ( [], context )
 
         _ ->
