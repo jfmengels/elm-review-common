@@ -165,25 +165,33 @@ expressionEnterVisitorHelp node context =
             { context | branch = branch }
 
         Expression.IfBlock _ then_ else_ ->
-            let
-                branch : Branch
-                branch =
-                    updateCurrentBranch
-                        (\b ->
-                            { b
-                                | branches =
-                                    b.branches
-                                        |> RangeDict.insert (Node.range then_) newBranch
-                                        |> RangeDict.insert (Node.range else_) newBranch
-                            }
-                        )
-                        context.currentBranching
-                        context.branch
-            in
-            { context | branch = branch }
+            addBranches [ then_, else_ ] context
 
         _ ->
             context
+
+
+addBranches : List (Node a) -> Context -> Context
+addBranches nodes context =
+    let
+        branch : Branch
+        branch =
+            updateCurrentBranch
+                (\b -> { b | branches = insertNewBranches nodes b.branches })
+                context.currentBranching
+                context.branch
+    in
+    { context | branch = branch }
+
+
+insertNewBranches : List (Node a) -> RangeDict Branch -> RangeDict Branch
+insertNewBranches nodes rangeDict =
+    case nodes of
+        [] ->
+            rangeDict
+
+        node :: tail ->
+            insertNewBranches tail (RangeDict.insert (Node.range node) newBranch rangeDict)
 
 
 expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
