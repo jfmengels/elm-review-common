@@ -167,6 +167,14 @@ expressionEnterVisitorHelp node context =
         Expression.IfBlock _ then_ else_ ->
             addBranches [ then_, else_ ] context
 
+        Expression.CaseExpression { cases } ->
+            let
+                branchNodes : List (Node Expression)
+                branchNodes =
+                    List.map (\( _, exprNode ) -> exprNode) cases
+            in
+            addBranches branchNodes context
+
         _ ->
             context
 
