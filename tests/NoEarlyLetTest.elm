@@ -76,6 +76,42 @@ a b c d =
     {a = 3}
 """ |> String.replace "$" " ")
                         ]
+        , test "should add to an existing let block instead of inserting a new let block" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = {a = 1}
+  in
+  if b then
+    let
+      y = 1
+    in
+    {z | a = 2}
+  else
+    {a = 3}
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed ("""module A exposing (..)
+a b c d =
+  if b then
+    let
+      z = {a = 1}
+   $
+      y = 1
+    in
+    {z | a = 2}
+  else
+    {a = 3}
+""" |> String.replace "$" " ")
+                        ]
         , test "should not report let functions" <|
             \() ->
                 -- TODO later?
