@@ -7,7 +7,6 @@ import Test exposing (Test, describe, test)
 
 
 -- TODO Keep computations done outside of lambdas there. It might be an optimization.
--- TODO Look at variables used in the same branch
 
 
 all : Test

@@ -209,6 +209,7 @@ expressionExitVisitorHelp node context =
             case getCurrentBranch context.currentBranching context.branch of
                 Just (Branch branch) ->
                     branch.letDeclarations
+                        |> List.filter (Node.value >> (\name -> List.member name branch.used))
                         |> List.map createError
 
                 Nothing ->
