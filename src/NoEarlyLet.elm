@@ -230,7 +230,7 @@ expressionEnterVisitorHelp node context =
 fullLines : Range -> Range
 fullLines range =
     { start = { row = range.start.row, column = 1 }
-    , end = { row = range.end.row + 1, column = 1 }
+    , end = range.end
     }
 
 
@@ -370,12 +370,25 @@ createError context declared (InsertNewLet insertLocation) =
         }
         declared.reportRange
         [ Fix.removeRange declared.removeRange
-        , Fix.insertAt insertLocation
-            """let
-      z = 1
-    in
-    """
+        , context.extractSourceCode declared.declarationRange
+            |> wrapInLet insertLocation.column
+            |> Fix.insertAt insertLocation
         ]
+
+
+wrapInLet : Int -> String -> String
+wrapInLet column source =
+    let
+        padding : String
+        padding =
+            String.repeat column " "
+    in
+    padding
+        ++ "let\n"
+        ++ source
+        ++ padding
+        ++ "in\n"
+        ++ padding
 
 
 getLastListItem : List a -> Maybe a
