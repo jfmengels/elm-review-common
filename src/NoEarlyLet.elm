@@ -185,7 +185,7 @@ expressionEnterVisitorHelp node context =
                                 , removeRange =
                                     if isDeclarationAlone then
                                         { start = (Node.range node).start
-                                        , end = (Node.range expression).end
+                                        , end = (Node.range expression).start
                                         }
 
                                     else
@@ -353,7 +353,8 @@ createError declared (InsertNewLet insertLocation) =
         , details = [ "REPLACEME" ]
         }
         declared.reportRange
-        [ Fix.insertAt insertLocation
+        [ Fix.removeRange declared.removeRange
+        , Fix.insertAt insertLocation
             """let
       z = 1
     in
