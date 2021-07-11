@@ -355,9 +355,9 @@ canBeMovedToCloserLocation branch name =
         relevantUsages : List LetInsertPosition
         relevantUsages =
             branch.branches
-                |> RangeDict.toList
+                |> RangeDict.values
                 |> List.filterMap
-                    (\( range, Branch b ) ->
+                    (\(Branch b) ->
                         case isUsingName name b of
                             DirectUse ->
                                 Just b.insertionLocation

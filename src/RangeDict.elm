@@ -1,4 +1,4 @@
-module RangeDict exposing (RangeDict, empty, fromList, get, insert, member, modify, toList)
+module RangeDict exposing (RangeDict, empty, fromList, get, insert, member, modify, toList, values)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Range exposing (Range)
@@ -34,8 +34,8 @@ modify range mapper dict =
 
 
 fromList : List ( Range, v ) -> RangeDict v
-fromList values =
-    values
+fromList entries =
+    entries
         |> List.map (Tuple.mapFirst rangeAsString)
         |> Dict.fromList
 
@@ -53,6 +53,11 @@ toList rangeDict =
                     Nothing ->
                         Nothing
             )
+
+
+values : RangeDict v -> List v
+values rangeDict =
+    Dict.values rangeDict
 
 
 get : Range -> RangeDict v -> Maybe v
