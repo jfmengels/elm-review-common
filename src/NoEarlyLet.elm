@@ -132,10 +132,10 @@ expressionEnterVisitor node context =
                 Nothing ->
                     context
     in
-    expressionEnterVisitorHelp node newContext
+    ( [], expressionEnterVisitorHelp node newContext )
 
 
-expressionEnterVisitorHelp : Node Expression -> Context -> ( List nothing, Context )
+expressionEnterVisitorHelp : Node Expression -> Context -> Context
 expressionEnterVisitorHelp node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
@@ -147,7 +147,7 @@ expressionEnterVisitorHelp node context =
                         context.currentBranching
                         context.branch
             in
-            ( [], { context | branch = branch } )
+            { context | branch = branch }
 
         Expression.LetExpression { declarations } ->
             let
@@ -162,7 +162,7 @@ expressionEnterVisitorHelp node context =
                         context.currentBranching
                         context.branch
             in
-            ( [], { context | branch = branch } )
+            { context | branch = branch }
 
         Expression.IfBlock _ then_ else_ ->
             let
@@ -180,10 +180,10 @@ expressionEnterVisitorHelp node context =
                         context.currentBranching
                         context.branch
             in
-            ( [], { context | branch = branch } )
+            { context | branch = branch }
 
         _ ->
-            ( [], context )
+            context
 
 
 expressionExitVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
