@@ -397,42 +397,26 @@ createError context declared (InsertNewLet insertLocation) =
         declared.reportRange
         [ Fix.removeRange declared.removeRange
         , context.extractSourceCode declared.declarationRange
-            |> wrapInLet insertLocation.column
+            |> wrapInLet declared.reportRange.start.column insertLocation.column
             |> Fix.insertAt insertLocation
         ]
 
 
-wrapInLet : Int -> String -> String
-wrapInLet column source =
+wrapInLet : Int -> Int -> String -> String
+wrapInLet initialPosition column source =
     let
         padding : String
         padding =
             String.repeat (column - 1) " "
     in
     [ [ "let" ]
-    , stripSharedPadding source
-        |> List.map (\line -> padding ++ line)
+    , source
+        |> String.lines
+        |> List.map (\line -> String.repeat (column - initialPosition) " " ++ "    " ++ line)
     , [ padding ++ "in", padding ]
     ]
         |> List.concat
         |> String.join "\n"
-
-
-stripSharedPadding : String -> List String
-stripSharedPadding source =
-    let
-        lines : List String
-        lines =
-            String.lines source
-
-        sharedPadding : Int
-        sharedPadding =
-            lines
-                |> List.map (String.toList >> countBlanks 0)
-                |> List.minimum
-                |> Maybe.withDefault 4
-    in
-    List.map (String.dropLeft sharedPadding) lines
 
 
 countBlanks : Int -> List Char -> Int
