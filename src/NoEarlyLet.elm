@@ -71,6 +71,7 @@ type Branch
 
 type alias Branching =
     { full : List Range
+    , last : Maybe Range
     }
 
 
@@ -87,6 +88,7 @@ newBranch insertionLocation =
 emptyBranching : Branching
 emptyBranching =
     { full = []
+    , last = Nothing
     }
 
 
@@ -203,7 +205,9 @@ expressionEnterVisitor node context =
 
 addBranching : Range -> Branching -> Branching
 addBranching range branching =
-    { full = branching.full ++ [ range ] }
+    { full = branching.full ++ [ range ]
+    , last = Just range
+    }
 
 
 removeLastBranchIfOnTheLastBranch : Range -> Branching -> Maybe Branching
