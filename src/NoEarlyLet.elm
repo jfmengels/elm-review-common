@@ -426,7 +426,7 @@ canBeMovedToCloserLocation branch name =
                             []
 
                         else
-                            []
+                            canBeMovedToCloserLocation b name
                     )
     in
     case relevantUsages of
