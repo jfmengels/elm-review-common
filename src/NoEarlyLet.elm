@@ -438,17 +438,7 @@ canBeMovedToCloserLocationHelp branch name =
             relevantUsages =
                 branch.branches
                     |> RangeDict.values
-                    |> List.concatMap
-                        (\(Branch b) ->
-                            if List.member name b.used then
-                                [ b.insertionLocation ]
-
-                            else if RangeDict.isEmpty b.branches then
-                                []
-
-                            else
-                                canBeMovedToCloserLocationHelp b name
-                        )
+                    |> List.concatMap (\(Branch b) -> canBeMovedToCloserLocationHelp b name)
         in
         -- TODO Avoid looking at other branches if we already found 2 that use "name"
         if List.length relevantUsages > 1 then
