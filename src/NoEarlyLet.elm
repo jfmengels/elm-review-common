@@ -441,6 +441,9 @@ isUsingName name branch =
     if List.member name branch.used then
         DirectUse
 
+    else if RangeDict.isEmpty branch.branches then
+        NoUse
+
     else
         NoUse
 
