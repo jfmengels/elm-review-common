@@ -419,12 +419,14 @@ canBeMovedToCloserLocation branch name =
                 |> RangeDict.values
                 |> List.concatMap
                     (\(Branch b) ->
-                        case isUsingName name b of
-                            DirectUse ->
-                                [ b.insertionLocation ]
+                        if List.member name b.used then
+                            [ b.insertionLocation ]
 
-                            NoUse ->
-                                []
+                        else if RangeDict.isEmpty b.branches then
+                            []
+
+                        else
+                            []
                     )
     in
     case relevantUsages of
@@ -439,18 +441,6 @@ canBeMovedToCloserLocation branch name =
 type NameUse
     = DirectUse
     | NoUse
-
-
-isUsingName : String -> BranchData -> NameUse
-isUsingName name branch =
-    if List.member name branch.used then
-        DirectUse
-
-    else if RangeDict.isEmpty branch.branches then
-        NoUse
-
-    else
-        NoUse
 
 
 createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
