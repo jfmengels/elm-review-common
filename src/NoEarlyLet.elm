@@ -431,7 +431,7 @@ canBeMovedToCloserLocation branch name =
     in
     -- TODO Avoid looking at other branches if we already found 2 that use "name"
     if List.length relevantUsages > 1 then
-        [ branch.insertionLocation ]
+        []
 
     else
         relevantUsages
