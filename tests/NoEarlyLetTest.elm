@@ -17,6 +17,7 @@ all =
                 """module A exposing (..)
 a b c d =
   let
+    z : Int
     z = 1
   in
   if b then
@@ -31,11 +32,12 @@ a b c d =
                             , details = [ "REPLACEME" ]
                             , under = "z"
                             }
-                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
                             |> Review.Test.whenFixed """module A exposing (..)
 a b c d =
   if b then
     let
+        z : Int
         z = 1
     in
     z
