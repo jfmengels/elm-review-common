@@ -429,13 +429,12 @@ canBeMovedToCloserLocation branch name =
                             canBeMovedToCloserLocation b name
                     )
     in
-    case relevantUsages of
-        [ location ] ->
-            [ location ]
+    -- TODO Avoid looking at other branches if we already found 2 that use "name"
+    if List.length relevantUsages > 1 then
+        [ branch.insertionLocation ]
 
-        _ ->
-            -- TODO Handle multiple cases
-            []
+    else
+        relevantUsages
 
 
 type NameUse
