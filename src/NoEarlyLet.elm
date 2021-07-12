@@ -365,16 +365,12 @@ expressionExitVisitorHelp node context =
                 Just (Branch branch) ->
                     List.filterMap
                         (\declaration ->
-                            if List.member declaration.name branch.used then
-                                Nothing
+                            case canBeMovedToCloserLocation branch declaration.name of
+                                [ location ] ->
+                                    Just (createError context declaration location)
 
-                            else
-                                case canBeMovedToCloserLocation branch declaration.name of
-                                    [ location ] ->
-                                        Just (createError context declaration location)
-
-                                    _ ->
-                                        Nothing
+                                _ ->
+                                    Nothing
                         )
                         branch.letDeclarations
 
@@ -412,29 +408,33 @@ collectDeclarations node =
 
 canBeMovedToCloserLocation : BranchData -> String -> List LetInsertPosition
 canBeMovedToCloserLocation branch name =
-    let
-        relevantUsages : List LetInsertPosition
-        relevantUsages =
-            branch.branches
-                |> RangeDict.values
-                |> List.concatMap
-                    (\(Branch b) ->
-                        if List.member name b.used then
-                            [ b.insertionLocation ]
-
-                        else if RangeDict.isEmpty b.branches then
-                            []
-
-                        else
-                            canBeMovedToCloserLocationHelp b name
-                    )
-    in
-    -- TODO Avoid looking at other branches if we already found 2 that use "name"
-    if List.length relevantUsages > 1 then
+    if List.member name branch.used then
         []
 
     else
-        relevantUsages
+        let
+            relevantUsages : List LetInsertPosition
+            relevantUsages =
+                branch.branches
+                    |> RangeDict.values
+                    |> List.concatMap
+                        (\(Branch b) ->
+                            if List.member name b.used then
+                                [ b.insertionLocation ]
+
+                            else if RangeDict.isEmpty b.branches then
+                                []
+
+                            else
+                                canBeMovedToCloserLocationHelp b name
+                        )
+        in
+        -- TODO Avoid looking at other branches if we already found 2 that use "name"
+        if List.length relevantUsages > 1 then
+            []
+
+        else
+            relevantUsages
 
 
 canBeMovedToCloserLocationHelp : BranchData -> String -> List LetInsertPosition
