@@ -414,7 +414,7 @@ canBeMovedToCloserLocation branch name =
             relevantUsages =
                 branch.branches
                     |> RangeDict.values
-                    |> List.concatMap (\(Branch b) -> canBeMovedToCloserLocationHelp b name)
+                    |> List.concatMap (canBeMovedToCloserLocationHelp name)
         in
         -- TODO Avoid looking at other branches if we already found 2 that use "name"
         if List.length relevantUsages > 1 then
@@ -424,8 +424,8 @@ canBeMovedToCloserLocation branch name =
             relevantUsages
 
 
-canBeMovedToCloserLocationHelp : BranchData -> String -> List LetInsertPosition
-canBeMovedToCloserLocationHelp branch name =
+canBeMovedToCloserLocationHelp : String -> Branch -> List LetInsertPosition
+canBeMovedToCloserLocationHelp name (Branch branch) =
     if List.member name branch.used then
         [ branch.insertionLocation ]
 
@@ -435,7 +435,7 @@ canBeMovedToCloserLocationHelp branch name =
             relevantUsages =
                 branch.branches
                     |> RangeDict.values
-                    |> List.concatMap (\(Branch b) -> canBeMovedToCloserLocationHelp b name)
+                    |> List.concatMap (canBeMovedToCloserLocationHelp name)
         in
         -- TODO Avoid looking at other branches if we already found 2 that use "name"
         if List.length relevantUsages > 1 then
