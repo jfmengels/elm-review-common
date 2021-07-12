@@ -61,7 +61,12 @@ rule =
 type alias Context =
     { extractSourceCode : Range -> String
     , branch : Branch
-    , currentBranching : List Range
+    , branching : List Range
+    }
+
+
+type alias Branching =
+    { full : List Range
     }
 
 
@@ -71,7 +76,7 @@ initialContext =
         (\extractSourceCode () ->
             { extractSourceCode = extractSourceCode
             , branch = newBranch (InsertNewLet { row = 0, column = 0 })
-            , currentBranching = []
+            , branching = []
             }
         )
         |> Rule.withSourceCodeExtractor
@@ -147,7 +152,7 @@ declarationVisitor node context =
             ( []
             , { extractSourceCode = context.extractSourceCode
               , branch = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression))
-              , currentBranching = []
+              , branching = []
               }
             )
 
@@ -176,10 +181,10 @@ expressionEnterVisitor node context =
     let
         newContext : Context
         newContext =
-            case getCurrentBranch context.currentBranching context.branch of
+            case getCurrentBranch context.branching context.branch of
                 Just (Branch branch) ->
                     if RangeDict.member (Node.range node) branch.branches then
-                        { context | currentBranching = context.currentBranching ++ [ Node.range node ] }
+                        { context | branching = context.branching ++ [ Node.range node ] }
 
                     else
                         context
@@ -199,7 +204,7 @@ expressionEnterVisitorHelp node context =
                 branch =
                     updateCurrentBranch
                         (\b -> { b | used = name :: b.used })
-                        context.currentBranching
+                        context.branching
                         context.branch
             in
             { context | branch = branch }
@@ -210,7 +215,7 @@ expressionEnterVisitorHelp node context =
                 branch =
                     updateCurrentBranch
                         (\b -> { b | used = Node.value name :: b.used })
-                        context.currentBranching
+                        context.branching
                         context.branch
             in
             { context | branch = branch }
@@ -247,7 +252,7 @@ expressionEnterVisitorHelp node context =
                 branch =
                     updateCurrentBranch
                         (\b -> { b | letDeclarations = letDeclarations ++ b.letDeclarations })
-                        context.currentBranching
+                        context.branching
                         context.branch
             in
             { context | branch = branch }
@@ -281,7 +286,7 @@ addBranches nodes context =
         branch =
             updateCurrentBranch
                 (\b -> { b | branches = insertNewBranches nodes b.branches })
-                context.currentBranching
+                context.branching
                 context.branch
     in
     { context | branch = branch }
@@ -312,8 +317,8 @@ expressionExitVisitor node context =
 popCurrentNodeFromBranching : Range -> Context -> Context
 popCurrentNodeFromBranching range context =
     -- TODO improve. Make currentbranching an array?
-    if getLastListItem context.currentBranching == Just range then
-        { context | currentBranching = List.filter (\n -> n /= range) context.currentBranching }
+    if getLastListItem context.branching == Just range then
+        { context | branching = List.filter (\n -> n /= range) context.branching }
 
     else
         context
@@ -323,7 +328,7 @@ expressionExitVisitorHelp : Node Expression -> Context -> List (Rule.Error {})
 expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
-            case getCurrentBranch context.currentBranching context.branch of
+            case getCurrentBranch context.branching context.branch of
                 Just (Branch branch) ->
                     List.filterMap
                         (\declaration ->
