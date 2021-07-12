@@ -61,25 +61,17 @@ rule =
 type alias Context =
     { extractSourceCode : Range -> String
     , branch : Branch
-    , branching : List Range
+    , branching : Branching
     }
+
+
+type Branch
+    = Branch BranchData
 
 
 type alias Branching =
     { full : List Range
     }
-
-
-initialContext : Rule.ContextCreator () Context
-initialContext =
-    Rule.initContextCreator
-        (\extractSourceCode () ->
-            { extractSourceCode = extractSourceCode
-            , branch = newBranch (InsertNewLet { row = 0, column = 0 })
-            , branching = []
-            }
-        )
-        |> Rule.withSourceCodeExtractor
 
 
 newBranch : LetInsertPosition -> Branch
@@ -92,8 +84,22 @@ newBranch insertionLocation =
         }
 
 
-type Branch
-    = Branch BranchData
+emptyBranching : Branching
+emptyBranching =
+    { full = []
+    }
+
+
+initialContext : Rule.ContextCreator () Context
+initialContext =
+    Rule.initContextCreator
+        (\extractSourceCode () ->
+            { extractSourceCode = extractSourceCode
+            , branch = newBranch (InsertNewLet { row = 0, column = 0 })
+            , branching = emptyBranching
+            }
+        )
+        |> Rule.withSourceCodeExtractor
 
 
 type alias BranchData =
@@ -152,7 +158,7 @@ declarationVisitor node context =
             ( []
             , { extractSourceCode = context.extractSourceCode
               , branch = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression))
-              , branching = []
+              , branching = emptyBranching
               }
             )
 
@@ -181,10 +187,10 @@ expressionEnterVisitor node context =
     let
         newContext : Context
         newContext =
-            case getCurrentBranch context.branching context.branch of
+            case getCurrentBranch context.branching.full context.branch of
                 Just (Branch branch) ->
                     if RangeDict.member (Node.range node) branch.branches then
-                        { context | branching = context.branching ++ [ Node.range node ] }
+                        { context | branching = addBranching (Node.range node) context.branching }
 
                     else
                         context
@@ -193,6 +199,30 @@ expressionEnterVisitor node context =
                     context
     in
     ( [], expressionEnterVisitorHelp node newContext )
+
+
+addBranching : Range -> Branching -> Branching
+addBranching range branching =
+    { full = branching.full ++ [ range ] }
+
+
+removeLastBranchIfOnTheLastBranch : Range -> Branching -> Maybe Branching
+removeLastBranchIfOnTheLastBranch range branching =
+    if getLastListItem branching.full == Just range then
+        Just { branching | full = List.take (List.length branching.full - 1) branching.full }
+
+    else
+        Nothing
+
+
+popCurrentNodeFromBranching : Range -> Context -> Context
+popCurrentNodeFromBranching range context =
+    case removeLastBranchIfOnTheLastBranch range context.branching of
+        Just newBranching ->
+            { context | branching = newBranching }
+
+        Nothing ->
+            context
 
 
 expressionEnterVisitorHelp : Node Expression -> Context -> Context
@@ -204,7 +234,7 @@ expressionEnterVisitorHelp node context =
                 branch =
                     updateCurrentBranch
                         (\b -> { b | used = name :: b.used })
-                        context.branching
+                        context.branching.full
                         context.branch
             in
             { context | branch = branch }
@@ -215,7 +245,7 @@ expressionEnterVisitorHelp node context =
                 branch =
                     updateCurrentBranch
                         (\b -> { b | used = Node.value name :: b.used })
-                        context.branching
+                        context.branching.full
                         context.branch
             in
             { context | branch = branch }
@@ -252,7 +282,7 @@ expressionEnterVisitorHelp node context =
                 branch =
                     updateCurrentBranch
                         (\b -> { b | letDeclarations = letDeclarations ++ b.letDeclarations })
-                        context.branching
+                        context.branching.full
                         context.branch
             in
             { context | branch = branch }
@@ -286,7 +316,7 @@ addBranches nodes context =
         branch =
             updateCurrentBranch
                 (\b -> { b | branches = insertNewBranches nodes b.branches })
-                context.branching
+                context.branching.full
                 context.branch
     in
     { context | branch = branch }
@@ -314,21 +344,11 @@ expressionExitVisitor node context =
     )
 
 
-popCurrentNodeFromBranching : Range -> Context -> Context
-popCurrentNodeFromBranching range context =
-    -- TODO improve. Make currentbranching an array?
-    if getLastListItem context.branching == Just range then
-        { context | branching = List.filter (\n -> n /= range) context.branching }
-
-    else
-        context
-
-
 expressionExitVisitorHelp : Node Expression -> Context -> List (Rule.Error {})
 expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
-            case getCurrentBranch context.branching context.branch of
+            case getCurrentBranch context.branching.full context.branch of
                 Just (Branch branch) ->
                     List.filterMap
                         (\declaration ->
