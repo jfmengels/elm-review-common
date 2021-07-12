@@ -299,6 +299,19 @@ fun =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report when a declaration is used in multiple sibling's branches" <|
+            \() ->
+                """module A exposing (..)
+fun =
+    let
+        z = 1
+        y = if True then z else 1
+        x = if True then z else 1
+    in
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         , test "should not report when a declaration is used in a branch of a sibling's declaration" <|
             \() ->
                 """module A exposing (..)
