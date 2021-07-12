@@ -212,7 +212,7 @@ addBranching range branching =
 
 removeLastBranchIfOnTheLastBranch : Range -> Branching -> Maybe Branching
 removeLastBranchIfOnTheLastBranch range branching =
-    if getLastListItem branching.full == Just range then
+    if branching.last == Just range then
         Just { branching | full = List.take (List.length branching.full - 1) branching.full }
 
     else
