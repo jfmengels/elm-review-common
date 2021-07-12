@@ -365,12 +365,9 @@ expressionExitVisitorHelp node context =
                 Just (Branch branch) ->
                     List.filterMap
                         (\declaration ->
-                            case canBeMovedToCloserLocation branch declaration.name of
-                                [ location ] ->
-                                    Just (createError context declaration location)
-
-                                _ ->
-                                    Nothing
+                            canBeMovedToCloserLocation branch declaration.name
+                                |> List.head
+                                |> Maybe.map (createError context declaration)
                         )
                         branch.letDeclarations
 
