@@ -369,8 +369,12 @@ expressionExitVisitorHelp node context =
                                 Nothing
 
                             else
-                                canBeMovedToCloserLocation branch declaration.name
-                                    |> Maybe.map (createError context declaration)
+                                case canBeMovedToCloserLocation branch declaration.name of
+                                    [ location ] ->
+                                        Just (createError context declaration location)
+
+                                    _ ->
+                                        Nothing
                         )
                         branch.letDeclarations
 
@@ -406,7 +410,7 @@ collectDeclarations node =
             []
 
 
-canBeMovedToCloserLocation : BranchData -> String -> Maybe LetInsertPosition
+canBeMovedToCloserLocation : BranchData -> String -> List LetInsertPosition
 canBeMovedToCloserLocation branch name =
     let
         relevantUsages : List LetInsertPosition
@@ -425,10 +429,11 @@ canBeMovedToCloserLocation branch name =
     in
     case relevantUsages of
         [ location ] ->
-            Just location
+            [ location ]
 
         _ ->
-            Nothing
+            -- TODO Handle multiple cases
+            []
 
 
 type NameUse
