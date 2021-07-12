@@ -416,14 +416,7 @@ canBeMovedToCloserLocation branch name =
                     |> RangeDict.values
                     |> List.concatMap
                         (\(Branch b) ->
-                            if List.member name b.used then
-                                [ b.insertionLocation ]
-
-                            else if RangeDict.isEmpty b.branches then
-                                []
-
-                            else
-                                canBeMovedToCloserLocationHelp b name
+                            canBeMovedToCloserLocationHelp b name
                         )
         in
         -- TODO Avoid looking at other branches if we already found 2 that use "name"
@@ -436,29 +429,33 @@ canBeMovedToCloserLocation branch name =
 
 canBeMovedToCloserLocationHelp : BranchData -> String -> List LetInsertPosition
 canBeMovedToCloserLocationHelp branch name =
-    let
-        relevantUsages : List LetInsertPosition
-        relevantUsages =
-            branch.branches
-                |> RangeDict.values
-                |> List.concatMap
-                    (\(Branch b) ->
-                        if List.member name b.used then
-                            [ b.insertionLocation ]
-
-                        else if RangeDict.isEmpty b.branches then
-                            []
-
-                        else
-                            canBeMovedToCloserLocationHelp b name
-                    )
-    in
-    -- TODO Avoid looking at other branches if we already found 2 that use "name"
-    if List.length relevantUsages > 1 then
+    if List.member name branch.used then
         [ branch.insertionLocation ]
 
     else
-        relevantUsages
+        let
+            relevantUsages : List LetInsertPosition
+            relevantUsages =
+                branch.branches
+                    |> RangeDict.values
+                    |> List.concatMap
+                        (\(Branch b) ->
+                            if List.member name b.used then
+                                [ b.insertionLocation ]
+
+                            else if RangeDict.isEmpty b.branches then
+                                []
+
+                            else
+                                canBeMovedToCloserLocationHelp b name
+                        )
+        in
+        -- TODO Avoid looking at other branches if we already found 2 that use "name"
+        if List.length relevantUsages > 1 then
+            [ branch.insertionLocation ]
+
+        else
+            relevantUsages
 
 
 type NameUse
