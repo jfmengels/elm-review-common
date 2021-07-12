@@ -210,8 +210,8 @@ addBranching range branching =
     }
 
 
-removeLastBranchIfOnTheLastBranch : Range -> Branching -> Maybe Branching
-removeLastBranchIfOnTheLastBranch range branching =
+removeLastBranchIfOnIt : Range -> Branching -> Maybe Branching
+removeLastBranchIfOnIt range branching =
     if branching.last == Just range then
         let
             full : List Range
@@ -230,7 +230,7 @@ removeLastBranchIfOnTheLastBranch range branching =
 
 popCurrentNodeFromBranching : Range -> Context -> Context
 popCurrentNodeFromBranching range context =
-    case removeLastBranchIfOnTheLastBranch range context.branching of
+    case removeLastBranchIfOnIt range context.branching of
         Just newBranching ->
             { context | branching = newBranching }
 
