@@ -286,6 +286,19 @@ second =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should not report when a declaration is used in multiple sibling's declarations" <|
+            \() ->
+                """module A exposing (..)
+fun =
+    let
+        z = 1
+        y = z
+        x = z
+    in
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         , test "should not report when a declaration is used in a branch of a sibling's declaration" <|
             \() ->
                 """module A exposing (..)
