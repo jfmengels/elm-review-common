@@ -417,14 +417,14 @@ canBeMovedToCloserLocation branch name =
         relevantUsages =
             branch.branches
                 |> RangeDict.values
-                |> List.filterMap
+                |> List.concatMap
                     (\(Branch b) ->
                         case isUsingName name b of
                             DirectUse ->
-                                Just b.insertionLocation
+                                [ b.insertionLocation ]
 
                             NoUse ->
-                                Nothing
+                                []
                     )
     in
     case relevantUsages of
