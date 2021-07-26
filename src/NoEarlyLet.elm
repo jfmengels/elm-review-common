@@ -143,14 +143,21 @@ updateCurrentBranch updateFn currentBranching (Branch branch) =
 
 
 getCurrentBranch : List Range -> Branch -> Maybe Branch
-getCurrentBranch currentBranching (Branch branch) =
+getCurrentBranch currentBranching branch =
     case currentBranching of
         [] ->
-            Just (Branch branch)
+            Just branch
 
         range :: restOfBranching ->
-            RangeDict.get range branch.branches
+            RangeDict.get range (getBranches branch)
                 |> Maybe.andThen (getCurrentBranch restOfBranching)
+
+
+getBranches : Branch -> RangeDict Branch
+getBranches branch =
+    case branch of
+        Branch b ->
+            b.branches
 
 
 declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
@@ -189,9 +196,9 @@ expressionEnterVisitor node context =
     let
         newContext : Context
         newContext =
-            case getCurrentBranch context.branching.full context.branch of
-                Just (Branch branch) ->
-                    if RangeDict.member (Node.range node) branch.branches then
+            case getCurrentBranch context.branching.full context.branch |> Maybe.map getBranches of
+                Just branches ->
+                    if RangeDict.member (Node.range node) branches then
                         { context | branching = addBranching (Node.range node) context.branching }
 
                     else
