@@ -314,8 +314,6 @@ fun =
                     |> Review.Test.expectNoErrors
         , test "should not report when a declaration is used in a branch of a sibling's declaration" <|
             \() ->
-                -- TODO Issue is that submitOnEnter and z are considered to be in the same let?
-                -- TODO exit visitor will try to report issues multiple times because the branch never changes?
                 """module A exposing (..)
 a =
     let

@@ -344,7 +344,10 @@ expressionEnterVisitorHelp node context =
                         context.branching.full
                         context.branch
             in
-            { context | branch = branch }
+            { context
+                | branch = branch
+                , branching = addBranching (Node.range node) context.branching
+            }
 
         Expression.IfBlock _ then_ else_ ->
             addBranches [ then_, else_ ] context
