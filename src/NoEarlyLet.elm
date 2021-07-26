@@ -320,10 +320,27 @@ expressionEnterVisitorHelp node context =
                                 }
                             )
 
+                newScope : Branch
+                newScope =
+                    LetScope
+                        { letDeclarations = letDeclarations
+                        , used = []
+                        , insertionLocation = figureOutInsertionLocation node
+                        , branches = RangeDict.empty
+                        }
+
                 branch : Branch
                 branch =
                     updateCurrentBranch
-                        (\b -> { b | letDeclarations = letDeclarations ++ b.letDeclarations })
+                        (\b ->
+                            { b
+                                | branches =
+                                    RangeDict.insert
+                                        (Node.range node)
+                                        newScope
+                                        b.branches
+                            }
+                        )
                         context.branching.full
                         context.branch
             in
