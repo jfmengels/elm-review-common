@@ -73,6 +73,7 @@ type alias Branching =
 
 type Branch
     = Branch BranchData
+    | LetScope BranchData
 
 
 type alias BranchData =
@@ -126,20 +127,33 @@ initialContext =
 
 
 updateCurrentBranch : (BranchData -> BranchData) -> List Range -> Branch -> Branch
-updateCurrentBranch updateFn currentBranching (Branch branch) =
+updateCurrentBranch updateFn currentBranching segment =
     case currentBranching of
         [] ->
+            updateBranch updateFn segment
+
+        range :: restOfSegments ->
+            updateBranch
+                (\branch ->
+                    { branch
+                        | branches =
+                            RangeDict.modify
+                                range
+                                (updateCurrentBranch updateFn restOfSegments)
+                                branch.branches
+                    }
+                )
+                segment
+
+
+updateBranch : (BranchData -> BranchData) -> Branch -> Branch
+updateBranch updateFn segment =
+    case segment of
+        Branch branch ->
             Branch (updateFn branch)
 
-        range :: restOfBranching ->
-            Branch
-                { branch
-                    | branches =
-                        RangeDict.modify
-                            range
-                            (updateCurrentBranch updateFn restOfBranching)
-                            branch.branches
-                }
+        LetScope branch ->
+            LetScope (updateFn branch)
 
 
 getCurrentBranch : List Range -> Branch -> Maybe Branch
@@ -154,10 +168,18 @@ getCurrentBranch currentBranching branch =
 
 
 getBranches : Branch -> RangeDict Branch
-getBranches branch =
+getBranches =
+    getBranchData >> .branches
+
+
+getBranchData : Branch -> BranchData
+getBranchData branch =
     case branch of
         Branch b ->
-            b.branches
+            b
+
+        LetScope b ->
+            b
 
 
 declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
@@ -369,16 +391,16 @@ expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression { declarations } ->
             case getCurrentBranch context.branching.full context.branch of
-                Just (Branch branch) ->
+                Just (LetScope letScope) ->
                     List.filterMap
                         (\declaration ->
-                            canBeMovedToCloserLocation True declaration.name (Branch branch)
+                            canBeMovedToCloserLocation True declaration.name (LetScope letScope)
                                 |> List.head
                                 |> Maybe.map (createError context declaration)
                         )
-                        branch.letDeclarations
+                        letScope.letDeclarations
 
-                Nothing ->
+                _ ->
                     []
 
         _ ->
@@ -411,7 +433,12 @@ collectDeclarations node =
 
 
 canBeMovedToCloserLocation : Bool -> String -> Branch -> List LetInsertPosition
-canBeMovedToCloserLocation isRoot name (Branch branch) =
+canBeMovedToCloserLocation isRoot name segment =
+    let
+        branch : BranchData
+        branch =
+            getBranchData segment
+    in
     if List.member name branch.used then
         emptyIfTrue isRoot [ branch.insertionLocation ]
 
