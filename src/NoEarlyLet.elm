@@ -65,13 +65,34 @@ type alias Context =
     }
 
 
+type alias Branching =
+    { full : List Range
+    , last : Maybe Range
+    }
+
+
 type Branch
     = Branch BranchData
 
 
-type alias Branching =
-    { full : List Range
-    , last : Maybe Range
+type alias BranchData =
+    { letDeclarations : List Declared
+    , used : List String
+    , insertionLocation : LetInsertPosition
+    , branches : RangeDict Branch
+    }
+
+
+type LetInsertPosition
+    = InsertNewLet Location
+    | InsertExistingLet Location
+
+
+type alias Declared =
+    { name : String
+    , reportRange : Range
+    , declarationRange : Range
+    , removeRange : Range
     }
 
 
@@ -102,27 +123,6 @@ initialContext =
             }
         )
         |> Rule.withSourceCodeExtractor
-
-
-type alias BranchData =
-    { letDeclarations : List Declared
-    , used : List String
-    , insertionLocation : LetInsertPosition
-    , branches : RangeDict Branch
-    }
-
-
-type LetInsertPosition
-    = InsertNewLet Location
-    | InsertExistingLet Location
-
-
-type alias Declared =
-    { name : String
-    , reportRange : Range
-    , declarationRange : Range
-    , removeRange : Range
-    }
 
 
 updateCurrentBranch : (BranchData -> BranchData) -> List Range -> Branch -> Branch
