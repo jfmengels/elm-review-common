@@ -339,4 +339,33 @@ a = 1
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should move a let declaration from one let to the other" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  let
+    y = 1
+  in
+  y + z
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  let
+     z = 1
+     y = 1
+  in
+  y + z
+"""
+                        ]
         ]
