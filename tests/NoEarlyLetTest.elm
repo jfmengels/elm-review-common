@@ -371,4 +371,61 @@ a =
   y + z
 """
                         ]
+        , test "should properly indent moved let declaration defined on multiple lines" <|
+            \() ->
+                """module A exposing (..)
+a o =
+    let
+        z =
+            foo
+                bar
+                baz
+    in
+    thing
+        (if o.expDetail then
+            let
+                y =
+                    foo2
+                        bar2
+                        baz2
+            in
+            [ y
+            , z
+            ]
+
+        else
+            []
+       )
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 9 }, end = { row = 4, column = 10 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a o =
+    thing
+        (if o.expDetail then
+            let
+                z =
+                    foo
+                        bar
+                        baz
+                y =
+                    foo2
+                        bar2
+                        baz2
+            in
+            [ y
+            , z
+            ]
+
+        else
+            []
+       )
+"""
+                        ]
         ]

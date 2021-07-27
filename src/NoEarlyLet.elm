@@ -528,7 +528,7 @@ fix context declared letInsertPosition =
         InsertExistingLet insertLocation ->
             [ Fix.removeRange declared.removeRange
             , context.extractSourceCode declared.declarationRange
-                |> insertInLet insertLocation.column
+                |> insertInLet declared.reportRange.start.column insertLocation.column
                 |> Fix.insertAt insertLocation
             ]
 
@@ -550,15 +550,18 @@ wrapInLet initialPosition column source =
         |> String.join "\n"
 
 
-insertInLet : Int -> String -> String
-insertInLet column source =
-    (source
-        |> String.trim
-        |> String.lines
-        |> String.join "\n"
-    )
-        ++ "\n"
-        ++ String.repeat (column - 1) " "
+insertInLet : Int -> Int -> String -> String
+insertInLet initialPosition column source =
+    case source |> String.trim |> String.lines of
+        [] ->
+            ""
+
+        firstLine :: restOfLines ->
+            ((firstLine :: List.map (\line -> String.repeat (column - initialPosition) " " ++ line) restOfLines)
+                |> String.join "\n"
+            )
+                ++ "\n"
+                ++ String.repeat (column - 1) " "
 
 
 getLastListItem : List a -> Maybe a
