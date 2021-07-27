@@ -558,13 +558,5 @@ countBlanks count chars =
 
 
 getLastListItem : List a -> Maybe a
-getLastListItem list =
-    case list of
-        [] ->
-            Nothing
-
-        [ a ] ->
-            Just a
-
-        _ :: _ :: rest ->
-            getLastListItem rest
+getLastListItem =
+    List.reverse >> List.head
