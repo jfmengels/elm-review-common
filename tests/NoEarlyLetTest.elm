@@ -348,6 +348,7 @@ a =
   in
   let
     y = 1
+    x = 1
   in
   y + z
 """
@@ -362,8 +363,9 @@ a =
                             |> Review.Test.whenFixed """module A exposing (..)
 a =
   let
-     z = 1
-     y = 1
+    z = 1
+    y = 1
+    x = 1
   in
   y + z
 """
