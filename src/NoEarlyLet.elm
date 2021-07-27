@@ -555,11 +555,10 @@ insertInLet column source =
     (source
         |> String.trim
         |> String.lines
-        |> List.map (\line -> String.repeat 1 " " ++ line)
         |> String.join "\n"
     )
         ++ "\n"
-        ++ String.repeat column " "
+        ++ String.repeat (column - 1) " "
 
 
 getLastListItem : List a -> Maybe a
