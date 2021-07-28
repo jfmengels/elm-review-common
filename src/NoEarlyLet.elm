@@ -372,17 +372,7 @@ expressionEnterVisitorHelp node context =
 
                 contextWithDeclarationsMarked : Context
                 contextWithDeclarationsMarked =
-                    let
-                        introducesVariablesInImplementation : Bool
-                        introducesVariablesInImplementation =
-                            -- TODO Mock
-                            True
-                    in
-                    if introducesVariablesInImplementation then
-                        { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
-
-                    else
-                        context
+                    { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
 
                 branch : Branch
                 branch =
