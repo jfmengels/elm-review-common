@@ -454,11 +454,16 @@ expressionEnterVisitorHelp node context =
             addBranches branchNodes contextWithDeclarationsMarked
 
         Expression.LambdaExpression { args } ->
-            if List.any patternIntroducesVariable args then
-                { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+            let
+                branch : Branch
+                branch =
+                    if List.any patternIntroducesVariable args then
+                        markLetDeclarationsAsIntroducingVariables (Node.range node) context
 
-            else
-                context
+                    else
+                        context.branch
+            in
+            { context | branch = branch }
 
         _ ->
             context
