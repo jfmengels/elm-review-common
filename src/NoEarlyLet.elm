@@ -661,7 +661,6 @@ collectDeclarations node =
                 declaration =
                     Node.value letFunction.declaration
             in
-            -- TODO Add support for let functions? but need to check name clashes...
             if List.isEmpty declaration.arguments then
                 [ ( declaration.name
                   , Node.range declaration.expression
@@ -718,7 +717,7 @@ canBeMovedToCloserLocationForBranchData isRoot name branchData =
                     |> RangeDict.values
                     |> List.concatMap (canBeMovedToCloserLocation False name)
         in
-        -- TODO Avoid looking at other branches if we already found 2 that use "name"
+        -- TODO Optimization: Avoid looking at other branches if we already found 2 that use "name"
         if List.length relevantUsages > 1 then
             emptyIfTrue isRoot [ branchData.insertionLocation ]
 

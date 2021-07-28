@@ -127,7 +127,6 @@ a b c d =
                         ]
         , test "should not report let functions" <|
             \() ->
-                -- TODO later?
                 """module A exposing (..)
 a b c d =
   let
