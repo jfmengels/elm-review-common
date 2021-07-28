@@ -7,7 +7,8 @@ import Test exposing (Test, describe, test)
 
 
 -- TODO Keep computations done outside of lambdas there. It might be an optimization.
--- TODO Handle destructuring lets
+-- TODO Handle destructuring lets with one variable
+-- TODO Handle destructuring lets with multiple variables
 -- TODO Incorporate https://github.com/jfmengels/elm-review/discussions/93 ? As an option?
 --      Not needed because this rule currently only targets is only for functions
 

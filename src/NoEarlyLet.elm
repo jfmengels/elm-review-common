@@ -16,23 +16,59 @@ import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Rule)
 
 
-{-| Reports... REPLACEME
+{-| Reports let declarations that are computed earlier than needed.
 
     config =
         [ NoEarlyLet.rule
         ]
 
+🔧 Running with `--fix` will automatically fix almost all of the reported errors.
+
 
 ## Fail
 
-    a =
-        "REPLACEME example to replace"
+In this example, we compute `value` earlier than needed, and we end up not using it in of the branches.
+
+    someFunction n =
+        let
+            value =
+                expensiveComputation n
+        in
+        if needToCompute then
+            value + 1
+
+        else
+            0
 
 
 ## Success
 
-    a =
-        "REPLACEME example to replace"
+If we take the example from above, this would be the suggested (and automatic) fix:
+
+    someFunction n =
+        if needToCompute then
+            let
+                value =
+                    expensiveComputation n
+            in
+            value + 1
+
+        else
+            0
+
+A declaration will not be reported if it's used in multiple branches at the same level.
+The rule will try to move the declaration as close as possible to the usages.
+
+    someFunction n =
+        let
+            value =
+                expensiveComputation n
+        in
+        if needToCompute then
+            value + 1
+
+        else
+            value - 1
 
 
 ## When (not) to enable this rule

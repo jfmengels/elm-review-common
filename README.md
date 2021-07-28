@@ -5,7 +5,7 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoEarlyLet`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.4/NoEarlyLet) - Reports REPLACEME.
+- [🔧 `NoEarlyLet`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.4/NoEarlyLet) - Reports let declarations that are computed earlier than needed.
 - [🔧 `NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.4/NoExposingEverything "Provides automatic fixes") - Forbids exporting everything from a module.
 - [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.4/NoImportingEverything) - Forbids importing everything from a module.
 - [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.0.4/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
