@@ -530,7 +530,7 @@ expressionExitVisitor node context =
 expressionExitVisitorHelp : Node Expression -> Context -> List (Rule.Error {})
 expressionExitVisitorHelp node context =
     case Node.value node of
-        Expression.LetExpression { declarations } ->
+        Expression.LetExpression _ ->
             case getCurrentBranch context.branching.full context.branch of
                 Just (LetScope letScope) ->
                     List.filterMap
