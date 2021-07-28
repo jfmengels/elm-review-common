@@ -380,6 +380,9 @@ expressionEnterVisitorHelp node context =
             in
             addBranches branchNodes context
 
+        Expression.LambdaExpression { args } ->
+            context
+
         _ ->
             context
 
