@@ -147,6 +147,27 @@ updateCurrentBranch updateFn currentBranching segment =
                 segment
 
 
+updateAllSegmentsOfCurrentBranch : (BranchData -> BranchData) -> List Range -> Branch -> Branch
+updateAllSegmentsOfCurrentBranch updateFn currentBranching segment =
+    case currentBranching of
+        [] ->
+            updateBranch updateFn segment
+
+        range :: restOfSegments ->
+            updateBranch
+                (\branch ->
+                    updateFn
+                        { branch
+                            | branches =
+                                RangeDict.modify
+                                    range
+                                    (updateCurrentBranch updateFn restOfSegments)
+                                    branch.branches
+                        }
+                )
+                segment
+
+
 updateBranch : (BranchData -> BranchData) -> Branch -> Branch
 updateBranch updateFn segment =
     case segment of
@@ -387,7 +408,7 @@ expressionEnterVisitorHelp node context =
                     True
             in
             if introducesVariablesInImplementation then
-                markLetDeclarationsAsIntroducingVariables (Node.range node) context
+                { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
 
             else
                 context
@@ -396,9 +417,17 @@ expressionEnterVisitorHelp node context =
             context
 
 
-markLetDeclarationsAsIntroducingVariables : Range -> Context -> Context
+markLetDeclarationsAsIntroducingVariables : Range -> Context -> Branch
 markLetDeclarationsAsIntroducingVariables range context =
-    context
+    updateAllSegmentsOfCurrentBranch
+        (markDeclarationsAsUsed range)
+        context.branching.full
+        context.branch
+
+
+markDeclarationsAsUsed : Range -> BranchData -> BranchData
+markDeclarationsAsUsed range branchData =
+    branchData
 
 
 fullLines : Range -> Range
