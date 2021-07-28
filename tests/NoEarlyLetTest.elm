@@ -7,6 +7,7 @@ import Test exposing (Test, describe, test)
 
 
 -- TODO Keep computations done outside of lambdas there. It might be an optimization.
+-- TODO Handle destructuring lets
 
 
 all : Test
