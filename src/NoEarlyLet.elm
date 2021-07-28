@@ -462,8 +462,42 @@ expressionEnterVisitorHelp node context =
 
                     else
                         context.branch
+
+                insertionLocation : LetInsertPosition
+                insertionLocation =
+                    case getCurrentBranch context.branching.full branch of
+                        Just currentBranch ->
+                            (getBranchData currentBranch).insertionLocation
+
+                        Nothing ->
+                            -- TODO Should not be used when lambda is on root
+                            InsertNewLet { row = 0, column = 1 }
+
+                newScope : Branch
+                newScope =
+                    Lambda
+                        { letDeclarations = []
+                        , used = []
+                        , insertionLocation = insertionLocation
+                        , branches = RangeDict.empty
+                        }
+
+                branchWithAddedScope : Branch
+                branchWithAddedScope =
+                    updateCurrentBranch
+                        (\b ->
+                            { b
+                                | branches =
+                                    RangeDict.insert
+                                        (Node.range node)
+                                        newScope
+                                        b.branches
+                            }
+                        )
+                        context.branching.full
+                        branch
             in
-            { context | branch = branch }
+            { context | branch = branchWithAddedScope }
 
         _ ->
             context
