@@ -107,6 +107,7 @@ type alias Branching =
 type Branch
     = Branch BranchData
     | LetScope BranchData
+    | Lambda BranchData
 
 
 type alias BranchData =
@@ -210,6 +211,9 @@ updateBranch updateFn segment =
         LetScope branch ->
             LetScope (updateFn branch)
 
+        Lambda branch ->
+            Lambda (updateFn branch)
+
 
 getCurrentBranch : List Range -> Branch -> Maybe Branch
 getCurrentBranch currentBranching branch =
@@ -234,6 +238,9 @@ getBranchData branch =
             b
 
         LetScope b ->
+            b
+
+        Lambda b ->
             b
 
 
