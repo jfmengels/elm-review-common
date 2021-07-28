@@ -655,17 +655,21 @@ canBeMovedToCloserLocation : Bool -> String -> Branch -> List LetInsertPosition
 canBeMovedToCloserLocation isRoot name segment =
     case segment of
         Branch branchData ->
-            foo isRoot name branchData
+            canBeMovedToCloserLocationForBranchData isRoot name branchData
 
         LetScope branchData ->
-            foo isRoot name branchData
+            canBeMovedToCloserLocationForBranchData isRoot name branchData
 
         Lambda branchData ->
-            foo isRoot name branchData
+            if List.isEmpty (canBeMovedToCloserLocationForBranchData isRoot name branchData) then
+                []
+
+            else
+                [ branchData.insertionLocation ]
 
 
-foo : Bool -> String -> BranchData -> List LetInsertPosition
-foo isRoot name branchData =
+canBeMovedToCloserLocationForBranchData : Bool -> String -> BranchData -> List LetInsertPosition
+canBeMovedToCloserLocationForBranchData isRoot name branchData =
     if List.member name branchData.used then
         emptyIfTrue isRoot [ branchData.insertionLocation ]
 
