@@ -9,7 +9,7 @@ module NoEarlyLet exposing (rule)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
-import Elm.Syntax.Range exposing (Location, Range)
+import Elm.Syntax.Range as Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Rule)
@@ -440,8 +440,9 @@ markDeclarationAsUsed range declared =
 
 
 isRangeContained : { outer : Range, inner : Range } -> Bool
-isRangeContained record =
-    True
+isRangeContained { outer, inner } =
+    (Range.compareLocations outer.start inner.start /= GT)
+        && (Range.compareLocations outer.end inner.end /= LT)
 
 
 fullLines : Range -> Range
