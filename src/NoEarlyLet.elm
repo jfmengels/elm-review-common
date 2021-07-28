@@ -381,7 +381,16 @@ expressionEnterVisitorHelp node context =
             addBranches branchNodes context
 
         Expression.LambdaExpression { args } ->
-            context
+            let
+                introducesVariablesInImplementation : Bool
+                introducesVariablesInImplementation =
+                    True
+            in
+            if introducesVariablesInImplementation then
+                context
+
+            else
+                context
 
         _ ->
             context
