@@ -6,7 +6,6 @@ import Test exposing (Test, describe, test)
 
 
 
--- TODO Keep computations done outside of lambdas there. It might be an optimization.
 -- TODO Handle destructuring lets with multiple variables
 -- TODO Incorporate https://github.com/jfmengels/elm-review/discussions/93 ? As an option?
 --      Not needed because this rule currently only targets is only for functions
@@ -669,4 +668,20 @@ a b c d =
     1
 """
                         ]
+        , test "should not report let declaration that would be moved to inside a lambda" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  (\\b ->
+      if b then
+        z
+      else
+        1
+  )
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
