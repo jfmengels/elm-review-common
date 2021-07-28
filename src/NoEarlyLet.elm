@@ -9,6 +9,7 @@ module NoEarlyLet exposing (rule)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
@@ -406,13 +407,7 @@ expressionEnterVisitorHelp node context =
             addBranches branchNodes context
 
         Expression.LambdaExpression { args } ->
-            let
-                introducesVariablesInImplementation : Bool
-                introducesVariablesInImplementation =
-                    -- TODO Mock
-                    True
-            in
-            if introducesVariablesInImplementation then
+            if List.any patternIntroducesVariable args then
                 { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
 
             else
@@ -420,6 +415,11 @@ expressionEnterVisitorHelp node context =
 
         _ ->
             context
+
+
+patternIntroducesVariable : Node Pattern -> Bool
+patternIntroducesVariable node =
+    True
 
 
 markLetDeclarationsAsIntroducingVariables : Range -> Context -> Branch
