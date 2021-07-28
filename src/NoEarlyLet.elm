@@ -18,6 +18,8 @@ import Review.Rule as Rule exposing (Rule)
 
 {-| Reports let declarations that are computed earlier than needed.
 
+This rule is useful to prevent unnecessary computations and to group related code together.
+
     config =
         [ NoEarlyLet.rule
         ]
@@ -69,12 +71,6 @@ The rule will try to move the declaration as close as possible to the usages.
 
         else
             value - 1
-
-
-## When (not) to enable this rule
-
-This rule is useful when REPLACEME.
-This rule is not useful when REPLACEME.
 
 
 ## Try it out
