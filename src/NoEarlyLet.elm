@@ -400,11 +400,19 @@ expressionEnterVisitorHelp node context =
 
         Expression.CaseExpression { cases } ->
             let
+                contextWithDeclarationsMarked : Context
+                contextWithDeclarationsMarked =
+                    if List.any (Tuple.first >> patternIntroducesVariable) cases then
+                        { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+
+                    else
+                        context
+
                 branchNodes : List (Node Expression)
                 branchNodes =
                     List.map (\( _, exprNode ) -> exprNode) cases
             in
-            addBranches branchNodes context
+            addBranches branchNodes contextWithDeclarationsMarked
 
         Expression.LambdaExpression { args } ->
             if List.any patternIntroducesVariable args then

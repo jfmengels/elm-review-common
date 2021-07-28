@@ -442,7 +442,7 @@ a o =
        )
 """
                         ]
-        , test "should not suggest a fix for let declarations that introduces variables in its implementation (lambda)" <|
+        , test "should not suggest a fix for let declarations that introduce variables in their implementation (lambda)" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -503,7 +503,7 @@ a b c d =
         1
 """ |> String.replace "$" " ")
                         ]
-        , test "should not suggest a fix for let declarations that introduces variables in its implementation (let block)" <|
+        , test "should not suggest a fix for let declarations that introduce variables in their implementation (let block)" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -528,7 +528,7 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
                         ]
-        , test "should not suggest a fix for let declarations that introduces variables in its implementation but still suggest fixes for others" <|
+        , test "should not suggest a fix for let declarations that introduce variables in their implementation but still suggest fixes for others" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -574,6 +574,68 @@ a b c d =
             x = 1
         in
         x
+"""
+                        ]
+        , test "should not suggest a fix for let declarations that introduce variables in their implementation (case expression)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = case c of
+      B y -> y + 1
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 11
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                        ]
+        , test "should suggest a fix for let declarations that do not introduce variables in their implementation (case expression)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = case c of
+      B -> 1
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 10
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  case b of
+    A y ->
+      if b then
+        let
+            z = case c of
+              B -> 1
+        in
+        z
+      else
+        1
 """
                         ]
         ]
