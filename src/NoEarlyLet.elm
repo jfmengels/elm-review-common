@@ -9,7 +9,7 @@ module NoEarlyLet exposing (rule)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
-import Elm.Syntax.Pattern exposing (Pattern)
+import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
@@ -419,7 +419,34 @@ expressionEnterVisitorHelp node context =
 
 patternIntroducesVariable : Node Pattern -> Bool
 patternIntroducesVariable node =
-    True
+    case Node.value node of
+        Pattern.ListPattern patterns ->
+            List.any patternIntroducesVariable patterns
+
+        Pattern.TuplePattern patterns ->
+            List.any patternIntroducesVariable patterns
+
+        Pattern.RecordPattern _ ->
+            True
+
+        Pattern.UnConsPattern left right ->
+            patternIntroducesVariable left
+                || patternIntroducesVariable right
+
+        Pattern.VarPattern _ ->
+            True
+
+        Pattern.NamedPattern _ patterns ->
+            List.any patternIntroducesVariable patterns
+
+        Pattern.AsPattern _ _ ->
+            True
+
+        Pattern.ParenthesizedPattern pattern ->
+            patternIntroducesVariable pattern
+
+        _ ->
+            False
 
 
 markLetDeclarationsAsIntroducingVariables : Range -> Context -> Branch

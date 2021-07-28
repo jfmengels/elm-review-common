@@ -466,6 +466,43 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
                         ]
+        , test "should suggest a fix for lambda that does not introduce variables" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = \\() _ -> 1
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 9
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed
+                                ("""module A exposing (..)
+a b c d =
+  case b of
+    A y ->
+      if b then
+        let
+            z = \\() _ -> 1
+         $
+        in
+        z
+      else
+        1
+""" |> String.replace "$" " ")
+                        ]
         , test "should not suggest a fix for let declarations that introduces variables in its implementation (let block)" <|
             \() ->
                 """module A exposing (..)
