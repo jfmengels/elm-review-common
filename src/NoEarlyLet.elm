@@ -497,7 +497,10 @@ expressionEnterVisitorHelp node context =
                         context.branching.full
                         branch
             in
-            { context | branch = branchWithAddedScope }
+            { context
+                | branch = branchWithAddedScope
+                , branching = addBranching (Node.range node) context.branching
+            }
 
         _ ->
             context
