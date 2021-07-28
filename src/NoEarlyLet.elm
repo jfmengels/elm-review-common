@@ -8,7 +8,7 @@ module NoEarlyLet exposing (rule)
 
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
-import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
@@ -461,7 +461,7 @@ expressionEnterVisitorHelp node context =
             context
 
 
-variablesInPattern : Node Pattern -> List String
+variablesInPattern : Node Pattern -> List (Node String)
 variablesInPattern node =
     case Node.value node of
         Pattern.ListPattern patterns ->
@@ -471,19 +471,19 @@ variablesInPattern node =
             List.concatMap variablesInPattern patterns
 
         Pattern.RecordPattern fields ->
-            List.map Node.value fields
+            fields
 
         Pattern.UnConsPattern left right ->
             List.concatMap variablesInPattern [ left, right ]
 
         Pattern.VarPattern name ->
-            [ name ]
+            [ Node (Node.range node) name ]
 
         Pattern.NamedPattern _ patterns ->
             List.concatMap variablesInPattern patterns
 
         Pattern.AsPattern pattern name ->
-            Node.value name :: variablesInPattern pattern
+            name :: variablesInPattern pattern
 
         Pattern.ParenthesizedPattern pattern ->
             variablesInPattern pattern
@@ -635,9 +635,17 @@ collectDeclarations node =
             else
                 []
 
-        Expression.LetDestructuring _ _ ->
-            -- TODO
-            []
+        Expression.LetDestructuring pattern expression ->
+            case variablesInPattern pattern of
+                [ name ] ->
+                    [ ( name
+                      , Node.range expression
+                      , node
+                      )
+                    ]
+
+                _ ->
+                    []
 
 
 canBeMovedToCloserLocation : Bool -> String -> Branch -> List LetInsertPosition

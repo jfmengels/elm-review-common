@@ -7,7 +7,6 @@ import Test exposing (Test, describe, test)
 
 
 -- TODO Keep computations done outside of lambdas there. It might be an optimization.
--- TODO Handle destructuring lets with one variable
 -- TODO Handle destructuring lets with multiple variables
 -- TODO Incorporate https://github.com/jfmengels/elm-review/discussions/93 ? As an option?
 --      Not needed because this rule currently only targets is only for functions
@@ -637,6 +636,37 @@ a b c d =
         z
       else
         1
+"""
+                        ]
+        , test "should report a let destructuring with a single value" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    {z} = {z = 1}
+  in
+  if b then
+    z
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 7
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 6 }, end = { row = 4, column = 7 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  if b then
+    let
+        {z} = {z = 1}
+    in
+    z
+  else
+    1
 """
                         ]
         ]
