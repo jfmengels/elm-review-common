@@ -653,25 +653,33 @@ collectDeclarations node =
 
 canBeMovedToCloserLocation : Bool -> String -> Branch -> List LetInsertPosition
 canBeMovedToCloserLocation isRoot name segment =
-    let
-        branch : BranchData
-        branch =
-            getBranchData segment
-    in
-    if List.member name branch.used then
-        emptyIfTrue isRoot [ branch.insertionLocation ]
+    case segment of
+        Branch branchData ->
+            foo isRoot name branchData
+
+        LetScope branchData ->
+            foo isRoot name branchData
+
+        Lambda branchData ->
+            foo isRoot name branchData
+
+
+foo : Bool -> String -> BranchData -> List LetInsertPosition
+foo isRoot name branchData =
+    if List.member name branchData.used then
+        emptyIfTrue isRoot [ branchData.insertionLocation ]
 
     else
         let
             relevantUsages : List LetInsertPosition
             relevantUsages =
-                branch.branches
+                branchData.branches
                     |> RangeDict.values
                     |> List.concatMap (canBeMovedToCloserLocation False name)
         in
         -- TODO Avoid looking at other branches if we already found 2 that use "name"
         if List.length relevantUsages > 1 then
-            emptyIfTrue isRoot [ branch.insertionLocation ]
+            emptyIfTrue isRoot [ branchData.insertionLocation ]
 
         else
             relevantUsages
