@@ -605,7 +605,7 @@ expressionExitVisitorHelp node context =
                 Just (LetScope letScope) ->
                     List.filterMap
                         (\declaration ->
-                            canBeMovedToCloserLocation True declaration.name (LetScope letScope)
+                            canBeMovedToCloserLocation Nothing declaration.name (LetScope letScope)
                                 |> List.head
                                 |> Maybe.map (createError context declaration)
                         )
@@ -651,27 +651,32 @@ collectDeclarations node =
                     []
 
 
-canBeMovedToCloserLocation : Bool -> String -> Branch -> List LetInsertPosition
-canBeMovedToCloserLocation isRoot name segment =
+canBeMovedToCloserLocation : Maybe LetInsertPosition -> String -> Branch -> List LetInsertPosition
+canBeMovedToCloserLocation parentInsertLocation name segment =
     case segment of
         Branch branchData ->
-            canBeMovedToCloserLocationForBranchData isRoot name branchData
+            canBeMovedToCloserLocationForBranchData parentInsertLocation name branchData
 
         LetScope branchData ->
-            canBeMovedToCloserLocationForBranchData isRoot name branchData
+            canBeMovedToCloserLocationForBranchData parentInsertLocation name branchData
 
         Lambda branchData ->
-            if List.isEmpty (canBeMovedToCloserLocationForBranchData isRoot name branchData) then
+            if List.isEmpty (canBeMovedToCloserLocationForBranchData parentInsertLocation name branchData) then
                 []
 
             else
-                [ branchData.insertionLocation ]
+                case parentInsertLocation of
+                    Just location ->
+                        [ location ]
+
+                    Nothing ->
+                        []
 
 
-canBeMovedToCloserLocationForBranchData : Bool -> String -> BranchData -> List LetInsertPosition
-canBeMovedToCloserLocationForBranchData isRoot name branchData =
+canBeMovedToCloserLocationForBranchData : Maybe LetInsertPosition -> String -> BranchData -> List LetInsertPosition
+canBeMovedToCloserLocationForBranchData parentInsertLocation name branchData =
     if List.member name branchData.used then
-        emptyIfTrue isRoot [ branchData.insertionLocation ]
+        emptyIfNothing parentInsertLocation [ branchData.insertionLocation ]
 
     else
         let
@@ -679,23 +684,24 @@ canBeMovedToCloserLocationForBranchData isRoot name branchData =
             relevantUsages =
                 branchData.branches
                     |> RangeDict.values
-                    |> List.concatMap (canBeMovedToCloserLocation False name)
+                    |> List.concatMap (canBeMovedToCloserLocation (Just branchData.insertionLocation) name)
         in
         -- TODO Avoid looking at other branches if we already found 2 that use "name"
         if List.length relevantUsages > 1 then
-            emptyIfTrue isRoot [ branchData.insertionLocation ]
+            emptyIfNothing parentInsertLocation [ branchData.insertionLocation ]
 
         else
             relevantUsages
 
 
-emptyIfTrue : Bool -> List a -> List a
-emptyIfTrue bool list =
-    if bool then
-        []
+emptyIfNothing : Maybe a -> List a -> List a
+emptyIfNothing maybe list =
+    case maybe of
+        Nothing ->
+            []
 
-    else
-        list
+        Just _ ->
+            list
 
 
 createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
