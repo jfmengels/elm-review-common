@@ -532,20 +532,24 @@ createError context declared letInsertPosition =
 
 fix : Context -> Declared -> LetInsertPosition -> List Fix
 fix context declared letInsertPosition =
-    case letInsertPosition of
-        InsertNewLet insertLocation ->
-            [ Fix.removeRange declared.removeRange
-            , context.extractSourceCode declared.declarationRange
-                |> wrapInLet declared.reportRange.start.column insertLocation.column
-                |> Fix.insertAt insertLocation
-            ]
+    if declared.introducesVariablesInImplementation then
+        []
 
-        InsertExistingLet insertLocation ->
-            [ Fix.removeRange declared.removeRange
-            , context.extractSourceCode declared.declarationRange
-                |> insertInLet declared.reportRange.start.column insertLocation.column
-                |> Fix.insertAt insertLocation
-            ]
+    else
+        case letInsertPosition of
+            InsertNewLet insertLocation ->
+                [ Fix.removeRange declared.removeRange
+                , context.extractSourceCode declared.declarationRange
+                    |> wrapInLet declared.reportRange.start.column insertLocation.column
+                    |> Fix.insertAt insertLocation
+                ]
+
+            InsertExistingLet insertLocation ->
+                [ Fix.removeRange declared.removeRange
+                , context.extractSourceCode declared.declarationRange
+                    |> insertInLet declared.reportRange.start.column insertLocation.column
+                    |> Fix.insertAt insertLocation
+                ]
 
 
 wrapInLet : Int -> Int -> String -> String
