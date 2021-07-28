@@ -387,13 +387,18 @@ expressionEnterVisitorHelp node context =
                     True
             in
             if introducesVariablesInImplementation then
-                context
+                markLetDeclarationsAsIntroducingVariables (Node.range node) context
 
             else
                 context
 
         _ ->
             context
+
+
+markLetDeclarationsAsIntroducingVariables : Range -> Context -> Context
+markLetDeclarationsAsIntroducingVariables range context =
+    context
 
 
 fullLines : Range -> Range
