@@ -91,6 +91,7 @@ type LetInsertPosition
 
 type alias Declared =
     { name : String
+    , introducesVariablesInImplementation : Bool
     , reportRange : Range
     , declarationRange : Range
     , removeRange : Range
@@ -323,6 +324,7 @@ expressionEnterVisitorHelp node context =
                         |> List.map
                             (\( nameNode, expressionRange, declaration ) ->
                                 { name = Node.value nameNode
+                                , introducesVariablesInImplementation = False
                                 , reportRange = Node.range nameNode
                                 , declarationRange = fullLines { start = (Node.range declaration).start, end = expressionRange.end }
                                 , removeRange =
