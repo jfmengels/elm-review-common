@@ -461,6 +461,37 @@ expressionEnterVisitorHelp node context =
             context
 
 
+variablesInPattern : Node Pattern -> List String
+variablesInPattern node =
+    case Node.value node of
+        Pattern.ListPattern patterns ->
+            List.concatMap variablesInPattern patterns
+
+        Pattern.TuplePattern patterns ->
+            List.concatMap variablesInPattern patterns
+
+        Pattern.RecordPattern fields ->
+            List.map Node.value fields
+
+        Pattern.UnConsPattern left right ->
+            List.concatMap variablesInPattern [ left, right ]
+
+        Pattern.VarPattern name ->
+            [ name ]
+
+        Pattern.NamedPattern _ patterns ->
+            List.concatMap variablesInPattern patterns
+
+        Pattern.AsPattern pattern name ->
+            Node.value name :: variablesInPattern pattern
+
+        Pattern.ParenthesizedPattern pattern ->
+            variablesInPattern pattern
+
+        _ ->
+            []
+
+
 patternIntroducesVariable : Node Pattern -> Bool
 patternIntroducesVariable node =
     case Node.value node of
