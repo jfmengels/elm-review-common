@@ -427,7 +427,21 @@ markLetDeclarationsAsIntroducingVariables range context =
 
 markDeclarationsAsUsed : Range -> BranchData -> BranchData
 markDeclarationsAsUsed range branchData =
-    branchData
+    { branchData | letDeclarations = List.map (markDeclarationAsUsed range) branchData.letDeclarations }
+
+
+markDeclarationAsUsed : Range -> Declared -> Declared
+markDeclarationAsUsed range declared =
+    if isRangeContained { outer = declared.declarationRange, inner = range } then
+        { declared | introducesVariablesInImplementation = True }
+
+    else
+        declared
+
+
+isRangeContained : { outer : Range, inner : Range } -> Bool
+isRangeContained record =
+    True
 
 
 fullLines : Range -> Range
