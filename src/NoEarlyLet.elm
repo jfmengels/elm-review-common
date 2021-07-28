@@ -703,16 +703,14 @@ canBeMovedToCloserLocation parentInsertLocation name segment =
             canBeMovedToCloserLocationForBranchData parentInsertLocation name branchData
 
         Lambda branchData ->
-            if List.isEmpty (canBeMovedToCloserLocationForBranchData parentInsertLocation name branchData) then
-                []
-
-            else
-                case parentInsertLocation of
-                    Just location ->
-                        [ location ]
-
-                    Nothing ->
-                        []
+            let
+                closestLocation : List LetInsertPosition
+                closestLocation =
+                    canBeMovedToCloserLocationForBranchData parentInsertLocation name branchData
+            in
+            -- Duplicating so that the parent has to use its insert location,
+            -- and we don't insert inside the let
+            closestLocation ++ closestLocation
 
 
 canBeMovedToCloserLocationForBranchData : Maybe LetInsertPosition -> String -> BranchData -> List LetInsertPosition
