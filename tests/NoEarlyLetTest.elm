@@ -10,6 +10,18 @@ import Test exposing (Test, describe, test)
 -- TODO Handle destructuring lets
 
 
+message : String
+message =
+    "Let value was declared prematurely"
+
+
+details : Int -> List String
+details letInsertLine =
+    [ "This value is only used in some code paths, and it can therefore be computed unnecessarily."
+    , "Try moving it closer to where it is needed, I recommend to move it to line " ++ String.fromInt letInsertLine ++ "."
+    ]
+
+
 all : Test
 all =
     describe "NoEarlyLet"
@@ -29,8 +41,8 @@ a b c d =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details 8
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
@@ -61,8 +73,8 @@ a b c d =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details 7
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
@@ -95,8 +107,8 @@ a b c d =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details 8
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
@@ -199,8 +211,8 @@ a b c d =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details 10
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
@@ -251,8 +263,8 @@ a b c d =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details 8
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
@@ -356,8 +368,8 @@ a =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details 7
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
@@ -400,8 +412,8 @@ a o =
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = message
+                            , details = details 12
                             , under = "z"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 9 }, end = { row = 4, column = 10 } }

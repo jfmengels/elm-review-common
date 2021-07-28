@@ -507,9 +507,22 @@ emptyIfTrue bool list =
 
 createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
 createError context declared letInsertPosition =
+    let
+        letInsertLine : Int
+        letInsertLine =
+            case letInsertPosition of
+                InsertNewLet insertLocation ->
+                    insertLocation.row
+
+                InsertExistingLet insertLocation ->
+                    insertLocation.row
+    in
     Rule.errorWithFix
-        { message = "REPLACEME"
-        , details = [ "REPLACEME" ]
+        { message = "Let value was declared prematurely"
+        , details =
+            [ "This value is only used in some code paths, and it can therefore be computed unnecessarily."
+            , "Try moving it closer to where it is needed, I recommend to move it to line " ++ String.fromInt letInsertLine ++ "."
+            ]
         }
         declared.reportRange
         (fix context declared letInsertPosition)
