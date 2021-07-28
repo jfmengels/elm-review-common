@@ -66,11 +66,30 @@ The rule will try to move the declaration as close as possible to the usages.
             value =
                 expensiveComputation n
         in
-        if needToCompute then
+        if condition then
             value + 1
 
         else
             value - 1
+
+Sometimes, when a computation is somewhat expensive, it is done once in a let declaration and then
+reference in an anonymous function. This rule does not want to worsen the performance, and therefore
+declarations will not be moved to inside a lambda.
+
+    someFunction items n =
+        let
+            value =
+                expensiveComputation n
+        in
+        List.map
+            (\item ->
+                if condition item then
+                    value + item.value
+
+                else
+                    0
+            )
+            items
 
 
 ## Try it out
