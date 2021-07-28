@@ -683,4 +683,45 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should try to move as close as possible to a lambda but not inside" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  if c then
+    (\\b ->
+        if b then
+          z
+        else
+          1
+    )
+  else
+    identity
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 7
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  if c then
+    let
+        z = 1
+    in
+    (\\b ->
+        if b then
+          z
+        else
+          1
+    )
+  else
+    identity
+"""
+                        ]
         ]
