@@ -713,16 +713,28 @@ canBeMovedToCloserLocationForBranchData isRoot name branchData =
         let
             relevantUsages : List LetInsertPosition
             relevantUsages =
-                branchData.branches
-                    |> RangeDict.values
-                    |> List.concatMap (canBeMovedToCloserLocation False name)
+                findRelevantUsages name (RangeDict.values branchData.branches) []
         in
-        -- TODO Optimization: Avoid looking at other branches if we already found 2 that use "name"
         if List.length relevantUsages > 1 then
             emptyIfTrue isRoot [ branchData.insertionLocation ]
 
         else
             relevantUsages
+
+
+findRelevantUsages : String -> List Branch -> List LetInsertPosition -> List LetInsertPosition
+findRelevantUsages name branches result =
+    if List.length result > 1 then
+        -- If we have already found 2 branches with relevant usages, then we don't need to continue
+        result
+
+    else
+        case branches of
+            [] ->
+                result
+
+            first :: rest ->
+                findRelevantUsages name rest (canBeMovedToCloserLocation False name first ++ result)
 
 
 emptyIfTrue : Bool -> List a -> List a
