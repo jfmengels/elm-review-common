@@ -466,7 +466,32 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
                         ]
-        , test "should not suggest a fix for let declarations that introduces variables in its implementation (lambda) but still suggest fixes for others" <|
+        , test "should not suggest a fix for let declarations that introduces variables in its implementation (let block)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = let y = 1
+        in y
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 11
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                        ]
+        , test "should not suggest a fix for let declarations that introduces variables in its implementation but still suggest fixes for others" <|
             \() ->
                 """module A exposing (..)
 a b c d =

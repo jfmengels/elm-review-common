@@ -161,7 +161,7 @@ updateAllSegmentsOfCurrentBranch updateFn currentBranching segment =
                             | branches =
                                 RangeDict.modify
                                     range
-                                    (updateCurrentBranch updateFn restOfSegments)
+                                    (updateAllSegmentsOfCurrentBranch updateFn restOfSegments)
                                     branch.branches
                         }
                 )
@@ -370,6 +370,20 @@ expressionEnterVisitorHelp node context =
                         , branches = RangeDict.empty
                         }
 
+                contextWithDeclarationsMarked : Context
+                contextWithDeclarationsMarked =
+                    let
+                        introducesVariablesInImplementation : Bool
+                        introducesVariablesInImplementation =
+                            -- TODO Mock
+                            True
+                    in
+                    if introducesVariablesInImplementation then
+                        { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+
+                    else
+                        context
+
                 branch : Branch
                 branch =
                     updateCurrentBranch
@@ -382,12 +396,12 @@ expressionEnterVisitorHelp node context =
                                         b.branches
                             }
                         )
-                        context.branching.full
-                        context.branch
+                        contextWithDeclarationsMarked.branching.full
+                        contextWithDeclarationsMarked.branch
             in
-            { context
+            { contextWithDeclarationsMarked
                 | branch = branch
-                , branching = addBranching (Node.range node) context.branching
+                , branching = addBranching (Node.range node) contextWithDeclarationsMarked.branching
             }
 
         Expression.IfBlock _ then_ else_ ->
