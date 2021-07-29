@@ -14,6 +14,7 @@ import Elm.Syntax.Range as Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
 import Review.Rule as Rule exposing (Rule)
+import Set exposing (Set)
 
 
 {-| Reports let declarations that are computed earlier than needed.
@@ -159,7 +160,7 @@ type ScopeType
 
 type alias ScopeData =
     { letDeclarations : List Declared
-    , used : List String
+    , used : Set String
     , insertionLocation : LetInsertPosition
     , scopes : RangeDict Scope
     }
@@ -184,7 +185,7 @@ newBranch insertionLocation =
     Scope
         Branch
         { letDeclarations = []
-        , used = []
+        , used = Set.empty
         , insertionLocation = insertionLocation
         , scopes = RangeDict.empty
         }
@@ -379,7 +380,7 @@ expressionEnterVisitorHelp node context =
                 branch : Scope
                 branch =
                     updateCurrentBranch
-                        (\b -> { b | used = name :: b.used })
+                        (\b -> { b | used = Set.insert name b.used })
                         context.branching.full
                         context.scope
             in
@@ -390,7 +391,7 @@ expressionEnterVisitorHelp node context =
                 branch : Scope
                 branch =
                     updateCurrentBranch
-                        (\b -> { b | used = Node.value name :: b.used })
+                        (\b -> { b | used = Set.insert (Node.value name) b.used })
                         context.branching.full
                         context.scope
             in
@@ -437,7 +438,7 @@ expressionEnterVisitorHelp node context =
                     Scope
                         LetScope
                         { letDeclarations = letDeclarations
-                        , used = []
+                        , used = Set.empty
                         , insertionLocation = figureOutInsertionLocation node
                         , scopes = scopes
                         }
@@ -500,7 +501,7 @@ expressionEnterVisitorHelp node context =
                     Scope
                         Lambda
                         { letDeclarations = []
-                        , used = []
+                        , used = Set.empty
                         , insertionLocation =
                             -- Will not be used
                             InsertNewLet { row = 0, column = 0 }
@@ -536,7 +537,7 @@ lambdaScope =
     Scope
         Lambda
         { letDeclarations = []
-        , used = []
+        , used = Set.empty
         , insertionLocation =
             -- Will not be used
             InsertNewLet { row = 0, column = 0 }
@@ -762,7 +763,7 @@ canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
 
 canBeMovedToCloserLocationForBranchData : Bool -> String -> ScopeData -> List LetInsertPosition
 canBeMovedToCloserLocationForBranchData isRoot name branchData =
-    if List.member name branchData.used then
+    if Set.member name branchData.used then
         emptyIfTrue isRoot [ branchData.insertionLocation ]
 
     else
