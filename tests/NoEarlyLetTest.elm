@@ -6,9 +6,15 @@ import Test exposing (Test, describe, test)
 
 
 
+-- TODO Rename Branch to Scope
+-- TODO Make Branch type a field in BranchData
+--      Dependent on branch type, choose to not move let declaration to inside it.
+--      See if we can simplify branch type to a simple boolean.
+-- TODO Prevent moving to a let declaration
 -- TODO Add a test for moving into a let declarations
 -- TODO Prevent moving the declaration to inside a let FUNCTION
 -- TODO Add a test for merging let declarations
+-- TODO     Mention in docs
 -- TODO Handle destructuring lets with multiple variables
 -- TODO Incorporate https://github.com/jfmengels/elm-review/discussions/93 ? As an option?
 --      Not needed because this rule currently only targets is only for functions
