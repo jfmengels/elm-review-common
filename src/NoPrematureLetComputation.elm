@@ -136,7 +136,7 @@ rule =
 
 type alias Context =
     { extractSourceCode : Range -> String
-    , branch : Scope
+    , scope : Scope
     , branching : Branching
     }
 
@@ -202,7 +202,7 @@ initialContext =
     Rule.initContextCreator
         (\extractSourceCode () ->
             { extractSourceCode = extractSourceCode
-            , branch = newBranch (InsertNewLet { row = 0, column = 0 })
+            , scope = newBranch (InsertNewLet { row = 0, column = 0 })
             , branching = emptyBranching
             }
         )
@@ -274,7 +274,7 @@ declarationVisitor node context =
         Declaration.FunctionDeclaration { declaration } ->
             ( []
             , { extractSourceCode = context.extractSourceCode
-              , branch = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression))
+              , scope = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression))
               , branching = emptyBranching
               }
             )
@@ -304,7 +304,7 @@ expressionEnterVisitor node context =
     let
         newContext : Context
         newContext =
-            case getCurrentBranch context.branching.full context.branch |> Maybe.map getBranches of
+            case getCurrentBranch context.branching.full context.scope |> Maybe.map getBranches of
                 Just branches ->
                     if RangeDict.member (Node.range node) branches then
                         { context | branching = addBranching (Node.range node) context.branching }
@@ -381,9 +381,9 @@ expressionEnterVisitorHelp node context =
                     updateCurrentBranch
                         (\b -> { b | used = name :: b.used })
                         context.branching.full
-                        context.branch
+                        context.scope
             in
-            { context | branch = branch }
+            { context | scope = branch }
 
         Expression.RecordUpdateExpression name _ ->
             let
@@ -392,9 +392,9 @@ expressionEnterVisitorHelp node context =
                     updateCurrentBranch
                         (\b -> { b | used = Node.value name :: b.used })
                         context.branching.full
-                        context.branch
+                        context.scope
             in
-            { context | branch = branch }
+            { context | scope = branch }
 
         Expression.LetExpression { declarations, expression } ->
             let
@@ -437,7 +437,7 @@ expressionEnterVisitorHelp node context =
 
                 contextWithDeclarationsMarked : Context
                 contextWithDeclarationsMarked =
-                    { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+                    { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
 
                 branch : Scope
                 branch =
@@ -452,10 +452,10 @@ expressionEnterVisitorHelp node context =
                             }
                         )
                         contextWithDeclarationsMarked.branching.full
-                        contextWithDeclarationsMarked.branch
+                        contextWithDeclarationsMarked.scope
             in
             { contextWithDeclarationsMarked
-                | branch = branch
+                | scope = branch
                 , branching = addBranching (Node.range node) contextWithDeclarationsMarked.branching
             }
 
@@ -467,7 +467,7 @@ expressionEnterVisitorHelp node context =
                 contextWithDeclarationsMarked : Context
                 contextWithDeclarationsMarked =
                     if List.any (Tuple.first >> patternIntroducesVariable) cases then
-                        { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+                        { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
 
                     else
                         context
@@ -486,7 +486,7 @@ expressionEnterVisitorHelp node context =
                         markLetDeclarationsAsIntroducingVariables (Node.range node) context
 
                     else
-                        context.branch
+                        context.scope
 
                 newScope : Scope
                 newScope =
@@ -516,7 +516,7 @@ expressionEnterVisitorHelp node context =
                         branch
             in
             { context
-                | branch = branchWithAddedScope
+                | scope = branchWithAddedScope
                 , branching = addBranching (Node.range node) context.branching
             }
 
@@ -592,7 +592,7 @@ markLetDeclarationsAsIntroducingVariables range context =
     updateAllSegmentsOfCurrentBranch
         (markDeclarationsAsUsed range)
         context.branching.full
-        context.branch
+        context.scope
 
 
 markDeclarationsAsUsed : Range -> ScopeData -> ScopeData
@@ -630,9 +630,9 @@ addBranches nodes context =
             updateCurrentBranch
                 (\b -> { b | scopes = insertNewBranches nodes b.scopes })
                 context.branching.full
-                context.branch
+                context.scope
     in
-    { context | branch = branch }
+    { context | scope = branch }
 
 
 insertNewBranches : List (Node Expression) -> RangeDict Scope -> RangeDict Scope
@@ -661,7 +661,7 @@ expressionExitVisitorHelp : Node Expression -> Context -> List (Rule.Error {})
 expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression _ ->
-            case getCurrentBranch context.branching.full context.branch of
+            case getCurrentBranch context.branching.full context.scope of
                 Just (Scope LetScope scope) ->
                     List.filterMap
                         (\declaration ->
