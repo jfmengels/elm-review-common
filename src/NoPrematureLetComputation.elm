@@ -734,8 +734,12 @@ collectDeclarations node =
 getLetFunctionRange : Node Expression.LetDeclaration -> Maybe Range
 getLetFunctionRange node =
     case Node.value node of
-        Expression.LetFunction _ ->
-            Just (Node.range node)
+        Expression.LetFunction { declaration } ->
+            if List.isEmpty (Node.value declaration).arguments then
+                Nothing
+
+            else
+                Just (Node.range node)
 
         Expression.LetDestructuring _ _ ->
             Nothing
