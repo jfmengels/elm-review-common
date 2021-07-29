@@ -1,4 +1,4 @@
-module RangeDict exposing (RangeDict, empty, get, insert, member, modify, values)
+module RangeDict exposing (RangeDict, empty, fromList, get, insert, member, modify, values)
 
 import Dict exposing (Dict)
 import Elm.Syntax.Range exposing (Range)
@@ -11,6 +11,13 @@ type alias RangeDict v =
 empty : RangeDict v
 empty =
     Dict.empty
+
+
+fromList : List ( Range, v ) -> RangeDict v
+fromList entries =
+    entries
+        |> List.map (Tuple.mapFirst rangeAsString)
+        |> Dict.fromList
 
 
 insert : Range -> v -> RangeDict v -> RangeDict v

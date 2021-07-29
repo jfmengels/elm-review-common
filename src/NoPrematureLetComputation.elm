@@ -427,7 +427,10 @@ expressionEnterVisitorHelp node context =
 
                 scopes : RangeDict Scope
                 scopes =
-                    RangeDict.empty
+                    declarations
+                        |> List.filterMap getLetFunctionRange
+                        |> List.map (\range -> ( range, lambdaScope ))
+                        |> RangeDict.fromList
 
                 newScope : Scope
                 newScope =
@@ -526,6 +529,19 @@ expressionEnterVisitorHelp node context =
 
         _ ->
             context
+
+
+lambdaScope : Scope
+lambdaScope =
+    Scope
+        Lambda
+        { letDeclarations = []
+        , used = []
+        , insertionLocation =
+            -- Will not be used
+            InsertNewLet { row = 0, column = 0 }
+        , scopes = RangeDict.empty
+        }
 
 
 variablesInPattern : Node Pattern -> List (Node String)
@@ -712,6 +728,16 @@ collectDeclarations node =
 
                 _ ->
                     []
+
+
+getLetFunctionRange : Node Expression.LetDeclaration -> Maybe Range
+getLetFunctionRange node =
+    case Node.value node of
+        Expression.LetFunction _ ->
+            Just (Node.range node)
+
+        Expression.LetDestructuring _ _ ->
+            Nothing
 
 
 canBeMovedToCloserLocation : Bool -> String -> Scope -> List LetInsertPosition
