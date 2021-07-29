@@ -161,7 +161,7 @@ type alias ScopeData =
     { letDeclarations : List Declared
     , used : List String
     , insertionLocation : LetInsertPosition
-    , branches : RangeDict Scope
+    , scopes : RangeDict Scope
     }
 
 
@@ -186,7 +186,7 @@ newBranch insertionLocation =
         { letDeclarations = []
         , used = []
         , insertionLocation = insertionLocation
-        , branches = RangeDict.empty
+        , scopes = RangeDict.empty
         }
 
 
@@ -219,11 +219,11 @@ updateCurrentBranch updateFn currentBranching (Scope type_ segment) =
             Scope
                 type_
                 { segment
-                    | branches =
+                    | scopes =
                         RangeDict.modify
                             range
                             (updateCurrentBranch updateFn restOfSegments)
-                            segment.branches
+                            segment.scopes
                 }
 
 
@@ -238,11 +238,11 @@ updateAllSegmentsOfCurrentBranch updateFn currentBranching (Scope type_ scope) =
                 type_
                 (updateFn
                     { scope
-                        | branches =
+                        | scopes =
                             RangeDict.modify
                                 range
                                 (updateAllSegmentsOfCurrentBranch updateFn restOfSegments)
-                                scope.branches
+                                scope.scopes
                     }
                 )
 
@@ -260,7 +260,7 @@ getCurrentBranch currentBranching branch =
 
 getBranches : Scope -> RangeDict Scope
 getBranches =
-    getBranchData >> .branches
+    getBranchData >> .scopes
 
 
 getBranchData : Scope -> ScopeData
@@ -432,7 +432,7 @@ expressionEnterVisitorHelp node context =
                         { letDeclarations = letDeclarations
                         , used = []
                         , insertionLocation = figureOutInsertionLocation node
-                        , branches = RangeDict.empty
+                        , scopes = RangeDict.empty
                         }
 
                 contextWithDeclarationsMarked : Context
@@ -444,11 +444,11 @@ expressionEnterVisitorHelp node context =
                     updateCurrentBranch
                         (\b ->
                             { b
-                                | branches =
+                                | scopes =
                                     RangeDict.insert
                                         (Node.range node)
                                         newScope
-                                        b.branches
+                                        b.scopes
                             }
                         )
                         contextWithDeclarationsMarked.branching.full
@@ -497,7 +497,7 @@ expressionEnterVisitorHelp node context =
                         , insertionLocation =
                             -- Will not be used
                             InsertNewLet { row = 0, column = 0 }
-                        , branches = RangeDict.empty
+                        , scopes = RangeDict.empty
                         }
 
                 branchWithAddedScope : Scope
@@ -505,11 +505,11 @@ expressionEnterVisitorHelp node context =
                     updateCurrentBranch
                         (\b ->
                             { b
-                                | branches =
+                                | scopes =
                                     RangeDict.insert
                                         (Node.range node)
                                         newScope
-                                        b.branches
+                                        b.scopes
                             }
                         )
                         context.branching.full
@@ -628,7 +628,7 @@ addBranches nodes context =
         branch : Scope
         branch =
             updateCurrentBranch
-                (\b -> { b | branches = insertNewBranches nodes b.branches })
+                (\b -> { b | scopes = insertNewBranches nodes b.scopes })
                 context.branching.full
                 context.branch
     in
@@ -739,7 +739,7 @@ canBeMovedToCloserLocationForBranchData isRoot name branchData =
         let
             relevantUsages : List LetInsertPosition
             relevantUsages =
-                findRelevantUsages name (RangeDict.values branchData.branches) []
+                findRelevantUsages name (RangeDict.values branchData.scopes) []
         in
         if List.length relevantUsages > 1 then
             emptyIfTrue isRoot [ branchData.insertionLocation ]
