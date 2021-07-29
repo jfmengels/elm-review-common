@@ -124,9 +124,9 @@ type alias Branching =
 
 
 type Scope
-    = Branch BranchData
-    | LetScope BranchData
-    | Lambda BranchData
+    = Branch ScopeData
+    | LetScope ScopeData
+    | Lambda ScopeData
 
 
 type ScopeType
@@ -135,7 +135,7 @@ type ScopeType
     | Lambda_
 
 
-type alias BranchData =
+type alias ScopeData =
     { type_ : ScopeType
     , letDeclarations : List Declared
     , used : List String
@@ -188,7 +188,7 @@ initialContext =
         |> Rule.withSourceCodeExtractor
 
 
-updateCurrentBranch : (BranchData -> BranchData) -> List Range -> Scope -> Scope
+updateCurrentBranch : (ScopeData -> ScopeData) -> List Range -> Scope -> Scope
 updateCurrentBranch updateFn currentBranching segment =
     case currentBranching of
         [] ->
@@ -208,7 +208,7 @@ updateCurrentBranch updateFn currentBranching segment =
                 segment
 
 
-updateAllSegmentsOfCurrentBranch : (BranchData -> BranchData) -> List Range -> Scope -> Scope
+updateAllSegmentsOfCurrentBranch : (ScopeData -> ScopeData) -> List Range -> Scope -> Scope
 updateAllSegmentsOfCurrentBranch updateFn currentBranching segment =
     case currentBranching of
         [] ->
@@ -229,7 +229,7 @@ updateAllSegmentsOfCurrentBranch updateFn currentBranching segment =
                 segment
 
 
-updateBranch : (BranchData -> BranchData) -> Scope -> Scope
+updateBranch : (ScopeData -> ScopeData) -> Scope -> Scope
 updateBranch updateFn segment =
     case segment of
         Branch branch ->
@@ -258,7 +258,7 @@ getBranches =
     getBranchData >> .branches
 
 
-getBranchData : Scope -> BranchData
+getBranchData : Scope -> ScopeData
 getBranchData branch =
     case branch of
         Branch b ->
@@ -598,7 +598,7 @@ markLetDeclarationsAsIntroducingVariables range context =
         context.branch
 
 
-markDeclarationsAsUsed : Range -> BranchData -> BranchData
+markDeclarationsAsUsed : Range -> ScopeData -> ScopeData
 markDeclarationsAsUsed range branchData =
     { branchData | letDeclarations = List.map (markDeclarationAsUsed range) branchData.letDeclarations }
 
@@ -733,7 +733,7 @@ canBeMovedToCloserLocation isRoot name segment =
             closestLocation ++ closestLocation
 
 
-canBeMovedToCloserLocationForBranchData : Bool -> String -> BranchData -> List LetInsertPosition
+canBeMovedToCloserLocationForBranchData : Bool -> String -> ScopeData -> List LetInsertPosition
 canBeMovedToCloserLocationForBranchData isRoot name branchData =
     if List.member name branchData.used then
         emptyIfTrue isRoot [ branchData.insertionLocation ]
