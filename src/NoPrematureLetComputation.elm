@@ -112,7 +112,7 @@ rule =
 
 type alias Context =
     { extractSourceCode : Range -> String
-    , branch : Branch
+    , branch : Scope
     , branching : Branching
     }
 
@@ -123,7 +123,7 @@ type alias Branching =
     }
 
 
-type Branch
+type Scope
     = Branch BranchData
     | LetScope BranchData
     | Lambda BranchData
@@ -133,7 +133,7 @@ type alias BranchData =
     { letDeclarations : List Declared
     , used : List String
     , insertionLocation : LetInsertPosition
-    , branches : RangeDict Branch
+    , branches : RangeDict Scope
     }
 
 
@@ -151,7 +151,7 @@ type alias Declared =
     }
 
 
-newBranch : LetInsertPosition -> Branch
+newBranch : LetInsertPosition -> Scope
 newBranch insertionLocation =
     Branch
         { letDeclarations = []
@@ -180,7 +180,7 @@ initialContext =
         |> Rule.withSourceCodeExtractor
 
 
-updateCurrentBranch : (BranchData -> BranchData) -> List Range -> Branch -> Branch
+updateCurrentBranch : (BranchData -> BranchData) -> List Range -> Scope -> Scope
 updateCurrentBranch updateFn currentBranching segment =
     case currentBranching of
         [] ->
@@ -200,7 +200,7 @@ updateCurrentBranch updateFn currentBranching segment =
                 segment
 
 
-updateAllSegmentsOfCurrentBranch : (BranchData -> BranchData) -> List Range -> Branch -> Branch
+updateAllSegmentsOfCurrentBranch : (BranchData -> BranchData) -> List Range -> Scope -> Scope
 updateAllSegmentsOfCurrentBranch updateFn currentBranching segment =
     case currentBranching of
         [] ->
@@ -221,7 +221,7 @@ updateAllSegmentsOfCurrentBranch updateFn currentBranching segment =
                 segment
 
 
-updateBranch : (BranchData -> BranchData) -> Branch -> Branch
+updateBranch : (BranchData -> BranchData) -> Scope -> Scope
 updateBranch updateFn segment =
     case segment of
         Branch branch ->
@@ -234,7 +234,7 @@ updateBranch updateFn segment =
             Lambda (updateFn branch)
 
 
-getCurrentBranch : List Range -> Branch -> Maybe Branch
+getCurrentBranch : List Range -> Scope -> Maybe Scope
 getCurrentBranch currentBranching branch =
     case currentBranching of
         [] ->
@@ -245,12 +245,12 @@ getCurrentBranch currentBranching branch =
                 |> Maybe.andThen (getCurrentBranch restOfBranching)
 
 
-getBranches : Branch -> RangeDict Branch
+getBranches : Scope -> RangeDict Scope
 getBranches =
     getBranchData >> .branches
 
 
-getBranchData : Branch -> BranchData
+getBranchData : Scope -> BranchData
 getBranchData branch =
     case branch of
         Branch b ->
@@ -371,7 +371,7 @@ expressionEnterVisitorHelp node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
             let
-                branch : Branch
+                branch : Scope
                 branch =
                     updateCurrentBranch
                         (\b -> { b | used = name :: b.used })
@@ -382,7 +382,7 @@ expressionEnterVisitorHelp node context =
 
         Expression.RecordUpdateExpression name _ ->
             let
-                branch : Branch
+                branch : Scope
                 branch =
                     updateCurrentBranch
                         (\b -> { b | used = Node.value name :: b.used })
@@ -420,7 +420,7 @@ expressionEnterVisitorHelp node context =
                                 }
                             )
 
-                newScope : Branch
+                newScope : Scope
                 newScope =
                     LetScope
                         { letDeclarations = letDeclarations
@@ -433,7 +433,7 @@ expressionEnterVisitorHelp node context =
                 contextWithDeclarationsMarked =
                     { context | branch = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
 
-                branch : Branch
+                branch : Scope
                 branch =
                     updateCurrentBranch
                         (\b ->
@@ -474,7 +474,7 @@ expressionEnterVisitorHelp node context =
 
         Expression.LambdaExpression { args } ->
             let
-                branch : Branch
+                branch : Scope
                 branch =
                     if List.any patternIntroducesVariable args then
                         markLetDeclarationsAsIntroducingVariables (Node.range node) context
@@ -482,7 +482,7 @@ expressionEnterVisitorHelp node context =
                     else
                         context.branch
 
-                newScope : Branch
+                newScope : Scope
                 newScope =
                     Lambda
                         { letDeclarations = []
@@ -493,7 +493,7 @@ expressionEnterVisitorHelp node context =
                         , branches = RangeDict.empty
                         }
 
-                branchWithAddedScope : Branch
+                branchWithAddedScope : Scope
                 branchWithAddedScope =
                     updateCurrentBranch
                         (\b ->
@@ -580,7 +580,7 @@ patternIntroducesVariable node =
             False
 
 
-markLetDeclarationsAsIntroducingVariables : Range -> Context -> Branch
+markLetDeclarationsAsIntroducingVariables : Range -> Context -> Scope
 markLetDeclarationsAsIntroducingVariables range context =
     updateAllSegmentsOfCurrentBranch
         (markDeclarationsAsUsed range)
@@ -618,7 +618,7 @@ fullLines range =
 addBranches : List (Node Expression) -> Context -> Context
 addBranches nodes context =
     let
-        branch : Branch
+        branch : Scope
         branch =
             updateCurrentBranch
                 (\b -> { b | branches = insertNewBranches nodes b.branches })
@@ -628,7 +628,7 @@ addBranches nodes context =
     { context | branch = branch }
 
 
-insertNewBranches : List (Node Expression) -> RangeDict Branch -> RangeDict Branch
+insertNewBranches : List (Node Expression) -> RangeDict Scope -> RangeDict Scope
 insertNewBranches nodes rangeDict =
     case nodes of
         [] ->
@@ -703,7 +703,7 @@ collectDeclarations node =
                     []
 
 
-canBeMovedToCloserLocation : Bool -> String -> Branch -> List LetInsertPosition
+canBeMovedToCloserLocation : Bool -> String -> Scope -> List LetInsertPosition
 canBeMovedToCloserLocation isRoot name segment =
     case segment of
         Branch branchData ->
@@ -741,7 +741,7 @@ canBeMovedToCloserLocationForBranchData isRoot name branchData =
             relevantUsages
 
 
-findRelevantUsages : String -> List Branch -> List LetInsertPosition -> List LetInsertPosition
+findRelevantUsages : String -> List Scope -> List LetInsertPosition -> List LetInsertPosition
 findRelevantUsages name branches result =
     if List.length result > 1 then
         -- If we have already found 2 branches with relevant usages, then we don't need to continue
