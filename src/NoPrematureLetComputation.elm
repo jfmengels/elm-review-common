@@ -682,14 +682,14 @@ expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression _ ->
             case getCurrentBranch context.branching.full context.scope of
-                Just (Scope LetScope scope) ->
+                Just ((Scope LetScope scopeData) as scope) ->
                     List.filterMap
                         (\declaration ->
-                            canBeMovedToCloserLocation True declaration.name (Scope LetScope scope)
+                            canBeMovedToCloserLocation True declaration.name scope
                                 |> List.head
                                 |> Maybe.map (createError context declaration)
                         )
-                        scope.letDeclarations
+                        scopeData.letDeclarations
 
                 _ ->
                     []
