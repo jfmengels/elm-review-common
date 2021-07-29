@@ -6,9 +6,6 @@ import Test exposing (Test, describe, test)
 
 
 
--- TODO Dependent on branch type, choose to not move let declaration to inside it.
---      See if we can simplify branch type to a simple boolean.
--- TODO Prevent moving the declaration to inside a let FUNCTION
 -- TODO Handle destructuring lets with multiple variables
 -- TODO Incorporate https://github.com/jfmengels/elm-review/discussions/93 ? As an option?
 --      Not needed because this rule currently only targets is only for functions
@@ -755,4 +752,20 @@ a =
     identity
 """
                         ]
+        , test "should not move declaration inside of a let function" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z = 1
+    y () =
+      if cond then
+        z
+      else
+        1
+  in
+  y ()
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]

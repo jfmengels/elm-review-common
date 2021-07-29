@@ -74,8 +74,8 @@ The rule will try to move the declaration as close as possible to the usages.
             value - 1
 
 Sometimes, when a computation is somewhat expensive, it is done once in a let declaration and then
-reference in an anonymous function. This rule does not want to worsen the performance, and therefore
-declarations will not be moved to inside a lambda.
+referenced in a let or anonymous function. This rule does not want to worsen the performance, and therefore
+declarations will not be moved to inside a function.
 
     someFunction items n =
         let
@@ -155,7 +155,7 @@ type Scope
 type ScopeType
     = Branch
     | LetScope
-    | Lambda
+    | Function
 
 
 type alias ScopeData =
@@ -255,17 +255,17 @@ getCurrentBranch currentBranching branch =
             Just branch
 
         range :: restOfBranching ->
-            RangeDict.get range (getBranches branch)
+            RangeDict.get range (getScopes branch)
                 |> Maybe.andThen (getCurrentBranch restOfBranching)
 
 
-getBranches : Scope -> RangeDict Scope
-getBranches =
-    getBranchData >> .scopes
+getScopes : Scope -> RangeDict Scope
+getScopes =
+    getScopeData >> .scopes
 
 
-getBranchData : Scope -> ScopeData
-getBranchData (Scope _ scope) =
+getScopeData : Scope -> ScopeData
+getScopeData (Scope _ scope) =
     scope
 
 
@@ -305,9 +305,9 @@ expressionEnterVisitor node context =
     let
         newContext : Context
         newContext =
-            case getCurrentBranch context.branching.full context.scope |> Maybe.map getBranches of
-                Just branches ->
-                    if RangeDict.member (Node.range node) branches then
+            case getCurrentBranch context.branching.full context.scope |> Maybe.map getScopes of
+                Just scopes ->
+                    if RangeDict.member (Node.range node) scopes then
                         { context | branching = addBranching (Node.range node) context.branching }
 
                     else
@@ -430,7 +430,7 @@ expressionEnterVisitorHelp node context =
                 scopes =
                     declarations
                         |> List.filterMap getLetFunctionRange
-                        |> List.map (\range -> ( range, lambdaScope ))
+                        |> List.map (\range -> ( range, functionScope ))
                         |> RangeDict.fromList
 
                 newScope : Scope
@@ -499,7 +499,7 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     Scope
-                        Lambda
+                        Function
                         { letDeclarations = []
                         , used = Set.empty
                         , insertionLocation =
@@ -532,10 +532,10 @@ expressionEnterVisitorHelp node context =
             context
 
 
-lambdaScope : Scope
-lambdaScope =
+functionScope : Scope
+functionScope =
     Scope
-        Lambda
+        Function
         { letDeclarations = []
         , used = Set.empty
         , insertionLocation =
@@ -739,7 +739,7 @@ getLetFunctionRange node =
                 Nothing
 
             else
-                Just (Node.range node)
+                Just (declaration |> Node.value |> .expression |> Node.range)
 
         Expression.LetDestructuring _ _ ->
             Nothing
@@ -759,7 +759,7 @@ canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
         LetScope ->
             closestLocation
 
-        Lambda ->
+        Function ->
             -- Duplicating so that the parent has to use its insert location,
             -- and we don't insert inside the let
             closestLocation ++ closestLocation
