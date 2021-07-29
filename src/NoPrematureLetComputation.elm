@@ -1,4 +1,4 @@
-module NoEarlyLet exposing (rule)
+module NoPrematureLetComputation exposing (rule)
 
 {-|
 
@@ -21,7 +21,7 @@ import Review.Rule as Rule exposing (Rule)
 This rule is useful to prevent unnecessary computations and to group related code together.
 
     config =
-        [ NoEarlyLet.rule
+        [ NoPrematureLetComputation.rule
         ]
 
 🔧 Running with `--fix` will automatically fix almost all of the reported errors.
@@ -97,13 +97,13 @@ declarations will not be moved to inside a lambda.
 You can try this rule out by running the following command:
 
 ```bash
-elm-review --template jfmengels/elm-review-common/example --rules NoEarlyLet
+elm-review --template jfmengels/elm-review-common/example --rules NoPrematureLetComputation
 ```
 
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoEarlyLet" initialContext
+    Rule.newModuleRuleSchemaUsingContextCreator "NoPrematureLetComputation" initialContext
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionEnterVisitor
         |> Rule.withExpressionExitVisitor expressionExitVisitor

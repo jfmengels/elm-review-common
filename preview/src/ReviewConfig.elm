@@ -11,7 +11,7 @@ when inside the directory containing this file.
 
 -}
 
-import NoEarlyLet
+import NoPrematureLetComputation
 import NoExposingEverything
 import NoImportingEverything
 import NoMissingTypeAnnotation
@@ -23,7 +23,7 @@ import Review.Rule exposing (Rule)
 config : List Rule
 config =
     [ NoExposingEverything.rule
-    , NoEarlyLet.rule
+    , NoPrematureLetComputation.rule
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
     , NoMissingTypeAnnotationInLetIn.rule

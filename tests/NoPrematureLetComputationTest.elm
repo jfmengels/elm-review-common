@@ -1,6 +1,6 @@
-module NoEarlyLetTest exposing (all)
+module NoPrematureLetComputationTest exposing (all)
 
-import NoEarlyLet exposing (rule)
+import NoPrematureLetComputation exposing (rule)
 import Review.Test
 import Test exposing (Test, describe, test)
 
@@ -34,7 +34,7 @@ details letInsertLine =
 
 all : Test
 all =
-    describe "NoEarlyLet"
+    describe "NoPrematureLetComputation"
         [ test "should report a let declaration that could be computed in a if branch" <|
             \() ->
                 """module A exposing (..)
