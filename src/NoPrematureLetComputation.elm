@@ -124,7 +124,7 @@ type alias Branching =
 
 
 type Scope
-    = Scope ScopeData
+    = Scope ScopeType ScopeData
 
 
 type ScopeType
@@ -159,6 +159,7 @@ type alias Declared =
 newBranch : LetInsertPosition -> Scope
 newBranch insertionLocation =
     Scope
+        Branch
         { type_ = Branch
         , letDeclarations = []
         , used = []
@@ -187,13 +188,14 @@ initialContext =
 
 
 updateCurrentBranch : (ScopeData -> ScopeData) -> List Range -> Scope -> Scope
-updateCurrentBranch updateFn currentBranching (Scope segment) =
+updateCurrentBranch updateFn currentBranching (Scope type_ segment) =
     case currentBranching of
         [] ->
-            Scope (updateFn segment)
+            Scope type_ (updateFn segment)
 
         range :: restOfSegments ->
             Scope
+                type_
                 { segment
                     | branches =
                         RangeDict.modify
@@ -204,13 +206,14 @@ updateCurrentBranch updateFn currentBranching (Scope segment) =
 
 
 updateAllSegmentsOfCurrentBranch : (ScopeData -> ScopeData) -> List Range -> Scope -> Scope
-updateAllSegmentsOfCurrentBranch updateFn currentBranching (Scope scope) =
+updateAllSegmentsOfCurrentBranch updateFn currentBranching (Scope type_ scope) =
     case currentBranching of
         [] ->
-            Scope (updateFn scope)
+            Scope type_ (updateFn scope)
 
         range :: restOfSegments ->
             Scope
+                type_
                 (updateFn
                     { scope
                         | branches =
@@ -239,7 +242,7 @@ getBranches =
 
 
 getBranchData : Scope -> ScopeData
-getBranchData (Scope scope) =
+getBranchData (Scope _ scope) =
     scope
 
 
@@ -403,6 +406,7 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     Scope
+                        LetScope
                         { type_ = LetScope
                         , letDeclarations = letDeclarations
                         , used = []
@@ -466,6 +470,7 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     Scope
+                        Lambda
                         { type_ = Lambda
                         , letDeclarations = []
                         , used = []
@@ -637,19 +642,14 @@ expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression _ ->
             case getCurrentBranch context.branching.full context.branch of
-                Just (Scope scope) ->
-                    case scope.type_ of
-                        LetScope ->
-                            List.filterMap
-                                (\declaration ->
-                                    canBeMovedToCloserLocation True declaration.name (Scope scope)
-                                        |> List.head
-                                        |> Maybe.map (createError context declaration)
-                                )
-                                scope.letDeclarations
-
-                        _ ->
-                            []
+                Just (Scope LetScope scope) ->
+                    List.filterMap
+                        (\declaration ->
+                            canBeMovedToCloserLocation True declaration.name (Scope LetScope scope)
+                                |> List.head
+                                |> Maybe.map (createError context declaration)
+                        )
+                        scope.letDeclarations
 
                 _ ->
                     []
@@ -691,8 +691,8 @@ collectDeclarations node =
 
 
 canBeMovedToCloserLocation : Bool -> String -> Scope -> List LetInsertPosition
-canBeMovedToCloserLocation isRoot name (Scope scope) =
-    case scope.type_ of
+canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
+    case type_ of
         Branch ->
             canBeMovedToCloserLocationForBranchData isRoot name scope
 
