@@ -13,6 +13,7 @@
             "jfmengels/elm-review": "2.4.0",
             "jfmengels/elm-review-debug": "1.0.5",
             "jfmengels/elm-review-documentation": "1.0.1",
+            "jfmengels/elm-review-simplify": "2.0.4",
             "jfmengels/elm-review-unused": "1.1.8",
             "sparksp/elm-review-forbidden-words": "1.0.1",
             "stil4m/elm-syntax": "7.2.3"
