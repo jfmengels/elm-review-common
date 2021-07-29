@@ -129,8 +129,15 @@ type Scope
     | Lambda BranchData
 
 
+type ScopeType
+    = Branch_
+    | LetScope_
+    | Lambda_
+
+
 type alias BranchData =
-    { letDeclarations : List Declared
+    { type_ : ScopeType
+    , letDeclarations : List Declared
     , used : List String
     , insertionLocation : LetInsertPosition
     , branches : RangeDict Scope
@@ -154,7 +161,8 @@ type alias Declared =
 newBranch : LetInsertPosition -> Scope
 newBranch insertionLocation =
     Branch
-        { letDeclarations = []
+        { type_ = Branch_
+        , letDeclarations = []
         , used = []
         , insertionLocation = insertionLocation
         , branches = RangeDict.empty
@@ -423,7 +431,8 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     LetScope
-                        { letDeclarations = letDeclarations
+                        { type_ = LetScope_
+                        , letDeclarations = letDeclarations
                         , used = []
                         , insertionLocation = figureOutInsertionLocation node
                         , branches = RangeDict.empty
@@ -485,7 +494,8 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     Lambda
-                        { letDeclarations = []
+                        { type_ = Lambda_
+                        , letDeclarations = []
                         , used = []
                         , insertionLocation =
                             -- Will not be used
