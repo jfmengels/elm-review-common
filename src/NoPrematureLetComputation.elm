@@ -91,6 +91,30 @@ declarations will not be moved to inside a lambda.
             )
             items
 
+The rule will also merge adjacent let declarations together:
+
+    someFunction n =
+        let
+            y =
+                1
+        in
+        let
+            z =
+                1
+        in
+        y + z
+
+    -->
+    someFunction n =
+        let
+            y =
+                1
+
+            z =
+                1
+        in
+        y + z
+
 
 ## Try it out
 
