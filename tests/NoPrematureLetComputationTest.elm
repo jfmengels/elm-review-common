@@ -6,11 +6,8 @@ import Test exposing (Test, describe, test)
 
 
 
--- TODO Rename Branch to Scope
--- TODO Make Branch type a field in BranchData
---      Dependent on branch type, choose to not move let declaration to inside it.
+-- TODO Dependent on branch type, choose to not move let declaration to inside it.
 --      See if we can simplify branch type to a simple boolean.
--- TODO Prevent moving to a let declaration
 -- TODO Add a test for moving into a let declarations
 -- TODO Prevent moving the declaration to inside a let FUNCTION
 -- TODO Add a test for merging let declarations

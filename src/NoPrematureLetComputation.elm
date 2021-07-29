@@ -134,8 +134,7 @@ type ScopeType
 
 
 type alias ScopeData =
-    { type_ : ScopeType
-    , letDeclarations : List Declared
+    { letDeclarations : List Declared
     , used : List String
     , insertionLocation : LetInsertPosition
     , branches : RangeDict Scope
@@ -160,8 +159,7 @@ newBranch : LetInsertPosition -> Scope
 newBranch insertionLocation =
     Scope
         Branch
-        { type_ = Branch
-        , letDeclarations = []
+        { letDeclarations = []
         , used = []
         , insertionLocation = insertionLocation
         , branches = RangeDict.empty
@@ -407,8 +405,7 @@ expressionEnterVisitorHelp node context =
                 newScope =
                     Scope
                         LetScope
-                        { type_ = LetScope
-                        , letDeclarations = letDeclarations
+                        { letDeclarations = letDeclarations
                         , used = []
                         , insertionLocation = figureOutInsertionLocation node
                         , branches = RangeDict.empty
@@ -471,8 +468,7 @@ expressionEnterVisitorHelp node context =
                 newScope =
                     Scope
                         Lambda
-                        { type_ = Lambda
-                        , letDeclarations = []
+                        { letDeclarations = []
                         , used = []
                         , insertionLocation =
                             -- Will not be used
