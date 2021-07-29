@@ -128,9 +128,9 @@ type Scope
 
 
 type ScopeType
-    = Branch_
-    | LetScope_
-    | Lambda_
+    = Branch
+    | LetScope
+    | Lambda
 
 
 type alias ScopeData =
@@ -159,7 +159,7 @@ type alias Declared =
 newBranch : LetInsertPosition -> Scope
 newBranch insertionLocation =
     Scope
-        { type_ = Branch_
+        { type_ = Branch
         , letDeclarations = []
         , used = []
         , insertionLocation = insertionLocation
@@ -403,7 +403,7 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     Scope
-                        { type_ = LetScope_
+                        { type_ = LetScope
                         , letDeclarations = letDeclarations
                         , used = []
                         , insertionLocation = figureOutInsertionLocation node
@@ -466,7 +466,7 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     Scope
-                        { type_ = Lambda_
+                        { type_ = Lambda
                         , letDeclarations = []
                         , used = []
                         , insertionLocation =
@@ -639,7 +639,7 @@ expressionExitVisitorHelp node context =
             case getCurrentBranch context.branching.full context.branch of
                 Just (Scope scope) ->
                     case scope.type_ of
-                        LetScope_ ->
+                        LetScope ->
                             List.filterMap
                                 (\declaration ->
                                     canBeMovedToCloserLocation True declaration.name (Scope scope)
@@ -693,13 +693,13 @@ collectDeclarations node =
 canBeMovedToCloserLocation : Bool -> String -> Scope -> List LetInsertPosition
 canBeMovedToCloserLocation isRoot name (Scope scope) =
     case scope.type_ of
-        Branch_ ->
+        Branch ->
             canBeMovedToCloserLocationForBranchData isRoot name scope
 
-        LetScope_ ->
+        LetScope ->
             canBeMovedToCloserLocationForBranchData isRoot name scope
 
-        Lambda_ ->
+        Lambda ->
             let
                 closestLocation : List LetInsertPosition
                 closestLocation =
