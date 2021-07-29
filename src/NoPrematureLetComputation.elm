@@ -124,9 +124,7 @@ type alias Branching =
 
 
 type Scope
-    = Branch ScopeData
-    | LetScope ScopeData
-    | Lambda ScopeData
+    = Scope ScopeData
 
 
 type ScopeType
@@ -160,7 +158,7 @@ type alias Declared =
 
 newBranch : LetInsertPosition -> Scope
 newBranch insertionLocation =
-    Branch
+    Scope
         { type_ = Branch_
         , letDeclarations = []
         , used = []
@@ -189,57 +187,39 @@ initialContext =
 
 
 updateCurrentBranch : (ScopeData -> ScopeData) -> List Range -> Scope -> Scope
-updateCurrentBranch updateFn currentBranching segment =
+updateCurrentBranch updateFn currentBranching (Scope segment) =
     case currentBranching of
         [] ->
-            updateBranch updateFn segment
+            Scope (updateFn segment)
 
         range :: restOfSegments ->
-            updateBranch
-                (\branch ->
-                    { branch
-                        | branches =
-                            RangeDict.modify
-                                range
-                                (updateCurrentBranch updateFn restOfSegments)
-                                branch.branches
-                    }
-                )
-                segment
+            Scope
+                { segment
+                    | branches =
+                        RangeDict.modify
+                            range
+                            (updateCurrentBranch updateFn restOfSegments)
+                            segment.branches
+                }
 
 
 updateAllSegmentsOfCurrentBranch : (ScopeData -> ScopeData) -> List Range -> Scope -> Scope
-updateAllSegmentsOfCurrentBranch updateFn currentBranching segment =
+updateAllSegmentsOfCurrentBranch updateFn currentBranching (Scope scope) =
     case currentBranching of
         [] ->
-            updateBranch updateFn segment
+            Scope (updateFn scope)
 
         range :: restOfSegments ->
-            updateBranch
-                (\branch ->
-                    updateFn
-                        { branch
-                            | branches =
-                                RangeDict.modify
-                                    range
-                                    (updateAllSegmentsOfCurrentBranch updateFn restOfSegments)
-                                    branch.branches
-                        }
+            Scope
+                (updateFn
+                    { scope
+                        | branches =
+                            RangeDict.modify
+                                range
+                                (updateAllSegmentsOfCurrentBranch updateFn restOfSegments)
+                                scope.branches
+                    }
                 )
-                segment
-
-
-updateBranch : (ScopeData -> ScopeData) -> Scope -> Scope
-updateBranch updateFn segment =
-    case segment of
-        Branch branch ->
-            Branch (updateFn branch)
-
-        LetScope branch ->
-            LetScope (updateFn branch)
-
-        Lambda branch ->
-            Lambda (updateFn branch)
 
 
 getCurrentBranch : List Range -> Scope -> Maybe Scope
@@ -259,16 +239,8 @@ getBranches =
 
 
 getBranchData : Scope -> ScopeData
-getBranchData branch =
-    case branch of
-        Branch b ->
-            b
-
-        LetScope b ->
-            b
-
-        Lambda b ->
-            b
+getBranchData (Scope scope) =
+    scope
 
 
 declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
@@ -430,7 +402,7 @@ expressionEnterVisitorHelp node context =
 
                 newScope : Scope
                 newScope =
-                    LetScope
+                    Scope
                         { type_ = LetScope_
                         , letDeclarations = letDeclarations
                         , used = []
@@ -493,7 +465,7 @@ expressionEnterVisitorHelp node context =
 
                 newScope : Scope
                 newScope =
-                    Lambda
+                    Scope
                         { type_ = Lambda_
                         , letDeclarations = []
                         , used = []
@@ -665,14 +637,19 @@ expressionExitVisitorHelp node context =
     case Node.value node of
         Expression.LetExpression _ ->
             case getCurrentBranch context.branching.full context.branch of
-                Just (LetScope letScope) ->
-                    List.filterMap
-                        (\declaration ->
-                            canBeMovedToCloserLocation True declaration.name (LetScope letScope)
-                                |> List.head
-                                |> Maybe.map (createError context declaration)
-                        )
-                        letScope.letDeclarations
+                Just (Scope scope) ->
+                    case scope.type_ of
+                        LetScope_ ->
+                            List.filterMap
+                                (\declaration ->
+                                    canBeMovedToCloserLocation True declaration.name (Scope scope)
+                                        |> List.head
+                                        |> Maybe.map (createError context declaration)
+                                )
+                                scope.letDeclarations
+
+                        _ ->
+                            []
 
                 _ ->
                     []
@@ -714,19 +691,19 @@ collectDeclarations node =
 
 
 canBeMovedToCloserLocation : Bool -> String -> Scope -> List LetInsertPosition
-canBeMovedToCloserLocation isRoot name segment =
-    case segment of
-        Branch branchData ->
-            canBeMovedToCloserLocationForBranchData isRoot name branchData
+canBeMovedToCloserLocation isRoot name (Scope scope) =
+    case scope.type_ of
+        Branch_ ->
+            canBeMovedToCloserLocationForBranchData isRoot name scope
 
-        LetScope branchData ->
-            canBeMovedToCloserLocationForBranchData isRoot name branchData
+        LetScope_ ->
+            canBeMovedToCloserLocationForBranchData isRoot name scope
 
-        Lambda branchData ->
+        Lambda_ ->
             let
                 closestLocation : List LetInsertPosition
                 closestLocation =
-                    canBeMovedToCloserLocationForBranchData isRoot name branchData
+                    canBeMovedToCloserLocationForBranchData isRoot name scope
             in
             -- Duplicating so that the parent has to use its insert location,
             -- and we don't insert inside the let
