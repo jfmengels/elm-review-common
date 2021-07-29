@@ -29,6 +29,16 @@ details letInsertLine =
 all : Test
 all =
     describe "NoPrematureLetComputation"
+        [ baseTests
+        , ignoreFixTests
+        , letDestructuringTests
+        , noMovingIntoFunctionTests
+        ]
+
+
+baseTests : Test
+baseTests =
+    describe "Base tests"
         [ test "should report a let declaration that could be computed in a if branch" <|
             \() ->
                 """module A exposing (..)
@@ -443,7 +453,13 @@ a o =
        )
 """
                         ]
-        , test "should not suggest a fix for let declarations that introduce variables in their implementation (lambda)" <|
+        ]
+
+
+ignoreFixTests : Test
+ignoreFixTests =
+    describe "Ignoring automatic fixes"
+        [ test "should not suggest a fix for let declarations that introduce variables in their implementation (lambda)" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -639,7 +655,13 @@ a b c d =
         1
 """
                         ]
-        , test "should report a let destructuring with a single value" <|
+        ]
+
+
+letDestructuringTests : Test
+letDestructuringTests =
+    describe "Let destructuring"
+        [ test "should report a let destructuring with a single value" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -670,7 +692,13 @@ a b c d =
     1
 """
                         ]
-        , test "should not report let declaration that would be moved to inside a lambda" <|
+        ]
+
+
+noMovingIntoFunctionTests : Test
+noMovingIntoFunctionTests =
+    describe "No moving into function"
+        [ test "should not report let declaration that would be moved to inside a lambda" <|
             \() ->
                 """module A exposing (..)
 a =
