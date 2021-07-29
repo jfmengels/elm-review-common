@@ -425,6 +425,10 @@ expressionEnterVisitorHelp node context =
                                 }
                             )
 
+                scopes : RangeDict Scope
+                scopes =
+                    RangeDict.empty
+
                 newScope : Scope
                 newScope =
                     Scope
@@ -432,7 +436,7 @@ expressionEnterVisitorHelp node context =
                         { letDeclarations = letDeclarations
                         , used = []
                         , insertionLocation = figureOutInsertionLocation node
-                        , scopes = RangeDict.empty
+                        , scopes = scopes
                         }
 
                 contextWithDeclarationsMarked : Context
