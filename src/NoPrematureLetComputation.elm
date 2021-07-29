@@ -712,19 +712,19 @@ collectDeclarations node =
 
 canBeMovedToCloserLocation : Bool -> String -> Scope -> List LetInsertPosition
 canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
+    let
+        closestLocation : List LetInsertPosition
+        closestLocation =
+            canBeMovedToCloserLocationForBranchData isRoot name scope
+    in
     case type_ of
         Branch ->
-            canBeMovedToCloserLocationForBranchData isRoot name scope
+            closestLocation
 
         LetScope ->
-            canBeMovedToCloserLocationForBranchData isRoot name scope
+            closestLocation
 
         Lambda ->
-            let
-                closestLocation : List LetInsertPosition
-                closestLocation =
-                    canBeMovedToCloserLocationForBranchData isRoot name scope
-            in
             -- Duplicating so that the parent has to use its insert location,
             -- and we don't insert inside the let
             closestLocation ++ closestLocation
