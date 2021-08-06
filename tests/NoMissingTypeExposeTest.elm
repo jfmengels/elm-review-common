@@ -862,6 +862,31 @@ toString happiness = "Happy"
 """
                 |> Review.Test.runWithProjectData project rule
                 |> Review.Test.expectNoErrors
+    , test "should not be confused about types that are named the same as local types" <|
+        \() ->
+            let
+                project : Project
+                project =
+                    Project.new
+                        |> Project.addElmJson (createElmJson packageElmJson)
+                        |> Project.addDependency dependency
+            in
+            [ """module Exposed exposing (Project, toString)
+
+import Internal exposing (Project)
+
+type alias Project =
+    Internal.Project
+
+toString : Project -> String
+toString project = ""
+"""
+            , """module Internal exposing (Project)
+type Project = P
+"""
+            ]
+                |> Review.Test.runOnModulesWithProjectData project rule
+                |> Review.Test.expectNoErrors
     ]
 
 
