@@ -168,17 +168,22 @@ moduleVisitor schema =
 
 moduleDefinitionVisitor : Node Module -> ModuleContext -> ( List nothing, ModuleContext )
 moduleDefinitionVisitor (Node _ mod) context =
-    case context of
+    case context.moduleType of
         InternalModule data ->
-            ( [], InternalModule { data | exposes = Module.exposingList mod } )
+            ( []
+            , { moduleType = InternalModule { data | exposes = Module.exposingList mod }
+              }
+            )
 
         ExposedModule data ->
             ( []
-            , ExposedModule
-                { data
-                    | exposes = Module.exposingList mod
-                    , exposingListStart = exposingListStartLocation (Module.exposingList mod)
-                }
+            , { moduleType =
+                    ExposedModule
+                        { data
+                            | exposes = Module.exposingList mod
+                            , exposingListStart = exposingListStartLocation (Module.exposingList mod)
+                        }
+              }
             )
 
 
@@ -194,19 +199,21 @@ exposingListStartLocation exposes =
 
 importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
 importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
-    case context of
+    case context.moduleType of
         InternalModule _ ->
             ( [], context )
 
         ExposedModule data ->
             ( []
-            , ExposedModule
-                { data
-                    | exposedModules =
-                        exposedModulesForImportAlias (Node.value moduleName) moduleAlias data.exposedModules
-                    , importedTypes =
-                        importedTypesForImportExposing (Node.value moduleName) exposingList data.moduleTypes data.importedTypes
-                }
+            , { moduleType =
+                    ExposedModule
+                        { data
+                            | exposedModules =
+                                exposedModulesForImportAlias (Node.value moduleName) moduleAlias data.exposedModules
+                            , importedTypes =
+                                importedTypesForImportExposing (Node.value moduleName) exposingList data.moduleTypes data.importedTypes
+                        }
+              }
             )
 
 
@@ -278,20 +285,24 @@ rememberImportedType moduleName typeName importedTypes =
 declarationListVisitor : List (Node Declaration) -> ModuleContext -> ( List nothing, ModuleContext )
 declarationListVisitor nodes context =
     ( []
-    , case context of
+    , case context.moduleType of
         InternalModule data ->
-            InternalModule
-                { data
-                    | exposedTypes =
-                        exposedTypesForDeclarationList data.exposes nodes data.exposedTypes
-                }
+            { moduleType =
+                InternalModule
+                    { data
+                        | exposedTypes =
+                            exposedTypesForDeclarationList data.exposes nodes data.exposedTypes
+                    }
+            }
 
         ExposedModule data ->
-            ExposedModule
-                { data
-                    | declaredTypes = declaredTypesForDeclarationList nodes data.declaredTypes
-                    , exposedSignatureTypes = exposedSignatureTypesForDeclarationList data.exposes nodes data.exposedSignatureTypes
-                }
+            { moduleType =
+                ExposedModule
+                    { data
+                        | declaredTypes = declaredTypesForDeclarationList nodes data.declaredTypes
+                        , exposedSignatureTypes = exposedSignatureTypesForDeclarationList data.exposes nodes data.exposedSignatureTypes
+                    }
+            }
     )
 
 
@@ -493,7 +504,7 @@ exposedSignatureTypesForTypeAnnotation (Node _ typeAnnotation) exposedSignatureT
 
 finalEvaluation : ModuleContext -> List (Rule.Error {})
 finalEvaluation context =
-    case context of
+    case context.moduleType of
         InternalModule _ ->
             []
 
@@ -651,7 +662,7 @@ fromProjectToModuleContext _ (Node _ moduleName) { exposedModules, moduleTypes }
 
 fromModuleToProjectContext : Rule.ModuleKey -> Node ModuleName -> ModuleContext -> ProjectContext
 fromModuleToProjectContext _ (Node _ moduleName) context =
-    case context of
+    case context.moduleType of
         InternalModule { exposedTypes } ->
             { initialProjectContext | moduleTypes = Dict.singleton moduleName exposedTypes }
 
@@ -706,20 +717,23 @@ initialProjectContext =
 
 initialInternalModuleContext : ModuleContext
 initialInternalModuleContext =
-    InternalModule initialAnyModuleData
+    { moduleType = InternalModule initialAnyModuleData
+    }
 
 
 initialExposedModuleContext : ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
 initialExposedModuleContext exposedModules moduleTypes =
-    ExposedModule
-        { declaredTypes = Set.empty
-        , exposedModules = exposedModules
-        , exposedSignatureTypes = []
-        , exposes = Exposing.Explicit []
-        , exposingListStart = Nothing
-        , importedTypes = Dict.empty
-        , moduleTypes = moduleTypes
-        }
+    { moduleType =
+        ExposedModule
+            { declaredTypes = Set.empty
+            , exposedModules = exposedModules
+            , exposedSignatureTypes = []
+            , exposes = Exposing.Explicit []
+            , exposingListStart = Nothing
+            , importedTypes = Dict.empty
+            , moduleTypes = moduleTypes
+            }
+    }
 
 
 initialAnyModuleData : InternalModuleData
@@ -735,7 +749,12 @@ type alias ProjectContext =
     }
 
 
-type ModuleContext
+type alias ModuleContext =
+    { moduleType : ModuleType
+    }
+
+
+type ModuleType
     = InternalModule InternalModuleData
     | ExposedModule ExposedModuleData
 
