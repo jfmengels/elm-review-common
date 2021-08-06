@@ -21,6 +21,7 @@ import Elm.Syntax.Signature exposing (Signature)
 import Elm.Syntax.Type as Type
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
+import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
@@ -91,7 +92,7 @@ rule =
         |> Rule.withDependenciesProjectVisitor dependencyDictVisitor
         |> Rule.withModuleVisitor moduleVisitor
         |> Rule.withContextFromImportedModules
-        |> Rule.withModuleContext
+        |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModuleContext
             , fromModuleToProject = fromModuleToProjectContext
             , foldProjectContexts = foldProjectContexts
@@ -171,13 +172,15 @@ moduleDefinitionVisitor (Node _ mod) context =
     case context.moduleType of
         InternalModule data ->
             ( []
-            , { moduleType = InternalModule { data | exposes = Module.exposingList mod }
+            , { lookupTable = context.lookupTable
+              , moduleType = InternalModule { data | exposes = Module.exposingList mod }
               }
             )
 
         ExposedModule data ->
             ( []
-            , { moduleType =
+            , { lookupTable = context.lookupTable
+              , moduleType =
                     ExposedModule
                         { data
                             | exposes = Module.exposingList mod
@@ -205,7 +208,8 @@ importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
 
         ExposedModule data ->
             ( []
-            , { moduleType =
+            , { lookupTable = context.lookupTable
+              , moduleType =
                     ExposedModule
                         { data
                             | exposedModules =
@@ -287,7 +291,8 @@ declarationListVisitor nodes context =
     ( []
     , case context.moduleType of
         InternalModule data ->
-            { moduleType =
+            { lookupTable = context.lookupTable
+            , moduleType =
                 InternalModule
                     { data
                         | exposedTypes =
@@ -296,7 +301,8 @@ declarationListVisitor nodes context =
             }
 
         ExposedModule data ->
-            { moduleType =
+            { lookupTable = context.lookupTable
+            , moduleType =
                 ExposedModule
                     { data
                         | declaredTypes = declaredTypesForDeclarationList nodes data.declaredTypes
@@ -651,23 +657,32 @@ formatTypeName ( moduleName, name ) =
     String.join "." (moduleName ++ [ name ])
 
 
-fromProjectToModuleContext : Rule.ModuleKey -> Node ModuleName -> ProjectContext -> ModuleContext
-fromProjectToModuleContext _ (Node _ moduleName) { exposedModules, moduleTypes } =
-    if isModuleExposed exposedModules moduleName then
-        initialExposedModuleContext exposedModules moduleTypes
+fromProjectToModuleContext : Rule.ContextCreator ProjectContext ModuleContext
+fromProjectToModuleContext =
+    Rule.initContextCreator
+        (\lookupTable metadata { exposedModules, moduleTypes } ->
+            if isModuleExposed exposedModules (Rule.moduleNameFromMetadata metadata) then
+                initialExposedModuleContext lookupTable exposedModules moduleTypes
 
-    else
-        initialInternalModuleContext
+            else
+                initialInternalModuleContext lookupTable
+        )
+        |> Rule.withModuleNameLookupTable
+        |> Rule.withMetadata
 
 
-fromModuleToProjectContext : Rule.ModuleKey -> Node ModuleName -> ModuleContext -> ProjectContext
-fromModuleToProjectContext _ (Node _ moduleName) context =
-    case context.moduleType of
-        InternalModule { exposedTypes } ->
-            { initialProjectContext | moduleTypes = Dict.singleton moduleName exposedTypes }
+fromModuleToProjectContext : Rule.ContextCreator ModuleContext ProjectContext
+fromModuleToProjectContext =
+    Rule.initContextCreator
+        (\metadata context ->
+            case context.moduleType of
+                InternalModule { exposedTypes } ->
+                    { initialProjectContext | moduleTypes = Dict.singleton (Rule.moduleNameFromMetadata metadata) exposedTypes }
 
-        ExposedModule _ ->
-            initialProjectContext
+                ExposedModule _ ->
+                    initialProjectContext
+        )
+        |> Rule.withMetadata
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
@@ -715,15 +730,17 @@ initialProjectContext =
     }
 
 
-initialInternalModuleContext : ModuleContext
-initialInternalModuleContext =
-    { moduleType = InternalModule initialAnyModuleData
+initialInternalModuleContext : ModuleNameLookupTable -> ModuleContext
+initialInternalModuleContext lookupTable =
+    { lookupTable = lookupTable
+    , moduleType = InternalModule initialAnyModuleData
     }
 
 
-initialExposedModuleContext : ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
-initialExposedModuleContext exposedModules moduleTypes =
-    { moduleType =
+initialExposedModuleContext : ModuleNameLookupTable -> ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
+initialExposedModuleContext lookupTable exposedModules moduleTypes =
+    { lookupTable = lookupTable
+    , moduleType =
         ExposedModule
             { declaredTypes = Set.empty
             , exposedModules = exposedModules
@@ -750,7 +767,8 @@ type alias ProjectContext =
 
 
 type alias ModuleContext =
-    { moduleType : ModuleType
+    { lookupTable : ModuleNameLookupTable
+    , moduleType : ModuleType
     }
 
 
