@@ -546,11 +546,8 @@ isTypePrivate : Set ModuleName -> ExposedModuleData -> Node ( ModuleName, String
 isTypePrivate modulesFromTheProject data (Node _ typeCall) =
     case typeCall of
         ( [], name ) ->
-            if Set.member name data.declaredTypes then
-                not (isTypeExposed data.exposes name)
-
-            else
-                False
+            Set.member name data.declaredTypes
+                && not (isTypeExposed data.exposes name)
 
         ( moduleName, _ ) ->
             Set.member moduleName modulesFromTheProject
