@@ -21,7 +21,7 @@ import Elm.Syntax.Signature exposing (Signature)
 import Elm.Syntax.Type as Type
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
-import Review.ModuleNameLookupTable exposing (ModuleNameLookupTable)
+import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
@@ -491,8 +491,14 @@ exposedSignatureTypesForTypeAnnotation :
 exposedSignatureTypesForTypeAnnotation lookupTable (Node _ typeAnnotation) exposedSignatureTypes =
     case typeAnnotation of
         TypeAnnotation.Typed name list ->
-            (name :: exposedSignatureTypes)
-                |> exposedSignatureTypesForTypeAnnotationList lookupTable list
+            case ModuleNameLookupTable.moduleNameFor lookupTable name of
+                Just moduleName ->
+                    (Node.map (\( _, typeName ) -> ( moduleName, typeName )) name :: exposedSignatureTypes)
+                        |> exposedSignatureTypesForTypeAnnotationList lookupTable list
+
+                Nothing ->
+                    (name :: exposedSignatureTypes)
+                        |> exposedSignatureTypesForTypeAnnotationList lookupTable list
 
         TypeAnnotation.FunctionTypeAnnotation left right ->
             exposedSignatureTypes
