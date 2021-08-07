@@ -173,6 +173,7 @@ moduleDefinitionVisitor (Node _ mod) context =
         InternalModule data ->
             ( []
             , { lookupTable = context.lookupTable
+              , modulesFromTheProject = context.modulesFromTheProject
               , moduleType = InternalModule { data | exposes = Module.exposingList mod }
               }
             )
@@ -180,6 +181,7 @@ moduleDefinitionVisitor (Node _ mod) context =
         ExposedModule data ->
             ( []
             , { lookupTable = context.lookupTable
+              , modulesFromTheProject = context.modulesFromTheProject
               , moduleType =
                     ExposedModule
                         { data
@@ -209,6 +211,7 @@ importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
         ExposedModule data ->
             ( []
             , { lookupTable = context.lookupTable
+              , modulesFromTheProject = context.modulesFromTheProject
               , moduleType =
                     ExposedModule
                         { data
@@ -292,6 +295,7 @@ declarationListVisitor nodes context =
     , case context.moduleType of
         InternalModule data ->
             { lookupTable = context.lookupTable
+            , modulesFromTheProject = context.modulesFromTheProject
             , moduleType =
                 InternalModule
                     { data
@@ -302,6 +306,7 @@ declarationListVisitor nodes context =
 
         ExposedModule data ->
             { lookupTable = context.lookupTable
+            , modulesFromTheProject = context.modulesFromTheProject
             , moduleType =
                 ExposedModule
                     { data
@@ -687,6 +692,7 @@ fromProjectToModuleContext =
                         initialInternalModuleType
             in
             { lookupTable = lookupTable
+            , modulesFromTheProject = Dict.keys moduleTypes |> Set.fromList
             , moduleType = moduleType
             }
         )
@@ -782,6 +788,7 @@ type alias ProjectContext =
 
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
+    , modulesFromTheProject : Set ModuleName
     , moduleType : ModuleType
     }
 
