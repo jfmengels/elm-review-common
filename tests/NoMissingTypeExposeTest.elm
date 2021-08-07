@@ -620,7 +620,7 @@ type Happiness = Ecstatic
                 |> Review.Test.expectErrorsForModules
                     [ ( "Exposed"
                       , [ Review.Test.error
-                            { message = "Private type `M.Happiness` should be exposed"
+                            { message = "Private type `Mood.Happiness` should be exposed"
                             , details = details
                             , under = "M.Happiness"
                             }
