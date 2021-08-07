@@ -553,7 +553,8 @@ isTypePrivate modulesFromTheProject data (Node _ typeCall) =
                 False
 
         ( moduleName, _ ) ->
-            not (isModuleExposed data.exposedModules moduleName)
+            Set.member moduleName modulesFromTheProject
+                && not (isModuleExposed data.exposedModules moduleName)
 
 
 moduleNameForType : Dict String ModuleName -> ( ModuleName, String ) -> ( ModuleName, String )
