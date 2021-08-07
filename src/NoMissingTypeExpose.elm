@@ -306,7 +306,7 @@ declarationListVisitor nodes context =
                 ExposedModule
                     { data
                         | declaredTypes = declaredTypesForDeclarationList nodes data.declaredTypes
-                        , exposedSignatureTypes = exposedSignatureTypesForDeclarationList data.exposes nodes data.exposedSignatureTypes
+                        , exposedSignatureTypes = exposedSignatureTypesForDeclarationList context.lookupTable data.exposes nodes data.exposedSignatureTypes
                     }
             }
     )
@@ -363,85 +363,91 @@ rememberDeclaredType (Node _ name) declaredTypes =
 
 
 exposedSignatureTypesForDeclarationList :
-    Exposing
+    ModuleNameLookupTable
+    -> Exposing
     -> List (Node Declaration)
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForDeclarationList exposes list exposedSignatureTypes =
-    List.foldl (exposedSignatureTypesForDeclaration exposes) exposedSignatureTypes list
+exposedSignatureTypesForDeclarationList lookupTable exposes list exposedSignatureTypes =
+    List.foldl (exposedSignatureTypesForDeclaration lookupTable exposes) exposedSignatureTypes list
 
 
 exposedSignatureTypesForDeclaration :
-    Exposing
+    ModuleNameLookupTable
+    -> Exposing
     -> Node Declaration
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForDeclaration exposes (Node _ declaration) exposedSignatureTypes =
+exposedSignatureTypesForDeclaration lookupTable exposes (Node _ declaration) exposedSignatureTypes =
     case declaration of
         Declaration.CustomTypeDeclaration { name, constructors } ->
-            exposedSignatureTypesForConstructorList exposes name constructors exposedSignatureTypes
+            exposedSignatureTypesForConstructorList lookupTable exposes name constructors exposedSignatureTypes
 
         Declaration.AliasDeclaration { name, typeAnnotation } ->
-            exposedSignatureTypesForAlias exposes name typeAnnotation exposedSignatureTypes
+            exposedSignatureTypesForAlias lookupTable exposes name typeAnnotation exposedSignatureTypes
 
         Declaration.FunctionDeclaration { signature } ->
-            exposedSignatureTypesForSignature exposes signature exposedSignatureTypes
+            exposedSignatureTypesForSignature lookupTable exposes signature exposedSignatureTypes
 
         _ ->
             exposedSignatureTypes
 
 
 exposedSignatureTypesForConstructorList :
-    Exposing
+    ModuleNameLookupTable
+    -> Exposing
     -> Node String
     -> List (Node Type.ValueConstructor)
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForConstructorList exposes (Node _ name) list exposedSignatureTypes =
+exposedSignatureTypesForConstructorList lookupTable exposes (Node _ name) list exposedSignatureTypes =
     if isTypeExposedOpen exposes name then
-        List.foldl exposedSignatureTypesForConstructor exposedSignatureTypes list
+        List.foldl (exposedSignatureTypesForConstructor lookupTable) exposedSignatureTypes list
 
     else
         exposedSignatureTypes
 
 
 exposedSignatureTypesForConstructor :
-    Node Type.ValueConstructor
+    ModuleNameLookupTable
+    -> Node Type.ValueConstructor
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForConstructor (Node _ { arguments }) exposedSignatureTypes =
-    exposedSignatureTypesForTypeAnnotationList arguments exposedSignatureTypes
+exposedSignatureTypesForConstructor lookupTable (Node _ { arguments }) exposedSignatureTypes =
+    exposedSignatureTypesForTypeAnnotationList lookupTable arguments exposedSignatureTypes
 
 
 exposedSignatureTypesForAlias :
-    Exposing
+    ModuleNameLookupTable
+    -> Exposing
     -> Node String
     -> Node TypeAnnotation
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForAlias exposes (Node _ name) typeAnnotation exposedSignatureTypes =
+exposedSignatureTypesForAlias lookupTable exposes (Node _ name) typeAnnotation exposedSignatureTypes =
     if isTypeExposed exposes name then
         case typeAnnotation of
             Node _ (TypeAnnotation.Typed _ list) ->
-                exposedSignatureTypesForTypeAnnotationList list exposedSignatureTypes
+                exposedSignatureTypesForTypeAnnotationList lookupTable list exposedSignatureTypes
 
             _ ->
-                exposedSignatureTypesForTypeAnnotation typeAnnotation exposedSignatureTypes
+                exposedSignatureTypesForTypeAnnotation lookupTable typeAnnotation exposedSignatureTypes
 
     else
         exposedSignatureTypes
 
 
 exposedSignatureTypesForSignature :
-    Exposing
+    ModuleNameLookupTable
+    -> Exposing
     -> Maybe (Node Signature)
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForSignature exposes maybeSignature exposedSignatureTypes =
+exposedSignatureTypesForSignature lookupTable exposes maybeSignature exposedSignatureTypes =
     case maybeSignature of
         Just (Node _ { name, typeAnnotation }) ->
             if Exposing.exposesFunction (Node.value name) exposes then
-                exposedSignatureTypesForTypeAnnotation typeAnnotation exposedSignatureTypes
+                exposedSignatureTypesForTypeAnnotation lookupTable typeAnnotation exposedSignatureTypes
 
             else
                 exposedSignatureTypes
@@ -451,55 +457,59 @@ exposedSignatureTypesForSignature exposes maybeSignature exposedSignatureTypes =
 
 
 exposedSignatureTypesForRecordFieldList :
-    List (Node TypeAnnotation.RecordField)
+    ModuleNameLookupTable
+    -> List (Node TypeAnnotation.RecordField)
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForRecordFieldList fields exposedSignatureTypes =
-    List.foldl exposedSignatureTypesForRecordField exposedSignatureTypes fields
+exposedSignatureTypesForRecordFieldList lookupTable fields exposedSignatureTypes =
+    List.foldl (exposedSignatureTypesForRecordField lookupTable) exposedSignatureTypes fields
 
 
 exposedSignatureTypesForRecordField :
-    Node TypeAnnotation.RecordField
+    ModuleNameLookupTable
+    -> Node TypeAnnotation.RecordField
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForRecordField (Node _ ( _, typeAnnotation )) exposedSignatureTypes =
-    exposedSignatureTypesForTypeAnnotation typeAnnotation exposedSignatureTypes
+exposedSignatureTypesForRecordField lookupTable (Node _ ( _, typeAnnotation )) exposedSignatureTypes =
+    exposedSignatureTypesForTypeAnnotation lookupTable typeAnnotation exposedSignatureTypes
 
 
 exposedSignatureTypesForTypeAnnotationList :
-    List (Node TypeAnnotation)
+    ModuleNameLookupTable
+    -> List (Node TypeAnnotation)
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForTypeAnnotationList list exposedSignatureTypes =
-    List.foldl exposedSignatureTypesForTypeAnnotation exposedSignatureTypes list
+exposedSignatureTypesForTypeAnnotationList lookupTable list exposedSignatureTypes =
+    List.foldl (exposedSignatureTypesForTypeAnnotation lookupTable) exposedSignatureTypes list
 
 
 exposedSignatureTypesForTypeAnnotation :
-    Node TypeAnnotation
+    ModuleNameLookupTable
+    -> Node TypeAnnotation
     -> List (Node ( ModuleName, String ))
     -> List (Node ( ModuleName, String ))
-exposedSignatureTypesForTypeAnnotation (Node _ typeAnnotation) exposedSignatureTypes =
+exposedSignatureTypesForTypeAnnotation lookupTable (Node _ typeAnnotation) exposedSignatureTypes =
     case typeAnnotation of
         TypeAnnotation.Typed name list ->
             (name :: exposedSignatureTypes)
-                |> exposedSignatureTypesForTypeAnnotationList list
+                |> exposedSignatureTypesForTypeAnnotationList lookupTable list
 
         TypeAnnotation.FunctionTypeAnnotation left right ->
             exposedSignatureTypes
-                |> exposedSignatureTypesForTypeAnnotation left
-                |> exposedSignatureTypesForTypeAnnotation right
+                |> exposedSignatureTypesForTypeAnnotation lookupTable left
+                |> exposedSignatureTypesForTypeAnnotation lookupTable right
 
         TypeAnnotation.Tupled list ->
             exposedSignatureTypes
-                |> exposedSignatureTypesForTypeAnnotationList list
+                |> exposedSignatureTypesForTypeAnnotationList lookupTable list
 
         TypeAnnotation.Record fields ->
             exposedSignatureTypes
-                |> exposedSignatureTypesForRecordFieldList fields
+                |> exposedSignatureTypesForRecordFieldList lookupTable fields
 
         TypeAnnotation.GenericRecord _ (Node _ fields) ->
             exposedSignatureTypes
-                |> exposedSignatureTypesForRecordFieldList fields
+                |> exposedSignatureTypesForRecordFieldList lookupTable fields
 
         TypeAnnotation.Unit ->
             exposedSignatureTypes
