@@ -537,7 +537,6 @@ finalEvaluation context =
 
         ExposedModule data ->
             data.exposedSignatureTypes
-                |> List.map (Node.map (moduleNameForType data.importedTypes))
                 |> List.filter (isTypePrivate context.modulesFromTheProject data)
                 |> List.map (makeError data.exposingListStart)
 
@@ -552,16 +551,6 @@ isTypePrivate modulesFromTheProject data (Node _ typeCall) =
         ( moduleName, _ ) ->
             Set.member moduleName modulesFromTheProject
                 && not (isModuleExposed data.exposedModules moduleName)
-
-
-moduleNameForType : Dict String ModuleName -> ( ModuleName, String ) -> ( ModuleName, String )
-moduleNameForType importedTypes ( moduleName, typeName ) =
-    case Dict.get typeName importedTypes of
-        Just typeModuleName ->
-            ( typeModuleName, typeName )
-
-        _ ->
-            ( moduleName, typeName )
 
 
 isTypeExposed : Exposing -> String -> Bool
