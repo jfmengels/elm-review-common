@@ -677,11 +677,18 @@ fromProjectToModuleContext : Rule.ContextCreator ProjectContext ModuleContext
 fromProjectToModuleContext =
     Rule.initContextCreator
         (\lookupTable metadata { exposedModules, moduleTypes } ->
-            if isModuleExposed exposedModules (Rule.moduleNameFromMetadata metadata) then
-                initialExposedModuleType lookupTable exposedModules moduleTypes
+            let
+                moduleType : ModuleType
+                moduleType =
+                    if isModuleExposed exposedModules (Rule.moduleNameFromMetadata metadata) then
+                        initialExposedModuleType exposedModules moduleTypes
 
-            else
-                initialInternalModuleType lookupTable
+                    else
+                        initialInternalModuleType
+            in
+            { lookupTable = lookupTable
+            , moduleType = moduleType
+            }
         )
         |> Rule.withModuleNameLookupTable
         |> Rule.withMetadata
@@ -746,34 +753,25 @@ initialProjectContext =
     }
 
 
-initialInternalModuleType : ModuleNameLookupTable -> ModuleContext
-initialInternalModuleType lookupTable =
-    { lookupTable = lookupTable
-    , moduleType = InternalModule initialAnyModuleData
-    }
+initialInternalModuleType : ModuleType
+initialInternalModuleType =
+    InternalModule
+        { exposedTypes = Set.empty
+        , exposes = Exposing.Explicit []
+        }
 
 
-initialExposedModuleType : ModuleNameLookupTable -> ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
-initialExposedModuleType lookupTable exposedModules moduleTypes =
-    { lookupTable = lookupTable
-    , moduleType =
-        ExposedModule
-            { declaredTypes = Set.empty
-            , exposedModules = exposedModules
-            , exposedSignatureTypes = []
-            , exposes = Exposing.Explicit []
-            , exposingListStart = Nothing
-            , importedTypes = Dict.empty
-            , moduleTypes = moduleTypes
-            }
-    }
-
-
-initialAnyModuleData : InternalModuleData
-initialAnyModuleData =
-    { exposedTypes = Set.empty
-    , exposes = Exposing.Explicit []
-    }
+initialExposedModuleType : ExposedModules -> Dict ModuleName (Set String) -> ModuleType
+initialExposedModuleType exposedModules moduleTypes =
+    ExposedModule
+        { declaredTypes = Set.empty
+        , exposedModules = exposedModules
+        , exposedSignatureTypes = []
+        , exposes = Exposing.Explicit []
+        , exposingListStart = Nothing
+        , importedTypes = Dict.empty
+        , moduleTypes = moduleTypes
+        }
 
 
 type alias ProjectContext =
