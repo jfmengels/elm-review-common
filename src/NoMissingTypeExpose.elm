@@ -203,7 +203,7 @@ exposingListStartLocation exposes =
 
 
 importVisitor : Node Import -> ModuleContext -> ( List nothing, ModuleContext )
-importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
+importVisitor (Node _ { moduleName, moduleAlias }) context =
     case context.moduleType of
         InternalModule _ ->
             ( [], context )
@@ -214,12 +214,7 @@ importVisitor (Node _ { moduleName, moduleAlias, exposingList }) context =
               , modulesFromTheProject = context.modulesFromTheProject
               , moduleType =
                     ExposedModule
-                        { data
-                            | exposedModules =
-                                exposedModulesForImportAlias (Node.value moduleName) moduleAlias data.exposedModules
-                            , importedTypes =
-                                importedTypesForImportExposing (Node.value moduleName) exposingList data.moduleTypes data.importedTypes
-                        }
+                        { data | exposedModules = exposedModulesForImportAlias (Node.value moduleName) moduleAlias data.exposedModules }
               }
             )
 
@@ -234,59 +229,6 @@ exposedModulesForImportAlias moduleName maybeModuleAlias exposedModules =
 
         Nothing ->
             exposedModules
-
-
-importedTypesForImportExposing :
-    ModuleName
-    -> Maybe (Node Exposing)
-    -> Dict ModuleName (Set String)
-    -> Dict String ModuleName
-    -> Dict String ModuleName
-importedTypesForImportExposing moduleName maybeExposing moduleTypes importedTypes =
-    case maybeExposing of
-        Just (Node _ (Exposing.Explicit list)) ->
-            List.foldl (importedTypesForImportExpose moduleName) importedTypes list
-
-        Just (Node _ (Exposing.All _)) ->
-            importedTypesForModule moduleName moduleTypes importedTypes
-
-        Nothing ->
-            importedTypes
-
-
-importedTypesForImportExpose : ModuleName -> Node Exposing.TopLevelExpose -> Dict String ModuleName -> Dict String ModuleName
-importedTypesForImportExpose moduleName (Node _ expose) importedTypes =
-    case expose of
-        Exposing.TypeExpose { name } ->
-            rememberImportedType moduleName name importedTypes
-
-        Exposing.TypeOrAliasExpose name ->
-            rememberImportedType moduleName name importedTypes
-
-        Exposing.FunctionExpose _ ->
-            importedTypes
-
-        Exposing.InfixExpose _ ->
-            importedTypes
-
-
-importedTypesForModule :
-    ModuleName
-    -> Dict ModuleName (Set String)
-    -> Dict String ModuleName
-    -> Dict String ModuleName
-importedTypesForModule moduleName moduleTypes importedTypes =
-    case Dict.get moduleName moduleTypes of
-        Just types ->
-            Set.foldl (rememberImportedType moduleName) importedTypes types
-
-        Nothing ->
-            importedTypes
-
-
-rememberImportedType : ModuleName -> String -> Dict String ModuleName -> Dict String ModuleName
-rememberImportedType moduleName typeName importedTypes =
-    Dict.insert typeName moduleName importedTypes
 
 
 declarationListVisitor : List (Node Declaration) -> ModuleContext -> ( List nothing, ModuleContext )
@@ -762,7 +704,6 @@ initialExposedModuleType exposedModules moduleTypes =
         , exposedSignatureTypes = []
         , exposes = Exposing.Explicit []
         , exposingListStart = Nothing
-        , importedTypes = Dict.empty
         , moduleTypes = moduleTypes
         }
 
@@ -797,7 +738,6 @@ type alias ExposedModuleData =
     , exposedSignatureTypes : List (Node ( ModuleName, String ))
     , exposes : Exposing
     , exposingListStart : Maybe Range.Location
-    , importedTypes : Dict String ModuleName
     , moduleTypes : Dict ModuleName (Set String)
     }
 
