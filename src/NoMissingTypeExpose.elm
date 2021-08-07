@@ -538,12 +538,12 @@ finalEvaluation context =
         ExposedModule data ->
             data.exposedSignatureTypes
                 |> List.map (Node.map (moduleNameForType data.importedTypes))
-                |> List.filter (isTypePrivate data)
+                |> List.filter (isTypePrivate context.modulesFromTheProject data)
                 |> List.map (makeError data.exposingListStart)
 
 
-isTypePrivate : ExposedModuleData -> Node ( ModuleName, String ) -> Bool
-isTypePrivate data (Node _ typeCall) =
+isTypePrivate : Set ModuleName -> ExposedModuleData -> Node ( ModuleName, String ) -> Bool
+isTypePrivate modulesFromTheProject data (Node _ typeCall) =
     case typeCall of
         ( [], name ) ->
             if Set.member name data.declaredTypes then
