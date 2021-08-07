@@ -678,10 +678,10 @@ fromProjectToModuleContext =
     Rule.initContextCreator
         (\lookupTable metadata { exposedModules, moduleTypes } ->
             if isModuleExposed exposedModules (Rule.moduleNameFromMetadata metadata) then
-                initialExposedModuleContext lookupTable exposedModules moduleTypes
+                initialExposedModuleType lookupTable exposedModules moduleTypes
 
             else
-                initialInternalModuleContext lookupTable
+                initialInternalModuleType lookupTable
         )
         |> Rule.withModuleNameLookupTable
         |> Rule.withMetadata
@@ -746,15 +746,15 @@ initialProjectContext =
     }
 
 
-initialInternalModuleContext : ModuleNameLookupTable -> ModuleContext
-initialInternalModuleContext lookupTable =
+initialInternalModuleType : ModuleNameLookupTable -> ModuleContext
+initialInternalModuleType lookupTable =
     { lookupTable = lookupTable
     , moduleType = InternalModule initialAnyModuleData
     }
 
 
-initialExposedModuleContext : ModuleNameLookupTable -> ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
-initialExposedModuleContext lookupTable exposedModules moduleTypes =
+initialExposedModuleType : ModuleNameLookupTable -> ExposedModules -> Dict ModuleName (Set String) -> ModuleContext
+initialExposedModuleType lookupTable exposedModules moduleTypes =
     { lookupTable = lookupTable
     , moduleType =
         ExposedModule
