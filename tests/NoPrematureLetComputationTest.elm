@@ -29,7 +29,7 @@ all =
         [ baseTests
         , ignoreFixTests
         , letDestructuringTests
-        , noMovingIntoFunctionTests
+        , novingIntoFunctionTests
         ]
 
 
@@ -733,9 +733,9 @@ a =
         ]
 
 
-noMovingIntoFunctionTests : Test
-noMovingIntoFunctionTests =
-    describe "No moving into function"
+novingIntoFunctionTests : Test
+novingIntoFunctionTests =
+    describe "Moving into functions"
         [ test "should not report let declaration that would be moved to inside a lambda" <|
             \() ->
                 """module A exposing (..)
@@ -806,6 +806,231 @@ a b c d =
         1
   in
   y ()
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should report let declaration that could be moved to inside a lambda passed to Maybe.map" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  Maybe.map
+      (\\b ->
+          z
+      )
+      x
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 8
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  Maybe.map
+      (\\b ->
+          let
+              z = 1
+          in
+          z
+      )
+      x
+"""
+                        ]
+        , test "should report let declaration that could be moved to inside a lambda passed to Maybe.map2" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  Maybe.map2
+      (\\b c ->
+          z
+      )
+      x
+      y
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 8
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  Maybe.map2
+      (\\b c ->
+          let
+              z = 1
+          in
+          z
+      )
+      x
+      y
+"""
+                        ]
+        , test "should not report reference to inside a lambda passed to Maybe.map if there are missing arguments to Maybe.map" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        z = 1
+        maybeZ =
+            Maybe.map
+                (\\b ->
+                    z
+                )
+    in
+    Maybe.map2
+        Tuple.pair
+        (maybeZ (Just x))
+        (maybeZ (Just y))
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should not report reference to inside a lambda passed to Maybe.map2 if there are missing arguments to Maybe.map2" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        z = 1
+        maybeZ =
+            Maybe.map2
+                (\\b c ->
+                    z
+                )
+                x
+    in
+    Maybe.map2
+        Tuple.pair
+        (maybeZ (Just x))
+        (maybeZ (Just y))
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should not report reference to inside a lambda passed to List.map" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  List.map
+      (\\b ->
+          z
+      )
+      x
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should report let declaration that could be moved to inside a lambda passed to Maybe.map using |>" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  x
+  |> Maybe.map
+      (\\b ->
+          z
+      )
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 9
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  x
+  |> Maybe.map
+      (\\b ->
+          let
+              z = 1
+          in
+          z
+      )
+"""
+                        ]
+        , test "should not report reference to inside a lambda passed to Maybe.map2 if there are missing arguments to Maybe.map (using |>)" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        z = 1
+        maybeZ =
+            x
+            |> Maybe.map2
+                (\\b ->
+                    z
+                )
+    in
+    Maybe.map2
+        Tuple.pair
+        (maybeZ (Just x))
+        (maybeZ (Just y))
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
+        , test "should report let declaration that could be moved to inside a lambda passed to Maybe.map using <|" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  Maybe.map
+      (\\b ->
+          z
+      ) <| x
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 8
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  Maybe.map
+      (\\b ->
+          let
+              z = 1
+          in
+          z
+      ) <| x
+"""
+                        ]
+        , test "should not report reference to inside a lambda passed to Maybe.map2 if there are missing arguments to Maybe.map (using <|)" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        z = 1
+        maybeZ =
+           Maybe.map2
+            (\\b ->
+                z
+            ) <| x
+    in
+    Maybe.map2
+        Tuple.pair
+        (maybeZ (Just x))
+        (maybeZ (Just y))
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors

@@ -6,6 +6,7 @@ module NoPrematureLetComputation exposing (rule)
 
 -}
 
+import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node(..))
@@ -13,6 +14,7 @@ import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Location, Range)
 import RangeDict exposing (RangeDict)
 import Review.Fix as Fix exposing (Fix)
+import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
@@ -79,6 +81,7 @@ declarations will not be moved to inside a function.
 
     someFunction items n =
         let
+            -- Will stay here
             value =
                 expensiveComputation n
         in
@@ -91,6 +94,26 @@ declarations will not be moved to inside a function.
                     0
             )
             items
+
+Some exceptions apply to that exist, like when we know for sure that a lambda will only be computed once,
+for instance when it's the argument to `Maybe.map`:
+
+    someFunction maybeItem n =
+        let
+            -- Will be moved from here...
+            value =
+                expensiveComputation n
+        in
+        Maybe.map
+            (\item ->
+                if condition item then
+                    -- ... to here
+                    value + item.value
+
+                else
+                    0
+            )
+            maybeItem
 
 The rule will also merge adjacent let declarations together:
 
@@ -136,9 +159,11 @@ rule =
 
 
 type alias Context =
-    { extractSourceCode : Range -> String
+    { lookupTable : ModuleNameLookupTable
+    , extractSourceCode : Range -> String
     , scope : Scope
     , branching : Branching
+    , functionsThatWillOnlyBeComputedOnce : RangeDict ()
     }
 
 
@@ -156,6 +181,7 @@ type ScopeType
     = Branch
     | LetScope
     | Function
+    | FunctionOkayToMoveInto
 
 
 type alias ScopeData =
@@ -202,12 +228,15 @@ emptyBranching =
 initialContext : Rule.ContextCreator () Context
 initialContext =
     Rule.initContextCreator
-        (\extractSourceCode () ->
-            { extractSourceCode = extractSourceCode
+        (\lookupTable extractSourceCode () ->
+            { lookupTable = lookupTable
+            , extractSourceCode = extractSourceCode
             , scope = newBranch (InsertNewLet { row = 0, column = 0 })
             , branching = emptyBranching
+            , functionsThatWillOnlyBeComputedOnce = RangeDict.empty
             }
         )
+        |> Rule.withModuleNameLookupTable
         |> Rule.withSourceCodeExtractor
 
 
@@ -275,9 +304,11 @@ declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration { declaration } ->
             ( []
-            , { extractSourceCode = context.extractSourceCode
+            , { lookupTable = context.lookupTable
+              , extractSourceCode = context.extractSourceCode
               , scope = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression))
               , branching = emptyBranching
+              , functionsThatWillOnlyBeComputedOnce = RangeDict.empty
               }
             )
 
@@ -488,7 +519,7 @@ expressionEnterVisitorHelp node context =
             in
             addBranches branchNodes contextWithDeclarationsMarked
 
-        Expression.LambdaExpression { args } ->
+        Expression.LambdaExpression { args, expression } ->
             let
                 branch : Scope
                 branch =
@@ -501,12 +532,15 @@ expressionEnterVisitorHelp node context =
                 newScope : Scope
                 newScope =
                     Scope
-                        Function
+                        (if RangeDict.member (Node.range node) context.functionsThatWillOnlyBeComputedOnce then
+                            FunctionOkayToMoveInto
+
+                         else
+                            Function
+                        )
                         { letDeclarations = []
                         , used = Set.empty
-                        , insertionLocation =
-                            -- Will not be used
-                            InsertNewLet { row = 0, column = 0 }
+                        , insertionLocation = figureOutInsertionLocation expression
                         , scopes = RangeDict.empty
                         }
 
@@ -530,8 +564,152 @@ expressionEnterVisitorHelp node context =
                 , branching = addBranching (Node.range node) context.branching
             }
 
+        Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: argumentWithParens :: restOfArguments) ->
+            registerApplicationCall
+                fnRange
+                fnName
+                argumentWithParens
+                (List.length restOfArguments)
+                context
+
+        Expression.OperatorApplication "|>" _ _ (Node _ (Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: argumentWithParens :: restOfArguments))) ->
+            registerApplicationCall
+                fnRange
+                fnName
+                argumentWithParens
+                (List.length restOfArguments + 1)
+                context
+
+        Expression.OperatorApplication "<|" _ (Node _ (Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: argumentWithParens :: restOfArguments))) _ ->
+            registerApplicationCall
+                fnRange
+                fnName
+                argumentWithParens
+                (List.length restOfArguments + 1)
+                context
+
         _ ->
             context
+
+
+registerApplicationCall : Range -> String -> Node Expression -> Int -> Context -> Context
+registerApplicationCall fnRange fnName argumentWithParens nbOfOtherArguments context =
+    let
+        argument : Node Expression
+        argument =
+            removeParens argumentWithParens
+    in
+    case Node.value argument of
+        Expression.LambdaExpression _ ->
+            case Dict.get fnName knownFunctions of
+                Just knownModuleNames ->
+                    case
+                        ModuleNameLookupTable.moduleNameAt context.lookupTable fnRange
+                            |> Maybe.andThen (\moduleName -> Dict.get moduleName knownModuleNames)
+                    of
+                        Just expectedNumberOfArguments ->
+                            if nbOfOtherArguments == expectedNumberOfArguments - 1 then
+                                { context
+                                    | functionsThatWillOnlyBeComputedOnce =
+                                        RangeDict.insert (Node.range argument) () context.functionsThatWillOnlyBeComputedOnce
+                                }
+
+                            else
+                                context
+
+                        _ ->
+                            context
+
+                _ ->
+                    context
+
+        _ ->
+            context
+
+
+knownFunctions : Dict String (Dict (List String) number)
+knownFunctions =
+    Dict.fromList
+        [ ( "map"
+          , Dict.fromList
+                [ ( [ "Maybe" ], 2 )
+                , ( [ "Html" ], 2 )
+                , ( [ "Result" ], 2 )
+                , ( [ "Task" ], 2 )
+                ]
+          )
+        , ( "map2"
+          , Dict.fromList
+                [ ( [ "Maybe" ], 3 )
+                , ( [ "Result" ], 3 )
+                , ( [ "Task" ], 3 )
+                ]
+          )
+        , ( "map3"
+          , Dict.fromList
+                [ ( [ "Maybe" ], 4 )
+                , ( [ "Result" ], 4 )
+                , ( [ "Task" ], 4 )
+                ]
+          )
+        , ( "map4"
+          , Dict.fromList
+                [ ( [ "Maybe" ], 5 )
+                , ( [ "Result" ], 5 )
+                , ( [ "Task" ], 5 )
+                ]
+          )
+        , ( "map5"
+          , Dict.fromList
+                [ ( [ "Maybe" ], 6 )
+                , ( [ "Result" ], 6 )
+                , ( [ "Task" ], 6 )
+                ]
+          )
+        , ( "mapError"
+          , Dict.fromList
+                [ ( [ "Result" ], 2 )
+                , ( [ "Task" ], 2 )
+                ]
+          )
+        , ( "andThen"
+          , Dict.fromList
+                [ ( [ "Maybe" ], 2 )
+                , ( [ "Result" ], 2 )
+                , ( [ "Task" ], 2 )
+                ]
+          )
+
+        -- TODO Support mapBoth as well
+        , ( "mapFirst"
+          , Dict.singleton [ "Tuple" ] 2
+          )
+        , ( "mapSecond"
+          , Dict.singleton [ "Tuple" ] 2
+          )
+        , ( "perform"
+          , Dict.singleton [ "Task" ] 2
+          )
+        , ( "attempt"
+          , Dict.singleton [ "Task" ] 2
+          )
+        , ( "onError"
+          , Dict.singleton [ "Task" ] 2
+          )
+        , ( "update"
+          , Dict.singleton [ "Dict" ] 4
+          )
+        ]
+
+
+removeParens : Node Expression -> Node Expression
+removeParens node =
+    case Node.value node of
+        Expression.ParenthesizedExpression expr ->
+            removeParens expr
+
+        _ ->
+            node
 
 
 functionScope : Scope
@@ -759,6 +937,9 @@ canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
             closestLocation
 
         LetScope ->
+            closestLocation
+
+        FunctionOkayToMoveInto ->
             closestLocation
 
         Function ->
