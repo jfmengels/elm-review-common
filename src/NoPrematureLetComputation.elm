@@ -175,6 +175,7 @@ type alias Declared =
     { name : String
     , introducesVariablesInImplementation : Bool
     , reportRange : Range
+    , declarationColumn : Int
     , declarationRange : Range
     , removeRange : Range
     }
@@ -412,6 +413,7 @@ expressionEnterVisitorHelp node context =
                                 { name = Node.value nameNode
                                 , introducesVariablesInImplementation = False
                                 , reportRange = Node.range nameNode
+                                , declarationColumn = (Node.range declaration).start.column
                                 , declarationRange = fullLines { start = (Node.range declaration).start, end = expressionRange.end }
                                 , removeRange =
                                     if isDeclarationAlone then
@@ -847,7 +849,7 @@ fix context declared letInsertPosition =
             InsertExistingLet insertLocation ->
                 [ Fix.removeRange declared.removeRange
                 , context.extractSourceCode declared.declarationRange
-                    |> insertInLet declared.reportRange.start.column insertLocation.column
+                    |> insertInLet declared.declarationColumn insertLocation.column
                     |> Fix.insertAt insertLocation
                 ]
 

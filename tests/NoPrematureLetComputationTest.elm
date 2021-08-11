@@ -658,7 +658,7 @@ a b c d =
 letDestructuringTests : Test
 letDestructuringTests =
     describe "Let destructuring"
-        [ test "should report a let destructuring with a single value" <|
+        [ test "should report a let destructuring with a single value (record destructuring)" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -687,6 +687,47 @@ a b c d =
     z
   else
     1
+"""
+                        ]
+        , test "should report a let destructuring with a single value (named pattern destructuring)" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        (Foo z) =
+            point
+    in
+    if condition then
+        let
+            b =
+                1
+        in
+        z
+
+    else
+        []
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 9
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 14 }, end = { row = 4, column = 15 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+    if condition then
+        let
+            (Foo z) =
+                point
+            b =
+                1
+        in
+        z
+
+    else
+        []
 """
                         ]
         ]
