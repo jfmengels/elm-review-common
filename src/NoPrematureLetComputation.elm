@@ -95,8 +95,8 @@ declarations will not be moved to inside a function.
             )
             items
 
-Some exceptions apply to that exist, like when we know for sure that a lambda will only be computed once,
-for instance when it's the argument to `Maybe.map`:
+There are some exceptions when we know for sure that an anonymous function will only be computed once,
+for instance when it is the argument to `Maybe.map`:
 
     someFunction maybeItem n =
         let
