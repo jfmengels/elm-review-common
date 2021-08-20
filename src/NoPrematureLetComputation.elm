@@ -436,20 +436,7 @@ expressionEnterVisitorHelp node context =
             addBranches [ then_, else_ ] context
 
         Expression.CaseExpression { cases } ->
-            let
-                contextWithDeclarationsMarked : Context
-                contextWithDeclarationsMarked =
-                    if List.any (Tuple.first >> patternIntroducesVariable) cases then
-                        { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
-
-                    else
-                        context
-
-                branchNodes : List (Node Expression)
-                branchNodes =
-                    List.map (\( _, exprNode ) -> exprNode) cases
-            in
-            addBranches branchNodes contextWithDeclarationsMarked
+            registerCaseExpression node cases context
 
         Expression.LambdaExpression { args, expression } ->
             let
@@ -595,6 +582,24 @@ registerLetExpression node { declarations, expression } context =
         | scope = branch
         , branching = addBranching (Node.range node) contextWithDeclarationsMarked.branching
     }
+
+
+registerCaseExpression : Node Expression -> List ( Node Pattern, Node Expression ) -> Context -> Context
+registerCaseExpression node cases context =
+    let
+        contextWithDeclarationsMarked : Context
+        contextWithDeclarationsMarked =
+            if List.any (Tuple.first >> patternIntroducesVariable) cases then
+                { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+
+            else
+                context
+
+        branchNodes : List (Node Expression)
+        branchNodes =
+            List.map (\( _, exprNode ) -> exprNode) cases
+    in
+    addBranches branchNodes contextWithDeclarationsMarked
 
 
 registerApplicationCall : Range -> String -> Node Expression -> Int -> Context -> Context
