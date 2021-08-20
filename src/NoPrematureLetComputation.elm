@@ -429,76 +429,8 @@ expressionEnterVisitorHelp node context =
             in
             { context | scope = branch }
 
-        Expression.LetExpression { declarations, expression } ->
-            let
-                isDeclarationAlone : Bool
-                isDeclarationAlone =
-                    List.length declarations == 1
-
-                letDeclarations : List Declared
-                letDeclarations =
-                    declarations
-                        |> List.concatMap collectDeclarations
-                        |> List.map
-                            (\( nameNode, expressionRange, declaration ) ->
-                                { name = Node.value nameNode
-                                , introducesVariablesInImplementation = False
-                                , reportRange = Node.range nameNode
-                                , declarationColumn = (Node.range declaration).start.column
-                                , declarationRange = fullLines { start = (Node.range declaration).start, end = expressionRange.end }
-                                , removeRange =
-                                    if isDeclarationAlone then
-                                        { start = (Node.range node).start
-                                        , end = (Node.range expression).start
-                                        }
-
-                                    else
-                                        { start = { row = (Node.range declaration).start.row, column = 1 }
-                                        , end = expressionRange.end
-                                        }
-                                }
-                            )
-
-                scopes : RangeDict Scope
-                scopes =
-                    declarations
-                        |> List.filterMap getLetFunctionRange
-                        |> List.map (\range -> ( range, functionScope ))
-                        |> RangeDict.fromList
-
-                newScope : Scope
-                newScope =
-                    Scope
-                        LetScope
-                        { letDeclarations = letDeclarations
-                        , used = Set.empty
-                        , insertionLocation = figureOutInsertionLocation node
-                        , scopes = scopes
-                        }
-
-                contextWithDeclarationsMarked : Context
-                contextWithDeclarationsMarked =
-                    { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
-
-                branch : Scope
-                branch =
-                    updateCurrentBranch
-                        (\b ->
-                            { b
-                                | scopes =
-                                    RangeDict.insert
-                                        (Node.range node)
-                                        newScope
-                                        b.scopes
-                            }
-                        )
-                        contextWithDeclarationsMarked.branching.full
-                        contextWithDeclarationsMarked.scope
-            in
-            { contextWithDeclarationsMarked
-                | scope = branch
-                , branching = addBranching (Node.range node) contextWithDeclarationsMarked.branching
-            }
+        Expression.LetExpression letBlock ->
+            registerLetExpression node letBlock context
 
         Expression.IfBlock _ then_ else_ ->
             addBranches [ then_, else_ ] context
@@ -590,6 +522,79 @@ expressionEnterVisitorHelp node context =
 
         _ ->
             context
+
+
+registerLetExpression : Node Expression -> Expression.LetBlock -> Context -> Context
+registerLetExpression node { declarations, expression } context =
+    let
+        isDeclarationAlone : Bool
+        isDeclarationAlone =
+            List.length declarations == 1
+
+        letDeclarations : List Declared
+        letDeclarations =
+            declarations
+                |> List.concatMap collectDeclarations
+                |> List.map
+                    (\( nameNode, expressionRange, declaration ) ->
+                        { name = Node.value nameNode
+                        , introducesVariablesInImplementation = False
+                        , reportRange = Node.range nameNode
+                        , declarationColumn = (Node.range declaration).start.column
+                        , declarationRange = fullLines { start = (Node.range declaration).start, end = expressionRange.end }
+                        , removeRange =
+                            if isDeclarationAlone then
+                                { start = (Node.range node).start
+                                , end = (Node.range expression).start
+                                }
+
+                            else
+                                { start = { row = (Node.range declaration).start.row, column = 1 }
+                                , end = expressionRange.end
+                                }
+                        }
+                    )
+
+        scopes : RangeDict Scope
+        scopes =
+            declarations
+                |> List.filterMap getLetFunctionRange
+                |> List.map (\range -> ( range, functionScope ))
+                |> RangeDict.fromList
+
+        newScope : Scope
+        newScope =
+            Scope
+                LetScope
+                { letDeclarations = letDeclarations
+                , used = Set.empty
+                , insertionLocation = figureOutInsertionLocation node
+                , scopes = scopes
+                }
+
+        contextWithDeclarationsMarked : Context
+        contextWithDeclarationsMarked =
+            { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+
+        branch : Scope
+        branch =
+            updateCurrentBranch
+                (\b ->
+                    { b
+                        | scopes =
+                            RangeDict.insert
+                                (Node.range node)
+                                newScope
+                                b.scopes
+                    }
+                )
+                contextWithDeclarationsMarked.branching.full
+                contextWithDeclarationsMarked.scope
+    in
+    { contextWithDeclarationsMarked
+        | scope = branch
+        , branching = addBranching (Node.range node) contextWithDeclarationsMarked.branching
+    }
 
 
 registerApplicationCall : Range -> String -> Node Expression -> Int -> Context -> Context
