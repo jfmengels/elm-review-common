@@ -611,30 +611,33 @@ registerApplicationCall fnRange fnName argumentWithParens nbOfOtherArguments con
     in
     case Node.value argument of
         Expression.LambdaExpression _ ->
-            case Dict.get fnName knownFunctions of
-                Just knownModuleNames ->
-                    case
-                        ModuleNameLookupTable.moduleNameAt context.lookupTable fnRange
-                            |> Maybe.andThen (\moduleName -> Dict.get moduleName knownModuleNames)
-                    of
-                        Just expectedNumberOfArguments ->
-                            if nbOfOtherArguments == expectedNumberOfArguments - 1 then
-                                { context
-                                    | functionsThatWillOnlyBeComputedOnce =
-                                        RangeDict.insert (Node.range argument) () context.functionsThatWillOnlyBeComputedOnce
-                                }
+            case numberOfArgumentsForFunction context.lookupTable fnName fnRange of
+                Just expectedNumberOfArguments ->
+                    if nbOfOtherArguments == expectedNumberOfArguments - 1 then
+                        { context
+                            | functionsThatWillOnlyBeComputedOnce =
+                                RangeDict.insert (Node.range argument) () context.functionsThatWillOnlyBeComputedOnce
+                        }
 
-                            else
-                                context
+                    else
+                        context
 
-                        _ ->
-                            context
-
-                _ ->
+                Nothing ->
                     context
 
         _ ->
             context
+
+
+numberOfArgumentsForFunction : ModuleNameLookupTable -> String -> Range -> Maybe number
+numberOfArgumentsForFunction lookupTable fnName fnRange =
+    case Dict.get fnName knownFunctions of
+        Just knownModuleNames ->
+            ModuleNameLookupTable.moduleNameAt lookupTable fnRange
+                |> Maybe.andThen (\moduleName -> Dict.get moduleName knownModuleNames)
+
+        _ ->
+            Nothing
 
 
 knownFunctions : Dict String (Dict (List String) number)
