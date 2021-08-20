@@ -21,16 +21,16 @@ import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoPrematureLetComputation
-import NoUnused.CustomTypeConstructors
 import NoUnused.CustomTypeConstructorArgs
+import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
 import NoUnused.Exports
 import NoUnused.Modules
 import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
-import Simplify
 import Review.Rule as Rule exposing (Rule)
+import Simplify
 
 
 config : List Rule
