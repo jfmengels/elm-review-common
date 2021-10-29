@@ -233,8 +233,14 @@ reportPatterns configuration lookupTable nodes acc =
                         newAcc
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
-                    -- TODO Report
-                    reportPatterns configuration lookupTable (List.append subPatterns restOfNodes) acc
+                    reportPatterns
+                        configuration
+                        lookupTable
+                        (List.append subPatterns restOfNodes)
+                        (List.append
+                            (reportValue configuration lookupTable (Node.range pattern) qualifiedNameRef.name)
+                            acc
+                        )
 
                 Pattern.AsPattern subPattern nameToMaybeReport ->
                     reportPatterns configuration lookupTable (subPattern :: restOfNodes) acc
