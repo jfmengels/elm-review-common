@@ -1,11 +1,46 @@
 module NoDeprecated exposing
     ( rule
-    , checkInName
+    , Configuration, checkInName
     )
 
 {-|
 
 @docs rule
+
+This rule is useful to stop the spread of the usage of deprecated functions and types.
+
+This rule is recommended to be used with `elm-review`'s suppression system (see `elm-review suppress --help`).
+That way, current uses of deprecated elements won't be reported, but the rule will report new usages, in practice
+allowing you to stop the bleed.
+
+An additional benefit is that the suppressed errors will make it easy to have an overview of the number of times
+deprecated elements are used and where they are located. Looking at the error reports (using `elm-review --unsuppress`
+for instance) will give you the more precise problems and locations.
+
+@docs Configuration, checkInName
+
+REPLACEME You can configure this rule to only trigger for a specific module, function or element, and create multiple of these. TODO Mention performance
+REPLACEME TODO Would this require renaming the rule maybe?
+
+
+## Fail
+
+    a =
+        Button.view_DEPRECATED "Click me!" OnClick
+
+
+## When (not) to enable this rule
+
+If you do not have deprecated elements in your project, this rule won't be useful.
+
+
+## Try it out
+
+You can try this rule out by running the following command:
+
+```bash
+elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
+```
 
 -}
 
@@ -20,38 +55,11 @@ import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNam
 import Review.Rule as Rule exposing (Rule)
 
 
-{-| Reports... REPLACEME
+{-| Reports usages of deprecated functions and types.
 
     config =
-        [ NoDeprecated.rule
+        [ NoDeprecated.rule NoDeprecated.defaults
         ]
-
-
-## Fail
-
-    a =
-        "REPLACEME example to replace"
-
-
-## Success
-
-    a =
-        "REPLACEME example to replace"
-
-
-## When (not) to enable this rule
-
-This rule is useful when REPLACEME.
-This rule is not useful when REPLACEME.
-
-
-## Try it out
-
-You can try this rule out by running the following command:
-
-```bash
-elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
-```
 
 -}
 rule : Configuration -> Rule
@@ -62,6 +70,8 @@ rule configuration =
         |> Rule.fromModuleRuleSchema
 
 
+{-| REPLACEME
+-}
 type Configuration
     = Configuration
         { moduleNamePredicate : ModuleName -> Bool
@@ -72,6 +82,8 @@ type Configuration
         }
 
 
+{-| REPLACEME
+-}
 checkInName : Configuration
 checkInName =
     let

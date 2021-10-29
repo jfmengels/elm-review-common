@@ -5,7 +5,7 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoDeprecated`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoDeprecated) - Reports REPLACEME.
+- [`NoDeprecated`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoDeprecated) - Reports usages of deprecated functions and types.
 - [🔧 `NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoExposingEverything "Provides automatic fixes") - Forbids exporting everything from a module.
 - [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoImportingEverything) - Forbids importing everything from a module.
 - [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
