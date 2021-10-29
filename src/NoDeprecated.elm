@@ -207,8 +207,7 @@ reportPatterns configuration lookupTable nodes acc =
                     reportPatterns configuration
                         lookupTable
                         restOfNodes
-                        -- TODO Report fields
-                        acc
+                        (List.append (List.filterMap (reportField configuration) fields) acc)
 
                 Pattern.UnConsPattern left right ->
                     reportPatterns configuration lookupTable (left :: right :: restOfNodes) acc
@@ -229,6 +228,15 @@ reportPatterns configuration lookupTable nodes acc =
 
                 _ ->
                     reportPatterns configuration lookupTable restOfNodes acc
+
+
+reportField : Configuration -> Node String -> Maybe (Rule.Error {})
+reportField (Configuration configuration) field =
+    if configuration.recordFieldPredicate (Node.value field) then
+        Just (error (Node.range field))
+
+    else
+        Nothing
 
 
 expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
