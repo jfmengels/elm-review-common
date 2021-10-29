@@ -98,7 +98,7 @@ expressionVisitor (Configuration configuration) (Node nodeRange node) context =
         Expression.FunctionOrValue _ name ->
             case ModuleNameLookuTable.moduleNameAt context.lookupTable nodeRange of
                 Just moduleName ->
-                    if predicate context moduleName name then
+                    if configuration.elementPredicate moduleName name || configuration.moduleNamePredicate moduleName then
                         ( [ Rule.error
                                 { message = "Found new usage of deprecated element"
                                 , details = [ "REPLACEME" ]
@@ -116,12 +116,6 @@ expressionVisitor (Configuration configuration) (Node nodeRange node) context =
 
         _ ->
             ( [], context )
-
-
-predicate : Context -> ModuleName -> String -> Bool
-predicate context moduleName name =
-    containsDeprecated name
-        || Set.member moduleName context.deprecatedModules
 
 
 containsDeprecated : String -> Bool
