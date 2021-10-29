@@ -53,10 +53,10 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 
 -}
 rule : Configuration -> Rule
-rule _ =
+rule configuration =
     Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
         -- TODO Use a set of deprecated module names and store them in the ProjectContext
-        |> Rule.withExpressionEnterVisitor expressionVisitor
+        |> Rule.withExpressionEnterVisitor (expressionVisitor configuration)
         |> Rule.fromModuleRuleSchema
 
 
@@ -88,8 +88,8 @@ initialContext =
         |> Rule.withModuleNameLookupTable
 
 
-expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
-expressionVisitor (Node nodeRange node) context =
+expressionVisitor : Configuration -> Node Expression -> Context -> ( List (Rule.Error {}), Context )
+expressionVisitor (Configuration configuration) (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
             case ModuleNameLookuTable.moduleNameAt context.lookupTable nodeRange of
