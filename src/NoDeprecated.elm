@@ -12,7 +12,7 @@ module NoDeprecated exposing
 import Dict exposing (Dict)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
-import Elm.Syntax.Node exposing (Node(..))
+import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Range exposing (Range)
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
@@ -103,6 +103,13 @@ expressionVisitor configuration (Node nodeRange node) context =
                 context.lookupTable
                 { rangeForModuleName = nodeRange, rangeToReport = nodeRange }
                 name
+
+        Expression.RecordUpdateExpression name _ ->
+            report
+                configuration
+                context.lookupTable
+                { rangeForModuleName = Node.range name, rangeToReport = Node.range name }
+                (Node.value name)
 
         _ ->
             []

@@ -75,5 +75,6 @@ a = { something | b = 1 }
                             , details = [ "REPLACEME" ]
                             , under = "something"
                             }
+                            |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
                         ]
         ]
