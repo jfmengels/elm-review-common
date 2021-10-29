@@ -252,7 +252,8 @@ reportPatterns configuration lookupTable nodes acc =
 
                         errors : List (Rule.Error {})
                         errors =
-                            reportValue configuration
+                            reportValue
+                                configuration
                                 lookupTable
                                 (Node.range pattern)
                                 rangeForNamedPattern
