@@ -233,14 +233,20 @@ reportPatterns configuration lookupTable nodes acc =
                         newAcc
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
+                    let
+                        errors : List (Rule.Error {})
+                        errors =
+                            reportValue configuration
+                                lookupTable
+                                (Node.range pattern)
+                                (Node.range pattern)
+                                qualifiedNameRef.name
+                    in
                     reportPatterns
                         configuration
                         lookupTable
                         (List.append subPatterns restOfNodes)
-                        (List.append
-                            (reportValue configuration lookupTable (Node.range pattern) qualifiedNameRef.name)
-                            acc
-                        )
+                        (List.append errors acc)
 
                 Pattern.AsPattern subPattern name ->
                     let
@@ -276,28 +282,30 @@ expressionVisitor configuration (Node nodeRange node) context =
                 configuration
                 context.lookupTable
                 nodeRange
+                nodeRange
                 name
 
-        Expression.RecordUpdateExpression name _ ->
+        Expression.RecordUpdateExpression (Node range name) _ ->
             reportValue
                 configuration
                 context.lookupTable
-                (Node.range name)
-                (Node.value name)
+                range
+                range
+                name
 
         _ ->
             []
 
 
-reportValue : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
-reportValue (Configuration configuration) lookupTable range name =
-    case ModuleNameLookuTable.moduleNameAt lookupTable range of
+reportValue : Configuration -> ModuleNameLookupTable -> Range -> Range -> String -> List (Rule.Error {})
+reportValue (Configuration configuration) lookupTable rangeForLookupTable rangeForReport name =
+    case ModuleNameLookuTable.moduleNameAt lookupTable rangeForLookupTable of
         Just moduleName ->
             if
                 configuration.elementPredicate moduleName name
                     || configuration.moduleNamePredicate moduleName
             then
-                [ error range ]
+                [ error rangeForReport ]
 
             else
                 []
