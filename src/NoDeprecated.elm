@@ -50,7 +50,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 rule : Rule
 rule =
     Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
-        |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor node context, context ))
+        |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
 
@@ -66,28 +66,30 @@ initialContext =
         |> Rule.withModuleNameLookupTable
 
 
-expressionVisitor : Node Expression -> Context -> List (Rule.Error {})
+expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitor (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
             case ModuleNameLookuTable.moduleNameAt context.lookupTable nodeRange of
                 Just moduleName ->
                     if predicate moduleName name then
-                        [ Rule.error
-                            { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
-                            }
-                            nodeRange
-                        ]
+                        ( [ Rule.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                }
+                                nodeRange
+                          ]
+                        , context
+                        )
 
                     else
-                        []
+                        ( [], context )
 
                 Nothing ->
-                    []
+                    ( [], context )
 
         _ ->
-            []
+            ( [], context )
 
 
 predicate : ModuleName -> String -> Bool
