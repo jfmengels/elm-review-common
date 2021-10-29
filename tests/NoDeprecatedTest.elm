@@ -252,6 +252,21 @@ a =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 10 }, end = { row = 5, column = 20 } }
                         ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (case expression)" <|
+            \() ->
+                """module A exposing (..)
+a =
+    case x of
+        ThingDeprecated b -> 1
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "ThingDeprecated"
+                            }
+                        ]
         , test "should report an error when referencing a type whose name contains 'deprecated' (custom type declaration)" <|
             \() ->
                 """module A exposing (..)

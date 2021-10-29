@@ -366,6 +366,13 @@ expressionVisitor configuration (Node nodeRange node) context =
                 (reportLetDeclaration configuration context.lookupTable)
                 letBlock.declarations
 
+        Expression.CaseExpression { cases } ->
+            reportPatterns
+                configuration
+                context.lookupTable
+                (List.map Tuple.first cases)
+                []
+
         Expression.RecordUpdateExpression (Node range name) _ ->
             reportValue
                 configuration
