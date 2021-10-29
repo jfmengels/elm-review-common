@@ -5,6 +5,7 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
+- [`NoDeprecated`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoDeprecated) - Reports REPLACEME.
 - [🔧 `NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoExposingEverything "Provides automatic fixes") - Forbids exporting everything from a module.
 - [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoImportingEverything) - Forbids importing everything from a module.
 - [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.1.2/NoMissingTypeAnnotation) - Reports top-level declarations that do not have a type annotation.
@@ -16,6 +17,7 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 ## Configuration
 
 ```elm
+import NoDeprecated
 import NoExposingEverything
 import NoImportingEverything
 import NoMissingTypeAnnotation
@@ -27,6 +29,7 @@ import Review.Rule exposing (Rule)
 config : List Rule
 config =
     [ NoExposingEverything.rule
+    , NoDeprecated.rule
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
     , NoMissingTypeAnnotationInLetIn.rule

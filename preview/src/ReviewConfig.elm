@@ -11,18 +11,20 @@ when inside the directory containing this file.
 
 -}
 
-import NoPrematureLetComputation
+import NoDeprecated
 import NoExposingEverything
 import NoImportingEverything
 import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
+import NoPrematureLetComputation
 import Review.Rule exposing (Rule)
 
 
 config : List Rule
 config =
     [ NoExposingEverything.rule
+    , NoDeprecated.rule
     , NoPrematureLetComputation.rule
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
