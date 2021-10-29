@@ -234,29 +234,13 @@ reportPatterns configuration lookupTable nodes acc =
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
                     let
-                        lengthForName : Int
-                        lengthForName =
-                            (qualifiedNameRef.moduleName ++ [ qualifiedNameRef.name ])
-                                |> String.join "."
-                                |> String.length
-
-                        patternStart : Range.Location
-                        patternStart =
-                            (Node.range pattern).start
-
-                        rangeForNamedPattern : Range
-                        rangeForNamedPattern =
-                            { start = patternStart
-                            , end = { row = patternStart.row, column = patternStart.column + lengthForName }
-                            }
-
                         errors : List (Rule.Error {})
                         errors =
                             reportValue
                                 configuration
                                 lookupTable
                                 (Node.range pattern)
-                                rangeForNamedPattern
+                                (\() -> rangeForNamedPattern pattern qualifiedNameRef)
                                 qualifiedNameRef.name
                     in
                     reportPatterns
@@ -282,6 +266,24 @@ reportPatterns configuration lookupTable nodes acc =
                     reportPatterns configuration lookupTable restOfNodes acc
 
 
+rangeForNamedPattern : Node a -> Pattern.QualifiedNameRef -> Range
+rangeForNamedPattern (Node parentRange _) { moduleName, name } =
+    let
+        lengthForName : Int
+        lengthForName =
+            (moduleName ++ [ name ])
+                |> String.join "."
+                |> String.length
+
+        patternStart : Range.Location
+        patternStart =
+            parentRange.start
+    in
+    { start = patternStart
+    , end = { row = patternStart.row, column = patternStart.column + lengthForName }
+    }
+
+
 reportField : Configuration -> Node String -> Maybe (Rule.Error {})
 reportField (Configuration configuration) field =
     if configuration.recordFieldPredicate (Node.value field) then
@@ -299,7 +301,7 @@ expressionVisitor configuration (Node nodeRange node) context =
                 configuration
                 context.lookupTable
                 nodeRange
-                nodeRange
+                (always nodeRange)
                 name
 
         Expression.RecordUpdateExpression (Node range name) _ ->
@@ -307,14 +309,14 @@ expressionVisitor configuration (Node nodeRange node) context =
                 configuration
                 context.lookupTable
                 range
-                range
+                (always range)
                 name
 
         _ ->
             []
 
 
-reportValue : Configuration -> ModuleNameLookupTable -> Range -> Range -> String -> List (Rule.Error {})
+reportValue : Configuration -> ModuleNameLookupTable -> Range -> (() -> Range) -> String -> List (Rule.Error {})
 reportValue (Configuration configuration) lookupTable rangeForLookupTable rangeForReport name =
     case ModuleNameLookuTable.moduleNameAt lookupTable rangeForLookupTable of
         Just moduleName ->
@@ -322,7 +324,7 @@ reportValue (Configuration configuration) lookupTable rangeForLookupTable rangeF
                 configuration.elementPredicate moduleName name
                     || configuration.moduleNamePredicate moduleName
             then
-                [ error rangeForReport ]
+                [ error (rangeForReport ()) ]
 
             else
                 []
