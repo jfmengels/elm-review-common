@@ -28,10 +28,24 @@ a = somethingDeprecated
                     |> Review.Test.run rule
                     |> Review.Test.expectErrors
                         [ Review.Test.error
-                            { message = "Found new usage of deprecated `somethingDeprecated`"
+                            { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
                             , under = "somethingDeprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 24 } }
+                        ]
+        , test "should report an error when referencing a function from a module whose name contains 'deprecated'" <|
+            \() ->
+                """module A exposing (..)
+import Some.DeprecatedModule
+a = Some.DeprecatedModule.something
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Some.DeprecatedModule.something"
+                            }
                         ]
         ]

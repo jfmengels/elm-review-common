@@ -7,6 +7,7 @@ module NoDeprecated exposing (rule)
 -}
 
 import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node exposing (Node(..))
 import Review.Rule as Rule exposing (Rule)
 
@@ -59,10 +60,10 @@ type alias Context =
 expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
 expressionVisitor (Node nodeRange node) context =
     case node of
-        Expression.FunctionOrValue _ name ->
-            if name |> String.toLower |> String.contains "deprecated" then
+        Expression.FunctionOrValue moduleName name ->
+            if predicate moduleName name then
                 ( [ Rule.error
-                        { message = "Found new usage of deprecated `" ++ name ++ "`"
+                        { message = "Found new usage of deprecated element"
                         , details = [ "REPLACEME" ]
                         }
                         nodeRange
@@ -75,3 +76,16 @@ expressionVisitor (Node nodeRange node) context =
 
         _ ->
             ( [], context )
+
+
+predicate : ModuleName -> String -> Bool
+predicate moduleName name =
+    containsDeprecated name
+        || containsDeprecated (String.join "." moduleName)
+
+
+containsDeprecated : String -> Bool
+containsDeprecated name =
+    name
+        |> String.toLower
+        |> String.contains "deprecated"
