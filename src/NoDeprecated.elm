@@ -9,7 +9,6 @@ module NoDeprecated exposing
 
 -}
 
-import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
@@ -19,7 +18,6 @@ import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
-import Set exposing (Set)
 
 
 {-| Reports... REPLACEME
@@ -217,9 +215,22 @@ reportPatterns configuration lookupTable nodes acc =
                 Pattern.ListPattern subPatterns ->
                     reportPatterns configuration lookupTable (List.append subPatterns restOfNodes) acc
 
-                Pattern.VarPattern string ->
-                    -- TODO Report
-                    reportPatterns configuration lookupTable restOfNodes acc
+                Pattern.VarPattern name ->
+                    let
+                        newAcc : List (Rule.Error {})
+                        newAcc =
+                            case reportParameter configuration (Node.range pattern) name of
+                                Just err ->
+                                    err :: acc
+
+                                Nothing ->
+                                    acc
+                    in
+                    reportPatterns
+                        configuration
+                        lookupTable
+                        restOfNodes
+                        newAcc
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
                     -- TODO Report
@@ -277,6 +288,15 @@ reportValue (Configuration configuration) lookupTable range name =
 
         Nothing ->
             []
+
+
+reportParameter : Configuration -> Range -> String -> Maybe (Rule.Error {})
+reportParameter (Configuration configuration) range name =
+    if configuration.parameterPredicate name then
+        Just (error range)
+
+    else
+        Nothing
 
 
 reportType : Configuration -> ModuleNameLookupTable -> Range -> String -> Maybe (Rule.Error {})
