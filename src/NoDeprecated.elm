@@ -166,14 +166,14 @@ expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Er
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
-            report
+            reportValue
                 configuration
                 context.lookupTable
                 nodeRange
                 name
 
         Expression.RecordUpdateExpression name _ ->
-            report
+            reportValue
                 configuration
                 context.lookupTable
                 (Node.range name)
@@ -183,8 +183,8 @@ expressionVisitor configuration (Node nodeRange node) context =
             []
 
 
-report : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
-report (Configuration configuration) lookupTable range name =
+reportValue : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
+reportValue (Configuration configuration) lookupTable range name =
     case ModuleNameLookuTable.moduleNameAt lookupTable range of
         Just moduleName ->
             if
