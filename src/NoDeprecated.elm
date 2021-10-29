@@ -12,6 +12,7 @@ import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node exposing (Node(..))
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
+import Set exposing (Set)
 
 
 {-| Reports... REPLACEME
@@ -50,7 +51,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 -}
 rule : Rule
 rule =
-    Rule.newProjectRuleSchema "NoDeprecated" initialContext
+    Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
         -- TODO Use a set of deprecated module names and store them in the ProjectContext
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
@@ -58,7 +59,7 @@ rule =
 
 type alias Context =
     { lookupTable : ModuleNameLookupTable
-    , deprecatedModuleCache : Dict ModuleName Bool
+    , deprecatedModules : Set ModuleName
     }
 
 
@@ -67,7 +68,7 @@ initialContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { lookupTable = lookupTable
-            , deprecatedModuleCache = Dict.empty
+            , deprecatedModules = Set.singleton [ "Some", "DeprecatedModule" ]
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -79,7 +80,7 @@ expressionVisitor (Node nodeRange node) context =
         Expression.FunctionOrValue _ name ->
             case ModuleNameLookuTable.moduleNameAt context.lookupTable nodeRange of
                 Just moduleName ->
-                    if predicate moduleName name then
+                    if predicate context moduleName name then
                         ( [ Rule.error
                                 { message = "Found new usage of deprecated element"
                                 , details = [ "REPLACEME" ]
@@ -99,32 +100,10 @@ expressionVisitor (Node nodeRange node) context =
             ( [], context )
 
 
-type DeprecatedLookup
-    = NotDeprecated Context
-    | Deprecated Context
-
-
-checkIfModuleIsDeprecated : ModuleName -> Context -> DeprecatedLookup
-checkIfModuleIsDeprecated moduleName context =
-    case Dict.get moduleName context.deprecatedModuleCache of
-        Just True ->
-            Deprecated context
-
-        Just False ->
-            NotDeprecated context
-
-        Nothing ->
-            if containsDeprecated (String.join "." moduleName) then
-                Deprecated context
-
-            else
-                NotDeprecated context
-
-
-predicate : ModuleName -> String -> Bool
-predicate moduleName name =
+predicate : Context -> ModuleName -> String -> Bool
+predicate context moduleName name =
     containsDeprecated name
-        || containsDeprecated (String.join "." moduleName)
+        || Set.member moduleName context.deprecatedModules
 
 
 containsDeprecated : String -> Bool
