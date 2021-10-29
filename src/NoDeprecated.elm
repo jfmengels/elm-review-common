@@ -56,7 +56,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 rule : Configuration -> Rule
 rule configuration =
     Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
-        |> Rule.withExpressionEnterVisitor (expressionVisitor configuration)
+        |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
         |> Rule.fromModuleRuleSchema
 
 
@@ -94,14 +94,14 @@ initialContext =
         |> Rule.withModuleNameLookupTable
 
 
-expressionVisitor : Configuration -> Node Expression -> Context -> ( List (Rule.Error {}), Context )
+expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
-            ( report configuration context.lookupTable nodeRange name, context )
+            report configuration context.lookupTable nodeRange name
 
         _ ->
-            ( [], context )
+            []
 
 
 report : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
