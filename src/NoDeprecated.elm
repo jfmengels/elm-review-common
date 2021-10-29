@@ -97,6 +97,15 @@ type DeprecatedLookup
     | Deprecated Context
 
 
+checkIfModuleIsDeprecated : ModuleName -> Context -> DeprecatedLookup
+checkIfModuleIsDeprecated moduleName context =
+    if containsDeprecated (String.join "." moduleName) then
+        Deprecated context
+
+    else
+        NotDeprecated context
+
+
 predicate : ModuleName -> String -> Bool
 predicate moduleName name =
     containsDeprecated name
