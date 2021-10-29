@@ -121,6 +121,6 @@ a = 1
                             , details = [ "REPLACEME" ]
                             , under = "Deprecated"
                             }
-                            |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
+                            |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
                         ]
         ]

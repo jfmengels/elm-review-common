@@ -126,17 +126,12 @@ reportTypes configuration lookupTable nodes acc =
 
         node :: restOfNodes ->
             case Node.value node of
-                TypeAnnotation.Typed subType args ->
-                    let
-                        newAcc : List (Rule.Error {})
-                        newAcc =
-                            acc
-                    in
+                TypeAnnotation.Typed (Node range ( _, name )) args ->
                     reportTypes
                         configuration
                         lookupTable
                         (List.append args restOfNodes)
-                        newAcc
+                        (List.append (reportType configuration lookupTable range name) acc)
 
                 TypeAnnotation.Tupled nodesToLookAt ->
                     reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
