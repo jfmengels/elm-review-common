@@ -68,6 +68,13 @@ type Configuration
 
 checkInName : Configuration
 checkInName =
+    let
+        containsDeprecated : String -> Bool
+        containsDeprecated name =
+            name
+                |> String.toLower
+                |> String.contains "deprecated"
+    in
     Configuration
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
         , elementPredicate = \_ name -> containsDeprecated name
@@ -110,10 +117,3 @@ expressionVisitor (Configuration configuration) (Node nodeRange node) context =
 
         _ ->
             ( [], context )
-
-
-containsDeprecated : String -> Bool
-containsDeprecated name =
-    name
-        |> String.toLower
-        |> String.contains "deprecated"
