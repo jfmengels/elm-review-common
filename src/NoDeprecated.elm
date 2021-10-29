@@ -118,15 +118,15 @@ declarationVisitor configuration node context =
                         Nothing ->
                             []
 
-                destructureErrors : List (Rule.Error {})
-                destructureErrors =
+                destructuringErrors : List (Rule.Error {})
+                destructuringErrors =
                     reportPatterns
                         configuration
                         context.lookupTable
                         (declaration.declaration |> Node.value |> .arguments)
                         []
             in
-            List.append destructureErrors signatureErrors
+            List.append destructuringErrors signatureErrors
 
         _ ->
             []
