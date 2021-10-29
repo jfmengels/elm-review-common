@@ -134,9 +134,7 @@ a (Deprecated value) = 1
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-
-                            -- TODO Try to get a better range
-                            , under = "Deprecated value"
+                            , under = "Deprecated"
                             }
                         ]
         , test "should report an error when having a parameter whose name contains 'deprecated' (top-level declaration)" <|
