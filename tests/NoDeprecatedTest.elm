@@ -165,4 +165,17 @@ a ({deprecated}) = 1
                             , under = "deprecated"
                             }
                         ]
+        , test "should report an error when using a parameter alias whose name contains 'deprecated' (top-level declaration)" <|
+            \() ->
+                """module A exposing (..)
+a (( x, y ) as deprecated) = 1
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "deprecated"
+                            }
+                        ]
         ]

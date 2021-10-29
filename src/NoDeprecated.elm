@@ -242,8 +242,18 @@ reportPatterns configuration lookupTable nodes acc =
                             acc
                         )
 
-                Pattern.AsPattern subPattern nameToMaybeReport ->
-                    reportPatterns configuration lookupTable (subPattern :: restOfNodes) acc
+                Pattern.AsPattern subPattern name ->
+                    let
+                        newAcc : List (Rule.Error {})
+                        newAcc =
+                            case reportParameter configuration (Node.range name) (Node.value name) of
+                                Just err ->
+                                    err :: acc
+
+                                Nothing ->
+                                    acc
+                    in
+                    reportPatterns configuration lookupTable (subPattern :: restOfNodes) newAcc
 
                 _ ->
                     reportPatterns configuration lookupTable restOfNodes acc
