@@ -136,6 +136,7 @@ a (Deprecated value) = 1
                             , details = [ "REPLACEME" ]
                             , under = "Deprecated"
                             }
+                            |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
                         ]
         , test "should report an error when having a parameter whose name contains 'deprecated' (top-level declaration)" <|
             \() ->

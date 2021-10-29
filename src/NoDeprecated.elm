@@ -14,7 +14,7 @@ import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
-import Elm.Syntax.Range exposing (Range)
+import Elm.Syntax.Range as Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
@@ -234,12 +234,28 @@ reportPatterns configuration lookupTable nodes acc =
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
                     let
+                        lengthForName : Int
+                        lengthForName =
+                            (qualifiedNameRef.moduleName ++ [ qualifiedNameRef.name ])
+                                |> String.join "."
+                                |> String.length
+
+                        patternStart : Range.Location
+                        patternStart =
+                            (Node.range pattern).start
+
+                        rangeForNamedPattern : Range
+                        rangeForNamedPattern =
+                            { start = patternStart
+                            , end = { row = patternStart.row, column = patternStart.column + lengthForName }
+                            }
+
                         errors : List (Rule.Error {})
                         errors =
                             reportValue configuration
                                 lookupTable
                                 (Node.range pattern)
-                                (Node.range pattern)
+                                rangeForNamedPattern
                                 qualifiedNameRef.name
                     in
                     reportPatterns
