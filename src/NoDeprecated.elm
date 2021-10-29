@@ -67,6 +67,7 @@ type Configuration
     = Configuration
         { moduleNamePredicate : ModuleName -> Bool
         , elementPredicate : ModuleName -> String -> Bool
+        , typePredicate : ModuleName -> String -> Bool
         }
 
 
@@ -82,6 +83,7 @@ checkInName =
     Configuration
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
         , elementPredicate = \_ name -> containsDeprecated name
+        , typePredicate = \_ name -> containsDeprecated name
         }
 
 
@@ -189,6 +191,23 @@ reportValue (Configuration configuration) lookupTable range name =
         Just moduleName ->
             if
                 configuration.elementPredicate moduleName name
+                    || configuration.moduleNamePredicate moduleName
+            then
+                [ error range ]
+
+            else
+                []
+
+        Nothing ->
+            []
+
+
+reportType : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
+reportType (Configuration configuration) lookupTable range name =
+    case ModuleNameLookuTable.moduleNameAt lookupTable range of
+        Just moduleName ->
+            if
+                configuration.typePredicate moduleName name
                     || configuration.moduleNamePredicate moduleName
             then
                 [ error range ]
