@@ -16,7 +16,7 @@ import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
-import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
+import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -318,7 +318,7 @@ expressionVisitor configuration (Node nodeRange node) context =
 
 reportValue : Configuration -> ModuleNameLookupTable -> Range -> (() -> Range) -> String -> List (Rule.Error {})
 reportValue (Configuration configuration) lookupTable rangeForLookupTable rangeForReport name =
-    case ModuleNameLookuTable.moduleNameAt lookupTable rangeForLookupTable of
+    case ModuleNameLookupTable.moduleNameAt lookupTable rangeForLookupTable of
         Just moduleName ->
             if
                 configuration.elementPredicate moduleName name
@@ -344,7 +344,7 @@ reportParameter (Configuration configuration) range name =
 
 reportType : Configuration -> ModuleNameLookupTable -> Range -> String -> Maybe (Rule.Error {})
 reportType (Configuration configuration) lookupTable range name =
-    case ModuleNameLookuTable.moduleNameAt lookupTable range of
+    case ModuleNameLookupTable.moduleNameAt lookupTable range of
         Just moduleName ->
             if
                 configuration.typePredicate moduleName name
