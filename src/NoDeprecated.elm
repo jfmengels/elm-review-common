@@ -70,6 +70,7 @@ type Configuration
         , elementPredicate : ModuleName -> String -> Bool
         , typePredicate : ModuleName -> String -> Bool
         , recordFieldPredicate : String -> Bool
+        , parameterPredicate : String -> Bool
         }
 
 
@@ -86,7 +87,8 @@ checkInName =
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
         , elementPredicate = \_ name -> containsDeprecated name
         , typePredicate = \_ name -> containsDeprecated name
-        , recordFieldPredicate = \name -> containsDeprecated name
+        , recordFieldPredicate = containsDeprecated
+        , parameterPredicate = containsDeprecated
         }
 
 
