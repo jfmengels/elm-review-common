@@ -14,6 +14,7 @@ import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
+import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
@@ -116,8 +117,16 @@ declarationVisitor configuration node context =
 
                         Nothing ->
                             []
+
+                destructureErrors : List (Rule.Error {})
+                destructureErrors =
+                    reportPatterns
+                        configuration
+                        context.lookupTable
+                        (declaration.declaration |> Node.value |> .arguments)
+                        []
             in
-            signatureErrors
+            List.append destructureErrors signatureErrors
 
         _ ->
             []
@@ -172,6 +181,52 @@ reportTypes configuration lookupTable nodes acc =
 
                 _ ->
                     reportTypes configuration lookupTable restOfNodes acc
+
+
+reportPatterns : Configuration -> ModuleNameLookupTable -> List (Node Pattern) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportPatterns configuration lookupTable nodes acc =
+    case nodes of
+        [] ->
+            acc
+
+        pattern :: restOfNodes ->
+            case Node.value pattern of
+                Pattern.ParenthesizedPattern subpattern ->
+                    reportPatterns
+                        configuration
+                        lookupTable
+                        (subpattern :: restOfNodes)
+                        acc
+
+                Pattern.TuplePattern subPatterns ->
+                    reportPatterns configuration lookupTable (List.append subPatterns restOfNodes) acc
+
+                Pattern.RecordPattern fields ->
+                    reportPatterns configuration
+                        lookupTable
+                        restOfNodes
+                        -- TODO Report fields
+                        acc
+
+                Pattern.UnConsPattern left right ->
+                    reportPatterns configuration lookupTable (left :: right :: restOfNodes) acc
+
+                Pattern.ListPattern subPatterns ->
+                    reportPatterns configuration lookupTable (List.append subPatterns restOfNodes) acc
+
+                Pattern.VarPattern string ->
+                    -- TODO Report
+                    reportPatterns configuration lookupTable restOfNodes acc
+
+                Pattern.NamedPattern qualifiedNameRef subPatterns ->
+                    -- TODO Report
+                    reportPatterns configuration lookupTable (List.append subPatterns restOfNodes) acc
+
+                Pattern.AsPattern subPattern nameToMaybeReport ->
+                    reportPatterns configuration lookupTable (subPattern :: restOfNodes) acc
+
+                _ ->
+                    reportPatterns configuration lookupTable restOfNodes acc
 
 
 expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
