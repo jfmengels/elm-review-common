@@ -130,6 +130,20 @@ declarationVisitor configuration node context =
             in
             List.append destructuringErrors signatureErrors
 
+        Declaration.CustomTypeDeclaration type_ ->
+            reportTypes
+                configuration
+                context.lookupTable
+                (List.concatMap (Node.value >> .arguments) type_.constructors)
+                []
+
+        Declaration.AliasDeclaration type_ ->
+            reportTypes
+                configuration
+                context.lookupTable
+                [ type_.typeAnnotation ]
+                []
+
         _ ->
             []
 
