@@ -123,4 +123,19 @@ a = 1
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
                         ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (top-level declaration )" <|
+            \() ->
+                """module A exposing (..)
+type Deprecated = Deprecated Int
+a (Deprecated value) = 1
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
+                        ]
         ]
