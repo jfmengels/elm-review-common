@@ -278,4 +278,30 @@ type alias A = Thing{ b : Deprecated }
                             , under = "Deprecated"
                             }
                         ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (Sub port)" <|
+            \() ->
+                """module A exposing (..)
+port input : (DeprecatedString -> msg) -> Sub msg
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "DeprecatedString"
+                            }
+                        ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (Cmd port)" <|
+            \() ->
+                """module A exposing (..)
+port output : DeprecatedString -> Cmd msg
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "DeprecatedString"
+                            }
+                        ]
         ]

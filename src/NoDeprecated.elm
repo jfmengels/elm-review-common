@@ -144,6 +144,13 @@ declarationVisitor configuration node context =
                 [ type_.typeAnnotation ]
                 []
 
+        Declaration.PortDeclaration signature ->
+            reportTypes
+                configuration
+                context.lookupTable
+                [ signature.typeAnnotation ]
+                []
+
         _ ->
             []
 
