@@ -16,7 +16,7 @@ a = Other.normalFunction
 """, """module Other exposing (..)
 normalFunction = 1
 """ ]
-                    |> Review.Test.runOnModules rule
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
                     |> Review.Test.expectNoErrors
         , test "should report an error when referencing a local function whose name contains 'deprecated'" <|
             \() ->
@@ -25,7 +25,7 @@ somethingDeprecated = 1
 
 a = somethingDeprecated
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -40,7 +40,7 @@ a = somethingDeprecated
 import Some.DeprecatedModule
 a = Some.DeprecatedModule.something
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -54,7 +54,7 @@ a = Some.DeprecatedModule.something
 import Some.DeprecatedModule as S
 a = S.something
 """
-                    |> Review.Test.run rule
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"

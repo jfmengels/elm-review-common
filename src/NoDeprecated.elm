@@ -1,4 +1,7 @@
-module NoDeprecated exposing (rule)
+module NoDeprecated exposing
+    ( rule
+    , checkInName
+    )
 
 {-|
 
@@ -49,12 +52,23 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 ```
 
 -}
-rule : Rule
-rule =
+rule : Configuration -> Rule
+rule _ =
     Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
         -- TODO Use a set of deprecated module names and store them in the ProjectContext
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
+
+
+type Configuration
+    = Configuration { elementPredicate : ModuleName -> String -> Bool }
+
+
+checkInName : Configuration
+checkInName =
+    Configuration
+        { elementPredicate = \_ name -> containsDeprecated name
+        }
 
 
 type alias Context =
