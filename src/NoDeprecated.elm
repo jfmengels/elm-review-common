@@ -60,14 +60,18 @@ expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Contex
 expressionVisitor (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
-            ( [ Rule.error
-                    { message = "Found new usage of deprecated `" ++ name ++ "`"
-                    , details = [ "REPLACEME" ]
-                    }
-                    nodeRange
-              ]
-            , context
-            )
+            if name |> String.toLower |> String.contains "deprecated" then
+                ( [ Rule.error
+                        { message = "Found new usage of deprecated `" ++ name ++ "`"
+                        , details = [ "REPLACEME" ]
+                        }
+                        nodeRange
+                  ]
+                , context
+                )
+
+            else
+                ( [], context )
 
         _ ->
             ( [], context )
