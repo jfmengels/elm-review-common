@@ -177,4 +177,60 @@ a (( x, y ) as deprecated) = 1
                             , under = "deprecated"
                             }
                         ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (let declaration annotation)" <|
+            \() ->
+                """module A exposing (..)
+type Deprecated = Int
+a =
+    let
+        b : Deprecated
+        b = 1
+    in
+    b
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
+                        ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (let declaration)" <|
+            \() ->
+                """module A exposing (..)
+type Deprecated = Deprecated Int
+a =
+    let
+        b (Deprecated value) = 1
+    in
+    b
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
+                        ]
+        , test "should report an error when having a parameter whose name contains 'deprecated' (let declaration)" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        b thingDeprecated = 1
+    in
+    b
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "thingDeprecated"
+                            }
+                        ]
         ]
