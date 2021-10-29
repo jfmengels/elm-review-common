@@ -134,6 +134,42 @@ declarationVisitor configuration node context =
             []
 
 
+reportLetDeclaration : Configuration -> ModuleNameLookupTable -> Node Expression.LetDeclaration -> List (Rule.Error {})
+reportLetDeclaration configuration lookupTable letDeclaration =
+    case Node.value letDeclaration of
+        Expression.LetFunction function ->
+            let
+                signatureErrors : List (Rule.Error {})
+                signatureErrors =
+                    case function.signature of
+                        Just signature ->
+                            reportTypes
+                                configuration
+                                lookupTable
+                                [ (Node.value signature).typeAnnotation ]
+                                []
+
+                        Nothing ->
+                            []
+
+                destructuringErrors : List (Rule.Error {})
+                destructuringErrors =
+                    reportPatterns
+                        configuration
+                        lookupTable
+                        (function.declaration |> Node.value |> .arguments)
+                        []
+            in
+            List.append destructuringErrors signatureErrors
+
+        Expression.LetDestructuring pattern _ ->
+            reportPatterns
+                configuration
+                lookupTable
+                [ pattern ]
+                []
+
+
 reportTypes : Configuration -> ModuleNameLookupTable -> List (Node TypeAnnotation) -> List (Rule.Error {}) -> List (Rule.Error {})
 reportTypes configuration lookupTable nodes acc =
     case nodes of
@@ -303,6 +339,11 @@ expressionVisitor configuration (Node nodeRange node) context =
                 nodeRange
                 (always nodeRange)
                 name
+
+        Expression.LetExpression letBlock ->
+            List.concatMap
+                (reportLetDeclaration configuration context.lookupTable)
+                letBlock.declarations
 
         Expression.RecordUpdateExpression (Node range name) _ ->
             reportValue

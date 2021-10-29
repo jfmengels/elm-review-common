@@ -195,7 +195,7 @@ a =
                             , details = [ "REPLACEME" ]
                             , under = "Deprecated"
                             }
-                            |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
+                            |> Review.Test.atExactly { start = { row = 5, column = 13 }, end = { row = 5, column = 23 } }
                         ]
         , test "should report an error when referencing a type whose name contains 'deprecated' (let declaration)" <|
             \() ->
@@ -214,7 +214,7 @@ a =
                             , details = [ "REPLACEME" ]
                             , under = "Deprecated"
                             }
-                            |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
+                            |> Review.Test.atExactly { start = { row = 5, column = 12 }, end = { row = 5, column = 22 } }
                         ]
         , test "should report an error when having a parameter whose name contains 'deprecated' (let declaration)" <|
             \() ->
@@ -232,5 +232,24 @@ a =
                             , details = [ "REPLACEME" ]
                             , under = "thingDeprecated"
                             }
+                        ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (let destructuring)" <|
+            \() ->
+                """module A exposing (..)
+type Deprecated = Deprecated Int
+a =
+    let
+        (Deprecated b) = 1
+    in
+    b
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 10 }, end = { row = 5, column = 20 } }
                         ]
         ]
