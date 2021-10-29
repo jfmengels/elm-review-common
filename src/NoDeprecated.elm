@@ -57,10 +57,17 @@ type alias Context =
 
 
 expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
-expressionVisitor (Node _ node) context =
+expressionVisitor (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
-            ( [], context )
+            ( [ Rule.error
+                    { message = "Found new usage of deprecated `" ++ name ++ "`"
+                    , details = [ "REPLACEME" ]
+                    }
+                    nodeRange
+              ]
+            , context
+            )
 
         _ ->
             ( [], context )

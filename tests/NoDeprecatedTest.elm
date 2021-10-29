@@ -32,5 +32,6 @@ a = somethingDeprecated
                             , details = [ "REPLACEME" ]
                             , under = "somethingDeprecated"
                             }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 24 } }
                         ]
         ]
