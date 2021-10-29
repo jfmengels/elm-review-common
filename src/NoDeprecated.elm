@@ -106,7 +106,7 @@ declarationVisitor configuration node context =
                     reportTypes
                         configuration
                         context.lookupTable
-                        (Node.value signature).typeAnnotation
+                        [ (Node.value signature).typeAnnotation ]
                         []
 
                 Nothing ->
@@ -116,11 +116,14 @@ declarationVisitor configuration node context =
             []
 
 
-reportTypes : Configuration -> ModuleNameLookupTable -> Node TypeAnnotation -> List (Rule.Error {}) -> List (Rule.Error {})
-reportTypes configuration lookupTable node acc =
-    case Node.value node of
-        _ ->
+reportTypes : Configuration -> ModuleNameLookupTable -> List (Node TypeAnnotation) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportTypes configuration lookupTable nodes acc =
+    case nodes of
+        [] ->
             acc
+
+        (Node range type_) :: restOfNodes ->
+            reportTypes configuration lookupTable restOfNodes acc
 
 
 expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
