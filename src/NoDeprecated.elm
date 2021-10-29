@@ -10,6 +10,7 @@ module NoDeprecated exposing
 -}
 
 import Dict exposing (Dict)
+import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
@@ -56,6 +57,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 rule : Configuration -> Rule
 rule configuration =
     Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
+        |> Rule.withDeclarationEnterVisitor (\node context -> ( declarationVisitor configuration node context, context ))
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
         |> Rule.fromModuleRuleSchema
 
@@ -92,6 +94,16 @@ initialContext =
     Rule.initContextCreator
         (\lookupTable () -> { lookupTable = lookupTable })
         |> Rule.withModuleNameLookupTable
+
+
+declarationVisitor : Configuration -> Node Declaration -> Context -> List (Rule.Error {})
+declarationVisitor configuration (Node nodeRange node) context =
+    case node of
+        Declaration.FunctionDeclaration declaration ->
+            []
+
+        _ ->
+            []
 
 
 expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
