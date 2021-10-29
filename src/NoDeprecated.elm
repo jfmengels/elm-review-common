@@ -15,7 +15,7 @@ import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Range exposing (Range)
-import Elm.Syntax.TypeAnnotation exposing (TypeAnnotation)
+import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
@@ -122,8 +122,39 @@ reportTypes configuration lookupTable nodes acc =
         [] ->
             acc
 
-        (Node range type_) :: restOfNodes ->
-            reportTypes configuration lookupTable restOfNodes acc
+        node :: restOfNodes ->
+            case Node.value node of
+                TypeAnnotation.Typed subType args ->
+                    reportTypes
+                        configuration
+                        lookupTable
+                        (List.append args restOfNodes)
+                        acc
+
+                TypeAnnotation.Tupled nodesToLookAt ->
+                    reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
+
+                TypeAnnotation.Record recordDefinition ->
+                    let
+                        nodesToLookAt : List (Node TypeAnnotation)
+                        nodesToLookAt =
+                            List.map (Node.value >> Tuple.second) recordDefinition
+                    in
+                    reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
+
+                TypeAnnotation.GenericRecord _ recordDefinition ->
+                    let
+                        nodesToLookAt : List (Node TypeAnnotation)
+                        nodesToLookAt =
+                            List.map (Node.value >> Tuple.second) (Node.value recordDefinition)
+                    in
+                    reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
+
+                TypeAnnotation.FunctionTypeAnnotation left right ->
+                    reportTypes configuration lookupTable (left :: right :: restOfNodes) acc
+
+                _ ->
+                    reportTypes configuration lookupTable restOfNodes acc
 
 
 expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
