@@ -193,11 +193,11 @@ reportPatterns configuration lookupTable nodes acc =
 
         pattern :: restOfNodes ->
             case Node.value pattern of
-                Pattern.ParenthesizedPattern subpattern ->
+                Pattern.ParenthesizedPattern subPattern ->
                     reportPatterns
                         configuration
                         lookupTable
-                        (subpattern :: restOfNodes)
+                        (subPattern :: restOfNodes)
                         acc
 
                 Pattern.TuplePattern subPatterns ->
