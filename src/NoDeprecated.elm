@@ -6,8 +6,8 @@ module NoDeprecated exposing (rule)
 
 -}
 
-import Elm.Syntax.Expression exposing (Expression)
-import Elm.Syntax.Node exposing (Node)
+import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.Node exposing (Node(..))
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -57,5 +57,10 @@ type alias Context =
 
 
 expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
-expressionVisitor node context =
-    ( [], context )
+expressionVisitor (Node _ node) context =
+    case node of
+        Expression.FunctionOrValue _ name ->
+            ( [], context )
+
+        _ ->
+            ( [], context )
