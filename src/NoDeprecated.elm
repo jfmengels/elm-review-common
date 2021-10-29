@@ -98,15 +98,19 @@ expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Er
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
-            report configuration context.lookupTable nodeRange name
+            report
+                configuration
+                context.lookupTable
+                { rangeForModuleName = nodeRange, rangeToReport = nodeRange }
+                name
 
         _ ->
             []
 
 
-report : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
-report (Configuration configuration) lookupTable range name =
-    case ModuleNameLookuTable.moduleNameAt lookupTable range of
+report : Configuration -> ModuleNameLookupTable -> { rangeForModuleName : Range, rangeToReport : Range } -> String -> List (Rule.Error {})
+report (Configuration configuration) lookupTable { rangeForModuleName, rangeToReport } name =
+    case ModuleNameLookuTable.moduleNameAt lookupTable rangeForModuleName of
         Just moduleName ->
             if
                 configuration.elementPredicate moduleName name
@@ -116,7 +120,7 @@ report (Configuration configuration) lookupTable range name =
                     { message = "Found new usage of deprecated element"
                     , details = [ "REPLACEME" ]
                     }
-                    range
+                    rangeToReport
                 ]
 
             else
