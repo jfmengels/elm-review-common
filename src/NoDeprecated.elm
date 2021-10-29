@@ -15,6 +15,7 @@ import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Range exposing (Range)
+import Elm.Syntax.TypeAnnotation exposing (TypeAnnotation)
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
@@ -97,13 +98,24 @@ initialContext =
 
 
 declarationVisitor : Configuration -> Node Declaration -> Context -> List (Rule.Error {})
-declarationVisitor configuration (Node nodeRange node) context =
-    case node of
+declarationVisitor configuration node context =
+    case Node.value node of
         Declaration.FunctionDeclaration declaration ->
-            []
+            case declaration.signature of
+                Just signature ->
+                    (Node.value signature).typeAnnotation
+                        |> reportTypes configuration context.lookupTable
+
+                Nothing ->
+                    []
 
         _ ->
             []
+
+
+reportTypes : Configuration -> ModuleNameLookupTable -> Node TypeAnnotation -> List (Rule.Error {})
+reportTypes configuration lookupTable node =
+    []
 
 
 expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
