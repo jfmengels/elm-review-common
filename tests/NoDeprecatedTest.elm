@@ -77,4 +77,34 @@ a = { something | b = 1 }
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
                         ]
+        , test "should report an error when referencing a custom type constructor whose name contains 'deprecated'" <|
+            \() ->
+                """module A exposing (..)
+type Deprecated = Deprecated
+a = Deprecated
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
+                        ]
+        , test "should report an error when referencing a type alias constructor whose name contains 'deprecated'" <|
+            \() ->
+                """module A exposing (..)
+type alias Deprecated = {}
+a = Deprecated
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
+                        ]
         ]
