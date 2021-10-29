@@ -103,16 +103,21 @@ declarationVisitor : Configuration -> Node Declaration -> Context -> List (Rule.
 declarationVisitor configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
-            case declaration.signature of
-                Just signature ->
-                    reportTypes
-                        configuration
-                        context.lookupTable
-                        [ (Node.value signature).typeAnnotation ]
-                        []
+            let
+                signatureErrors : List (Rule.Error {})
+                signatureErrors =
+                    case declaration.signature of
+                        Just signature ->
+                            reportTypes
+                                configuration
+                                context.lookupTable
+                                [ (Node.value signature).typeAnnotation ]
+                                []
 
-                Nothing ->
-                    []
+                        Nothing ->
+                            []
+            in
+            signatureErrors
 
         _ ->
             []
