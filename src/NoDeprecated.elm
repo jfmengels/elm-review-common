@@ -9,6 +9,7 @@ module NoDeprecated exposing (rule)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node exposing (Node(..))
+import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -48,34 +49,45 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchema "NoDeprecated" ()
-        |> Rule.withExpressionEnterVisitor expressionVisitor
+    Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
+        |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor node context, context ))
         |> Rule.fromModuleRuleSchema
 
 
 type alias Context =
-    ()
+    { lookupTable : ModuleNameLookupTable
+    }
 
 
-expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
+initialContext : Rule.ContextCreator () Context
+initialContext =
+    Rule.initContextCreator
+        (\lookupTable () -> { lookupTable = lookupTable })
+        |> Rule.withModuleNameLookupTable
+
+
+expressionVisitor : Node Expression -> Context -> List (Rule.Error {})
 expressionVisitor (Node nodeRange node) context =
     case node of
-        Expression.FunctionOrValue moduleName name ->
-            if predicate moduleName name then
-                ( [ Rule.error
-                        { message = "Found new usage of deprecated element"
-                        , details = [ "REPLACEME" ]
-                        }
-                        nodeRange
-                  ]
-                , context
-                )
+        Expression.FunctionOrValue _ name ->
+            case ModuleNameLookuTable.moduleNameAt context.lookupTable nodeRange of
+                Just moduleName ->
+                    if predicate moduleName name then
+                        [ Rule.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            }
+                            nodeRange
+                        ]
 
-            else
-                ( [], context )
+                    else
+                        []
+
+                Nothing ->
+                    []
 
         _ ->
-            ( [], context )
+            []
 
 
 predicate : ModuleName -> String -> Bool
