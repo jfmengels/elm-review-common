@@ -61,13 +61,17 @@ rule configuration =
 
 
 type Configuration
-    = Configuration { elementPredicate : ModuleName -> String -> Bool }
+    = Configuration
+        { moduleNamePredicate : ModuleName -> Bool
+        , elementPredicate : ModuleName -> String -> Bool
+        }
 
 
 checkInName : Configuration
 checkInName =
     Configuration
-        { elementPredicate = \_ name -> containsDeprecated name
+        { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
+        , elementPredicate = \_ name -> containsDeprecated name
         }
 
 
