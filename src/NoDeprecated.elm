@@ -76,18 +76,13 @@ checkInName =
 
 type alias Context =
     { lookupTable : ModuleNameLookupTable
-    , deprecatedModules : Set ModuleName
     }
 
 
 initialContext : Rule.ContextCreator () Context
 initialContext =
     Rule.initContextCreator
-        (\lookupTable () ->
-            { lookupTable = lookupTable
-            , deprecatedModules = Set.singleton [ "Some", "DeprecatedModule" ]
-            }
-        )
+        (\lookupTable () -> { lookupTable = lookupTable })
         |> Rule.withModuleNameLookupTable
 
 
