@@ -191,15 +191,19 @@ report (Configuration configuration) lookupTable range name =
                 configuration.elementPredicate moduleName name
                     || configuration.moduleNamePredicate moduleName
             then
-                [ Rule.error
-                    { message = "Found new usage of deprecated element"
-                    , details = [ "REPLACEME" ]
-                    }
-                    range
-                ]
+                [ error range ]
 
             else
                 []
 
         Nothing ->
             []
+
+
+error : Range -> Rule.Error {}
+error range =
+    Rule.error
+        { message = "Found new usage of deprecated element"
+        , details = [ "REPLACEME" ]
+        }
+        range
