@@ -6,6 +6,7 @@ module NoDeprecated exposing (rule)
 
 -}
 
+import Dict exposing (Dict)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node exposing (Node(..))
@@ -56,13 +57,18 @@ rule =
 
 type alias Context =
     { lookupTable : ModuleNameLookupTable
+    , deprecatedModuleCache : Dict ModuleName Bool
     }
 
 
 initialContext : Rule.ContextCreator () Context
 initialContext =
     Rule.initContextCreator
-        (\lookupTable () -> { lookupTable = lookupTable })
+        (\lookupTable () ->
+            { lookupTable = lookupTable
+            , deprecatedModuleCache = Dict.empty
+            }
+        )
         |> Rule.withModuleNameLookupTable
 
 
