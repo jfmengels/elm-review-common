@@ -127,11 +127,21 @@ reportTypes configuration lookupTable nodes acc =
         node :: restOfNodes ->
             case Node.value node of
                 TypeAnnotation.Typed (Node range ( _, name )) args ->
+                    let
+                        newAcc : List (Rule.Error {})
+                        newAcc =
+                            case reportType configuration lookupTable range name of
+                                Just err ->
+                                    err :: acc
+
+                                Nothing ->
+                                    acc
+                    in
                     reportTypes
                         configuration
                         lookupTable
                         (List.append args restOfNodes)
-                        (List.append (reportType configuration lookupTable range name) acc)
+                        newAcc
 
                 TypeAnnotation.Tupled nodesToLookAt ->
                     reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
@@ -197,7 +207,7 @@ reportValue (Configuration configuration) lookupTable range name =
             []
 
 
-reportType : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
+reportType : Configuration -> ModuleNameLookupTable -> Range -> String -> Maybe (Rule.Error {})
 reportType (Configuration configuration) lookupTable range name =
     case ModuleNameLookuTable.moduleNameAt lookupTable range of
         Just moduleName ->
@@ -205,13 +215,13 @@ reportType (Configuration configuration) lookupTable range name =
                 configuration.typePredicate moduleName name
                     || configuration.moduleNamePredicate moduleName
             then
-                [ error range ]
+                Just (error range)
 
             else
-                []
+                Nothing
 
         Nothing ->
-            []
+            Nothing
 
 
 error : Range -> Rule.Error {}
