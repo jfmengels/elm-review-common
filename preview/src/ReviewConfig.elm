@@ -24,7 +24,7 @@ import Review.Rule exposing (Rule)
 config : List Rule
 config =
     [ NoExposingEverything.rule
-    , NoDeprecated.rule
+    , NoDeprecated.rule NoDeprecated.checkInName
     , NoPrematureLetComputation.rule
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
