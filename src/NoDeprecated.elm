@@ -13,6 +13,7 @@ import Dict exposing (Dict)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node exposing (Node(..))
+import Elm.Syntax.Range exposing (Range)
 import Review.ModuleNameLookupTable as ModuleNameLookuTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
@@ -94,29 +95,32 @@ initialContext =
 
 
 expressionVisitor : Configuration -> Node Expression -> Context -> ( List (Rule.Error {}), Context )
-expressionVisitor (Configuration configuration) (Node nodeRange node) context =
+expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
-            case ModuleNameLookuTable.moduleNameAt context.lookupTable nodeRange of
-                Just moduleName ->
-                    if
-                        configuration.elementPredicate moduleName name
-                            || configuration.moduleNamePredicate moduleName
-                    then
-                        ( [ Rule.error
-                                { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
-                                }
-                                nodeRange
-                          ]
-                        , context
-                        )
-
-                    else
-                        ( [], context )
-
-                Nothing ->
-                    ( [], context )
+            ( report configuration context.lookupTable nodeRange name, context )
 
         _ ->
             ( [], context )
+
+
+report : Configuration -> ModuleNameLookupTable -> Range -> String -> List (Rule.Error {})
+report (Configuration configuration) lookupTable range name =
+    case ModuleNameLookuTable.moduleNameAt lookupTable range of
+        Just moduleName ->
+            if
+                configuration.elementPredicate moduleName name
+                    || configuration.moduleNamePredicate moduleName
+            then
+                [ Rule.error
+                    { message = "Found new usage of deprecated element"
+                    , details = [ "REPLACEME" ]
+                    }
+                    range
+                ]
+
+            else
+                []
+
+        Nothing ->
+            []
