@@ -92,6 +92,11 @@ expressionVisitor (Node nodeRange node) context =
             ( [], context )
 
 
+type DeprecatedLookup
+    = NotDeprecated Context
+    | Deprecated Context
+
+
 predicate : ModuleName -> String -> Bool
 predicate moduleName name =
     containsDeprecated name
