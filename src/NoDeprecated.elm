@@ -50,7 +50,8 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 -}
 rule : Rule
 rule =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
+    Rule.newProjectRuleSchema "NoDeprecated" initialContext
+        -- TODO Use a set of deprecated module names and store them in the ProjectContext
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
 
