@@ -6,6 +6,8 @@ module NoDeprecated exposing (rule)
 
 -}
 
+import Elm.Syntax.Expression exposing (Expression)
+import Elm.Syntax.Node exposing (Node)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -46,5 +48,14 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoDeprecated" ()
-        -- Add your visitors
+        |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
+
+
+type alias Context =
+    ()
+
+
+expressionVisitor : Node Expression -> Context -> ( List (Rule.Error {}), Context )
+expressionVisitor node context =
+    ( [], context )
