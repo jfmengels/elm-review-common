@@ -64,9 +64,23 @@ import Review.Rule as Rule exposing (Rule)
 -}
 rule : Configuration -> Rule
 rule configuration =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
-        |> moduleVisitor configuration
-        |> Rule.fromModuleRuleSchema
+    Rule.newProjectRuleSchema "NoDeprecated" {}
+        |> Rule.withModuleVisitor (moduleVisitor configuration)
+        |> Rule.withModuleContextUsingContextCreator
+            { fromProjectToModule = fromProjectToModule
+            , fromModuleToProject = fromModuleToProject
+            , foldProjectContexts = foldProjectContexts
+            }
+        |> Rule.fromProjectRuleSchema
+
+
+type alias ProjectContext =
+    {}
+
+
+type alias ModuleContext =
+    { lookupTable : ModuleNameLookupTable
+    }
 
 
 fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
@@ -124,22 +138,6 @@ checkInName =
         , recordFieldPredicate = containsDeprecated
         , parameterPredicate = containsDeprecated
         }
-
-
-type alias ProjectContext =
-    {}
-
-
-type alias ModuleContext =
-    { lookupTable : ModuleNameLookupTable
-    }
-
-
-initialContext : Rule.ContextCreator () ModuleContext
-initialContext =
-    Rule.initContextCreator
-        (\lookupTable () -> { lookupTable = lookupTable })
-        |> Rule.withModuleNameLookupTable
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
