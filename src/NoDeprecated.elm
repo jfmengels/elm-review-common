@@ -121,6 +121,7 @@ moduleVisitor configuration schema =
 type Configuration
     = Configuration
         { moduleNamePredicate : ModuleName -> Bool
+        , documentationPredicate : String -> Bool
         , elementPredicate : ModuleName -> String -> Bool
         , typePredicate : ModuleName -> String -> Bool
         , recordFieldPredicate : String -> Bool
@@ -141,6 +142,7 @@ checkInName =
     in
     Configuration
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
+        , documentationPredicate = containsDeprecated
         , elementPredicate = \_ name -> containsDeprecated name
         , typePredicate = \_ name -> containsDeprecated name
         , recordFieldPredicate = containsDeprecated
