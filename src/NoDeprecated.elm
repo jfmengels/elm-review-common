@@ -65,9 +65,15 @@ import Review.Rule as Rule exposing (Rule)
 rule : Configuration -> Rule
 rule configuration =
     Rule.newModuleRuleSchemaUsingContextCreator "NoDeprecated" initialContext
+        |> moduleVisitor configuration
+        |> Rule.fromModuleRuleSchema
+
+
+moduleVisitor : Configuration -> Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
+moduleVisitor configuration schema =
+    schema
         |> Rule.withDeclarationEnterVisitor (\node context -> ( declarationVisitor configuration node context, context ))
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
-        |> Rule.fromModuleRuleSchema
 
 
 {-| REPLACEME
