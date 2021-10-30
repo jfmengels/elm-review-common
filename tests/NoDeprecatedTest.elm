@@ -1,6 +1,12 @@
 module NoDeprecatedTest exposing (all)
 
+import Elm.Docs
+import Elm.Project
+import Elm.Type
+import Json.Decode as Decode
 import NoDeprecated exposing (rule)
+import Review.Project as Project exposing (Project)
+import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Test
 import Test exposing (Test, describe, test)
 
@@ -8,6 +14,14 @@ import Test exposing (Test, describe, test)
 all : Test
 all =
     describe "NoDeprecated"
+        [ mainTests
+        , dependencyTests
+        ]
+
+
+mainTests : Test
+mainTests =
+    describe "Main"
         [ test "should not report an error when using a non-deprecated element" <|
             \() ->
                 [ """module A exposing (..)
@@ -320,3 +334,117 @@ port output : DeprecatedString -> Cmd msg
                             }
                         ]
         ]
+
+
+dependencyTests : Test
+dependencyTests =
+    describe "Dependencies"
+        [ test "should report an error when referencing a value from a deprecated module" <|
+            \() ->
+                """module A exposing (..)
+import ModuleFromDependency_1
+a = ModuleFromDependency_1.something
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "DeprecatedString"
+                            }
+                        ]
+        ]
+
+
+projectWithDeprecations : Project
+projectWithDeprecations =
+    Project.addDependency dependency Project.new
+
+
+dependency : Dependency
+dependency =
+    Dependency.create
+        "author/package"
+        (createElmJsonProject dependencyElmJson)
+        dependencyModules
+
+
+createElmJsonProject : String -> Elm.Project.Project
+createElmJsonProject rawElmJson =
+    case Decode.decodeString Elm.Project.decoder rawElmJson of
+        Ok project ->
+            project
+
+        Err error ->
+            Debug.todo ("[elm.json]: " ++ Debug.toString error)
+
+
+dependencyModules : List Elm.Docs.Module
+dependencyModules =
+    [ { name = "ModuleFromDependency_1"
+      , comment = "{-| This is deprecated, use X instead. -}"
+      , unions =
+            [ { name = "CustomType"
+              , comment = ""
+              , args = []
+              , tags = [ ( "Constructor", [] ) ]
+              }
+            ]
+      , aliases =
+            [ { name = "Happiness"
+              , comment = ""
+              , args = []
+              , tipe = Elm.Type.Tuple []
+              }
+            ]
+      , values =
+            [ { name = "Happiness"
+              , comment = ""
+              , tipe = Elm.Type.Tuple []
+              }
+            ]
+      , binops = []
+      }
+    , { name = "ModuleFromDependency_2"
+      , comment = ""
+      , unions =
+            [ { name = "CustomType"
+              , comment = "{-| This is deprecated -}"
+              , args = []
+              , tags = [ ( "Constructor", [] ) ]
+              }
+            ]
+      , aliases =
+            [ { name = "Happiness"
+              , comment = "{-| This is deprecated -}"
+              , args = []
+              , tipe = Elm.Type.Tuple []
+              }
+            ]
+      , values =
+            [ { name = "Happiness"
+              , comment = "{-| This is deprecated -}"
+              , tipe = Elm.Type.Tuple []
+              }
+            ]
+      , binops = []
+      }
+    ]
+
+
+dependencyElmJson : String
+dependencyElmJson =
+    """{
+    "type": "package",
+    "name": "author/package",
+    "summary": "Moods for tests",
+    "license": "MIT",
+    "version": "1.0.0",
+    "exposed-modules": [
+        "ModuleFromDependency_1",
+        "ModuleFromDependency_2"
+    ],
+    "elm-version": "0.19.0 <= v <= 0.20.0",
+    "dependencies": {},
+    "test-dependencies": {}
+}"""
