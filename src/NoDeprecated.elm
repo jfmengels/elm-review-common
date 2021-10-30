@@ -44,6 +44,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 
 -}
 
+import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
@@ -52,6 +53,7 @@ import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
+import Review.Project.Dependency
 import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
@@ -66,6 +68,7 @@ import Set exposing (Set)
 rule : Configuration -> Rule
 rule configuration =
     Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
+        |> Rule.withDependenciesProjectVisitor (\dict _ -> ( [], dependenciesVisitor configuration dict ))
         |> Rule.withModuleVisitor (moduleVisitor configuration)
         |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModule
@@ -148,6 +151,18 @@ checkInName =
         , recordFieldPredicate = containsDeprecated
         , parameterPredicate = containsDeprecated
         }
+
+
+dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext
+dependenciesVisitor (Configuration configuration) dict =
+    { deprecatedModules =
+        dict
+            |> Dict.values
+            |> List.concatMap Review.Project.Dependency.modules
+            |> List.filter (.comment >> configuration.documentationPredicate)
+            |> List.map (.name >> String.split ".")
+            |> Set.fromList
+    }
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
