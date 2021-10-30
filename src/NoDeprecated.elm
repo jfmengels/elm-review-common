@@ -102,6 +102,10 @@ checkInName =
         }
 
 
+type alias ProjectContext =
+    {}
+
+
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     }
