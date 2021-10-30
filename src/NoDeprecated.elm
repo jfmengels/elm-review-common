@@ -69,6 +69,24 @@ rule configuration =
         |> Rule.fromModuleRuleSchema
 
 
+fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
+fromProjectToModule =
+    Rule.initContextCreator
+        (\lookupTable _ -> { lookupTable = lookupTable })
+        |> Rule.withModuleNameLookupTable
+
+
+fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
+fromModuleToProject =
+    Rule.initContextCreator
+        (\_ -> {})
+
+
+foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
+foldProjectContexts newContext previousContext =
+    previousContext
+
+
 moduleVisitor : Configuration -> Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
 moduleVisitor configuration schema =
     schema
