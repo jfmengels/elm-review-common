@@ -102,19 +102,19 @@ checkInName =
         }
 
 
-type alias Context =
+type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     }
 
 
-initialContext : Rule.ContextCreator () Context
+initialContext : Rule.ContextCreator () ModuleContext
 initialContext =
     Rule.initContextCreator
         (\lookupTable () -> { lookupTable = lookupTable })
         |> Rule.withModuleNameLookupTable
 
 
-declarationVisitor : Configuration -> Node Declaration -> Context -> List (Rule.Error {})
+declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
 declarationVisitor configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
@@ -362,7 +362,7 @@ reportField (Configuration configuration) field =
         Nothing
 
 
-expressionVisitor : Configuration -> Node Expression -> Context -> List (Rule.Error {})
+expressionVisitor : Configuration -> Node Expression -> ModuleContext -> List (Rule.Error {})
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
