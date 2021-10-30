@@ -53,6 +53,7 @@ import Elm.Syntax.Range as Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Rule)
+import Set exposing (Set)
 
 
 {-| Reports usages of deprecated functions and types.
@@ -64,7 +65,7 @@ import Review.Rule as Rule exposing (Rule)
 -}
 rule : Configuration -> Rule
 rule configuration =
-    Rule.newProjectRuleSchema "NoDeprecated" {}
+    Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
         |> Rule.withModuleVisitor (moduleVisitor configuration)
         |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModule
@@ -74,8 +75,15 @@ rule configuration =
         |> Rule.fromProjectRuleSchema
 
 
+initialProjectContext : ProjectContext
+initialProjectContext =
+    { deprecatedModules = Set.empty
+    }
+
+
 type alias ProjectContext =
-    {}
+    { deprecatedModules : Set ModuleName
+    }
 
 
 type alias ModuleContext =
@@ -93,7 +101,7 @@ fromProjectToModule =
 fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
-        (\_ -> {})
+        (\_ -> initialProjectContext)
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
