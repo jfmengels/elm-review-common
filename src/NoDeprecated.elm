@@ -201,12 +201,12 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
     else
         { deprecatedModules = acc.deprecatedModules
         , deprecatedValues =
-            List.append
-                (module_.values
+            List.concat
+                [ module_.values
                     |> List.filter (.comment >> configuration.documentationPredicate)
                     |> List.map (\value -> ( moduleName, value.name ))
-                )
-                acc.deprecatedValues
+                , acc.deprecatedValues
+                ]
         }
 
 
