@@ -372,7 +372,7 @@ reportPatterns configuration context nodes acc =
                         errors =
                             reportValue
                                 configuration
-                                context.lookupTable
+                                context
                                 (Node.range pattern)
                                 (\() -> rangeForNamedPattern pattern qualifiedNameRef)
                                 qualifiedNameRef.name
@@ -433,7 +433,7 @@ expressionVisitor configuration (Node nodeRange node) context =
         Expression.FunctionOrValue _ name ->
             reportValue
                 configuration
-                context.lookupTable
+                context
                 nodeRange
                 (always nodeRange)
                 name
@@ -453,7 +453,7 @@ expressionVisitor configuration (Node nodeRange node) context =
         Expression.RecordUpdateExpression (Node range name) _ ->
             reportValue
                 configuration
-                context.lookupTable
+                context
                 range
                 (always range)
                 name
@@ -462,9 +462,9 @@ expressionVisitor configuration (Node nodeRange node) context =
             []
 
 
-reportValue : Configuration -> ModuleNameLookupTable -> Range -> (() -> Range) -> String -> List (Rule.Error {})
-reportValue (Configuration configuration) lookupTable rangeForLookupTable rangeForReport name =
-    case ModuleNameLookupTable.moduleNameAt lookupTable rangeForLookupTable of
+reportValue : Configuration -> ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {})
+reportValue (Configuration configuration) context rangeForLookupTable rangeForReport name =
+    case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
             if
                 configuration.elementPredicate moduleName name
