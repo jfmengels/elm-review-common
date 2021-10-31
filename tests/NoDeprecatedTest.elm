@@ -356,8 +356,8 @@ a = ModuleFromDependency_1.something
         , test "should report an error when referencing a type from a deprecated module" <|
             \() ->
                 """module A exposing (..)
-import ModuleFromDependency_2
-a : ModuleFromDependency_2.Something
+import ModuleFromDependency_1
+a : ModuleFromDependency_1.Something
 a = 1
 """
                     |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
@@ -365,7 +365,7 @@ a = 1
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-                            , under = "ModuleFromDependency_2.Something"
+                            , under = "ModuleFromDependency_1.Something"
                             }
                         ]
         ]
