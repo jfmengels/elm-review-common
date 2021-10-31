@@ -57,48 +57,64 @@ a = somethingDeprecated
                         ]
         , test "should report an error when referencing a function from a module whose name contains 'deprecated' (qualified import)" <|
             \() ->
-                """module A exposing (..)
+                [ """module A exposing (..)
 import Some.DeprecatedModule
 a = Some.DeprecatedModule.something
-"""
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
-                            , under = "Some.DeprecatedModule.something"
-                            }
+""", moduleWithDeprecatedInItsName ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "Some.DeprecatedModule.something"
+                                }
+                            ]
+                          )
                         ]
         , test "should report an error when referencing a function from a module whose name contains 'deprecated' (unqualifed import)" <|
             \() ->
-                """module A exposing (..)
+                [ """module A exposing (..)
 import Some.DeprecatedModule as S
 a = S.something
-"""
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
-                            , under = "S.something"
-                            }
+""", moduleWithDeprecatedInItsName ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "S.something"
+                                }
+                            ]
+                          )
                         ]
         , test "should report an error when referencing a function from a module whose name contains 'deprecated' (record update)" <|
             \() ->
-                """module A exposing (..)
+                [ """module A exposing (..)
 import Some.DeprecatedModule exposing (something)
 a = { something | b = 1 }
-"""
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
-                            , under = "something"
-                            }
-                            |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
+""", moduleWithDeprecatedInItsName ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "something"
+                                }
+                                |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
+                            ]
+                          )
                         ]
         ]
+
+
+moduleWithDeprecatedInItsName : String
+moduleWithDeprecatedInItsName =
+    """module Some.DeprecatedModule exposing (..)
+a = 1
+"""
 
 
 typeTests : Test
