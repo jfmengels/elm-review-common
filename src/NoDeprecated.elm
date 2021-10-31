@@ -84,19 +84,20 @@ rule configuration =
 initialProjectContext : ProjectContext
 initialProjectContext =
     { deprecatedModules = []
-    , values = []
+    , deprecatedValues = []
     }
 
 
 type alias ProjectContext =
     { deprecatedModules : List ModuleName
-    , values : List ( ModuleName, String )
+    , deprecatedValues : List ( ModuleName, String )
     }
 
 
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , deprecatedModules : Set ModuleName
+    , deprecatedValues : Set ( ModuleName, String )
     }
 
 
@@ -106,6 +107,7 @@ fromProjectToModule =
         (\lookupTable projectContext ->
             { lookupTable = lookupTable
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
+            , deprecatedValues = Set.fromList projectContext.deprecatedValues
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -116,7 +118,7 @@ fromModuleToProject =
     Rule.initContextCreator
         (\_ ->
             { deprecatedModules = []
-            , values = []
+            , deprecatedValues = []
             }
         )
 
@@ -124,7 +126,7 @@ fromModuleToProject =
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
     { deprecatedModules = List.append newContext.deprecatedModules previousContext.deprecatedModules
-    , values = List.append newContext.values previousContext.values
+    , deprecatedValues = List.append newContext.deprecatedValues previousContext.deprecatedValues
     }
 
 
@@ -193,18 +195,18 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
     in
     if configuration.documentationPredicate module_.comment then
         { deprecatedModules = moduleName :: acc.deprecatedModules
-        , values = acc.values
+        , deprecatedValues = acc.deprecatedValues
         }
 
     else
         { deprecatedModules = acc.deprecatedModules
-        , values =
+        , deprecatedValues =
             List.append
                 (module_.values
                     |> List.filter (.comment >> configuration.documentationPredicate)
                     |> List.map (\value -> ( moduleName, value.name ))
                 )
-                acc.values
+                acc.deprecatedValues
         }
 
 
