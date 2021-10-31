@@ -198,12 +198,29 @@ a (Deprecated value) = 1
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
                         ]
-        , test "should report an error when referencing a type whose documentation contains 'deprecated' (top-level declaration)" <|
+        , test "should report an error when referencing a custom type constructor whose documentation contains 'deprecated' (top-level declaration)" <|
             \() ->
                 """module A exposing (..)
 a (Something value) = 1
 {-| This is deprecated -}
 type Something = Something Int
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Something"
+                            }
+                            |> Review.Test.atExactly { start = { row = 2, column = 4 }, end = { row = 2, column = 13 } }
+                        ]
+        , test "should report an error when referencing a type alias whose documentation contains 'deprecated' (top-level declaration)" <|
+            \() ->
+                """module A exposing (..)
+a : Something
+a = 1
+{-| This is deprecated -}
+type alias Something = Int
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
