@@ -513,6 +513,7 @@ reportValue (Configuration configuration) context rangeForLookupTable rangeForRe
             if
                 configuration.elementPredicate moduleName name
                     || isModuleDeprecated context configuration.moduleNamePredicate moduleName
+                    || Set.member ( moduleName, name ) context.deprecatedValues
             then
                 [ error (rangeForReport ()) ]
 
