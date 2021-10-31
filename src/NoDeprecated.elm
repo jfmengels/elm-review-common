@@ -333,10 +333,15 @@ registerDeclaration (Configuration configuration) node context =
 
 registerFunctionDeclaration : Configuration -> Expression.Function -> ModuleContext -> ModuleContext
 registerFunctionDeclaration (Configuration configuration) declaration context =
+    let
+        name : String
+        name =
+            declaration.declaration |> Node.value |> .name |> Node.value
+    in
     case declaration.documentation of
         Just (Node _ str) ->
             if configuration.documentationPredicate str then
-                { context | deprecatedValues = Set.insert ( [], declaration.declaration |> Node.value |> .name |> Node.value ) context.deprecatedValues }
+                { context | deprecatedValues = Set.insert ( [], name ) context.deprecatedValues }
 
             else
                 context
