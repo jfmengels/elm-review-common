@@ -205,25 +205,23 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
             deprecatedAliases =
                 module_.aliases
                     |> List.filter (.comment >> configuration.documentationPredicate)
+
+            newValues =
+                List.concat
+                    [ module_.values
+                        |> List.filter (.comment >> configuration.documentationPredicate)
+                        |> List.map (\value -> ( moduleName, value.name ))
+                    , module_.unions
+                        |> List.filter (.comment >> configuration.documentationPredicate)
+                        |> List.concatMap .tags
+                        |> List.map (\( name, _ ) -> ( moduleName, name ))
+                    , deprecatedAliases
+                        |> List.filter isRecordTypeAlias
+                        |> List.map (\{ name } -> ( moduleName, name ))
+                    ]
         in
         { deprecatedModules = acc.deprecatedModules
-        , deprecatedValues =
-            List.concat
-                [ module_.values
-                    |> List.filter (.comment >> configuration.documentationPredicate)
-                    |> List.map (\value -> ( moduleName, value.name ))
-                , module_.unions
-                    |> List.filter (.comment >> configuration.documentationPredicate)
-                    |> List.concatMap .tags
-                    |> List.map (\( name, _ ) -> ( moduleName, name ))
-                , deprecatedAliases
-                    |> List.filter isRecordTypeAlias
-                    |> List.map (\{ name } -> ( moduleName, name ))
-
-                --, deprecatedAliases
-                --    |> List.map (\{ name } -> ( moduleName, name ))
-                , acc.deprecatedValues
-                ]
+        , deprecatedValues = List.append newValues acc.deprecatedValues
         }
 
 
