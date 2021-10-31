@@ -14,14 +14,15 @@ import Test exposing (Test, describe, test)
 all : Test
 all =
     describe "NoDeprecated"
-        [ mainTests
+        [ valueTests
+        , mainTests
         , dependencyTests
         ]
 
 
-mainTests : Test
-mainTests =
-    describe "Main"
+valueTests : Test
+valueTests =
+    describe "Values"
         [ test "should not report an error when using a non-deprecated element" <|
             \() ->
                 [ """module A exposing (..)
@@ -91,7 +92,13 @@ a = { something | b = 1 }
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
                         ]
-        , test "should report an error when referencing a custom type constructor whose name contains 'deprecated'" <|
+        ]
+
+
+mainTests : Test
+mainTests =
+    describe "Main"
+        [ test "should report an error when referencing a custom type constructor whose name contains 'deprecated'" <|
             \() ->
                 """module A exposing (..)
 type Deprecated = Deprecated
