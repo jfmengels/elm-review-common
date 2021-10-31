@@ -381,7 +381,7 @@ port output : DeprecatedString -> Cmd msg
 dependencyTests : Test
 dependencyTests =
     describe "Dependencies"
-        [ test "should report an error when referencing a value from a deprecated module" <|
+        [ test "should report an error when referencing a value from a deprecated dependency module" <|
             \() ->
                 """module A exposing (..)
 import ModuleFromDependency_1
@@ -395,7 +395,7 @@ a = ModuleFromDependency_1.something
                             , under = "ModuleFromDependency_1.something"
                             }
                         ]
-        , test "should report an error when referencing a custom type from a deprecated module" <|
+        , test "should report an error when referencing a custom type from a deprecated dependency module" <|
             \() ->
                 """module A exposing (..)
 import ModuleFromDependency_1
@@ -410,7 +410,7 @@ a = 1
                             , under = "ModuleFromDependency_1.Something"
                             }
                         ]
-        , test "should report an error when referencing a type alias from a deprecated module" <|
+        , test "should report an error when referencing a type alias from a deprecated dependency module" <|
             \() ->
                 """module A exposing (..)
 import ModuleFromDependency_1
@@ -423,6 +423,50 @@ a = 1
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
                             , under = "ModuleFromDependency_1.Alias"
+                            }
+                        ]
+        , test "should report an error when referencing a deprecated value from a dependency" <|
+            \() ->
+                """module A exposing (..)
+import ModuleFromDependency_2
+a = ModuleFromDependency_2.something
+"""
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "ModuleFromDependency_2.something"
+                            }
+                        ]
+        , test "should report an error when referencing a deprecated custom type from a dependency" <|
+            \() ->
+                """module A exposing (..)
+import ModuleFromDependency_2
+a : ModuleFromDependency_2.Something
+a = 1
+"""
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "ModuleFromDependency_2.Something"
+                            }
+                        ]
+        , test "should report an error when referencing a deprecated type alias from a dependency" <|
+            \() ->
+                """module A exposing (..)
+import ModuleFromDependency_2
+a : ModuleFromDependency_2.Alias
+a = 1
+"""
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "ModuleFromDependency_2.Alias"
                             }
                         ]
         ]
@@ -463,14 +507,14 @@ dependencyModules =
               }
             ]
       , aliases =
-            [ { name = "Happiness"
+            [ { name = "Alias"
               , comment = ""
               , args = []
               , tipe = Elm.Type.Tuple []
               }
             ]
       , values =
-            [ { name = "Happiness"
+            [ { name = "value"
               , comment = ""
               , tipe = Elm.Type.Tuple []
               }
@@ -487,14 +531,14 @@ dependencyModules =
               }
             ]
       , aliases =
-            [ { name = "Happiness"
+            [ { name = "Alias"
               , comment = "{-| This is deprecated -}"
               , args = []
               , tipe = Elm.Type.Tuple []
               }
             ]
       , values =
-            [ { name = "Happiness"
+            [ { name = "value"
               , comment = "{-| This is deprecated -}"
               , tipe = Elm.Type.Tuple []
               }
