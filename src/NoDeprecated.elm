@@ -289,16 +289,7 @@ registerDeclaration : Configuration -> Node Declaration -> ModuleContext -> Modu
 registerDeclaration (Configuration configuration) node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
-            case declaration.documentation of
-                Just (Node _ str) ->
-                    if configuration.documentationPredicate str then
-                        { context | deprecatedValues = Set.insert ( [], declaration.declaration |> Node.value |> .name |> Node.value ) context.deprecatedValues }
-
-                    else
-                        context
-
-                Nothing ->
-                    context
+            registerFunctionDeclaration (Configuration configuration) declaration context
 
         Declaration.AliasDeclaration type_ ->
             case type_.documentation of
@@ -337,6 +328,20 @@ registerDeclaration (Configuration configuration) node context =
                     context
 
         _ ->
+            context
+
+
+registerFunctionDeclaration : Configuration -> Expression.Function -> ModuleContext -> ModuleContext
+registerFunctionDeclaration (Configuration configuration) declaration context =
+    case declaration.documentation of
+        Just (Node _ str) ->
+            if configuration.documentationPredicate str then
+                { context | deprecatedValues = Set.insert ( [], declaration.declaration |> Node.value |> .name |> Node.value ) context.deprecatedValues }
+
+            else
+                context
+
+        Nothing ->
             context
 
 
