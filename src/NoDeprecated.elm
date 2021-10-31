@@ -481,7 +481,8 @@ reportValue (Configuration configuration) context rangeForLookupTable rangeForRe
 
 isModuleDeprecated : ModuleContext -> (ModuleName -> Bool) -> ModuleName -> Bool
 isModuleDeprecated moduleContext moduleNamePredicate moduleName =
-    moduleNamePredicate moduleName
+    Set.member moduleName moduleContext.deprecatedModules
+        || moduleNamePredicate moduleName
 
 
 reportParameter : Configuration -> Range -> String -> Maybe (Rule.Error {})
