@@ -592,7 +592,7 @@ a = OtherModule.Constructor
 import OtherModule
 a : OtherModule.Alias
 a = 1
-""" ]
+""", modulesWithDeprecatedThings ]
                     |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
@@ -609,7 +609,7 @@ a = 1
                 [ """module A exposing (..)
 import ModuleFromDependency_2
 a = ModuleFromDependency_2.value
-""" ]
+""", modulesWithDeprecatedThings ]
                     |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
@@ -627,7 +627,7 @@ a = ModuleFromDependency_2.value
 import ModuleFromDependency_2
 a : ModuleFromDependency_2.CustomType
 a = 1
-""" ]
+""", modulesWithDeprecatedThings ]
                     |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
@@ -644,7 +644,7 @@ a = 1
                 [ """module A exposing (..)
 import ModuleFromDependency_2
 a = ModuleFromDependency_2.Constructor
-""" ]
+""", modulesWithDeprecatedThings ]
                     |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
@@ -662,7 +662,7 @@ a = ModuleFromDependency_2.Constructor
 import ModuleFromDependency_2
 a : ModuleFromDependency_2.Alias
 a = 1
-""" ]
+""", modulesWithDeprecatedThings ]
                     |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
@@ -679,7 +679,7 @@ a = 1
                 [ """module A exposing (..)
 import ModuleFromDependency_2
 a = ModuleFromDependency_2.RecordAlias
-""" ]
+""", modulesWithDeprecatedThings ]
                     |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
@@ -701,6 +701,25 @@ deprecatedModule =
 -}
 import Basics
 a = 1
+"""
+
+
+modulesWithDeprecatedThings : String
+modulesWithDeprecatedThings =
+    """module OtherModule exposing (..)
+import Basics
+{-| This is deprecated.
+-}
+type CustomType = Constructor
+{-| This is deprecated.
+-}
+type alias Alias = Int
+{-| This is deprecated.
+-}
+type alias RecordAlias = {}
+{-| This is deprecated.
+-}
+value = 1
 """
 
 
