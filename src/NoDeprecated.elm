@@ -93,20 +93,28 @@ type alias ProjectContext =
 
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
+    , deprecatedModules : Set ModuleName
     }
 
 
 fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
 fromProjectToModule =
     Rule.initContextCreator
-        (\lookupTable _ -> { lookupTable = lookupTable })
+        (\lookupTable projectContext ->
+            { lookupTable = lookupTable
+            , deprecatedModules = Set.fromList projectContext.deprecatedModules
+            }
+        )
         |> Rule.withModuleNameLookupTable
 
 
 fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
-        (\_ -> initialProjectContext)
+        (\_ ->
+            { deprecatedModules = []
+            }
+        )
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
