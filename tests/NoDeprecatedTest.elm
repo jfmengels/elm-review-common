@@ -410,6 +410,21 @@ a = 1
                             , under = "ModuleFromDependency_1.Something"
                             }
                         ]
+        , test "should report an error when referencing a custom type constructor from a deprecated dependency module" <|
+            \() ->
+                """module A exposing (..)
+import ModuleFromDependency_1
+a : ModuleFromDependency_1.Constructor
+a = 1
+"""
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "ModuleFromDependency_1.Constructor"
+                            }
+                        ]
         , test "should report an error when referencing a type alias from a deprecated dependency module" <|
             \() ->
                 """module A exposing (..)
@@ -429,21 +444,21 @@ a = 1
             \() ->
                 """module A exposing (..)
 import ModuleFromDependency_2
-a = ModuleFromDependency_2.something
+a = ModuleFromDependency_2.value
 """
                     |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-                            , under = "ModuleFromDependency_2.something"
+                            , under = "ModuleFromDependency_2.value"
                             }
                         ]
         , test "should report an error when referencing a deprecated custom type from a dependency" <|
             \() ->
                 """module A exposing (..)
 import ModuleFromDependency_2
-a : ModuleFromDependency_2.Something
+a : ModuleFromDependency_2.CustomType
 a = 1
 """
                     |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
@@ -451,7 +466,7 @@ a = 1
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-                            , under = "ModuleFromDependency_2.Something"
+                            , under = "ModuleFromDependency_2.CustomType"
                             }
                         ]
         , test "should report an error when referencing a deprecated type alias from a dependency" <|
