@@ -84,11 +84,13 @@ rule configuration =
 initialProjectContext : ProjectContext
 initialProjectContext =
     { deprecatedModules = []
+    , values = []
     }
 
 
 type alias ProjectContext =
     { deprecatedModules : List ModuleName
+    , values : List ( ModuleName, String )
     }
 
 
@@ -114,18 +116,16 @@ fromModuleToProject =
     Rule.initContextCreator
         (\_ ->
             { deprecatedModules = []
+            , values = []
             }
         )
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
-    if List.isEmpty newContext.deprecatedModules then
-        previousContext
-
-    else
-        { deprecatedModules = List.append newContext.deprecatedModules previousContext.deprecatedModules
-        }
+    { deprecatedModules = List.append newContext.deprecatedModules previousContext.deprecatedModules
+    , values = List.append newContext.values previousContext.values
+    }
 
 
 moduleVisitor : Configuration -> Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
@@ -185,13 +185,15 @@ dependenciesVisitor configuration dict projectContext =
 
 
 registerDeprecatedThings : Configuration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
-registerDeprecatedThings (Configuration configuration) module_ { deprecatedModules } =
+registerDeprecatedThings (Configuration configuration) module_ acc =
     if configuration.documentationPredicate module_.comment then
-        { deprecatedModules = String.split "." module_.name :: deprecatedModules
+        { deprecatedModules = String.split "." module_.name :: acc.deprecatedModules
+        , values = acc.values
         }
 
     else
-        { deprecatedModules = deprecatedModules
+        { deprecatedModules = acc.deprecatedModules
+        , values = acc.values
         }
 
 
