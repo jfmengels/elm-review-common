@@ -497,6 +497,20 @@ a = 1
                             , under = "ModuleFromDependency_2.Alias"
                             }
                         ]
+        , test "should report an error when referencing a constructor of a deprecated record alias from a dependency" <|
+            \() ->
+                """module A exposing (..)
+import ModuleFromDependency_2
+a = ModuleFromDependency_2.RecordAlias
+"""
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "ModuleFromDependency_2.RecordAlias"
+                            }
+                        ]
         ]
 
 
@@ -563,6 +577,11 @@ dependencyModules =
               , comment = "{-| This is deprecated -}"
               , args = []
               , tipe = Elm.Type.Tuple []
+              }
+            , { name = "RecordAlias"
+              , comment = "{-| This is deprecated -}"
+              , args = []
+              , tipe = Elm.Type.Record [] Nothing
               }
             ]
       , values =
