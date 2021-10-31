@@ -55,6 +55,23 @@ a = somethingDeprecated
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 24 } }
                         ]
+        , test "should report an error when referencing a local function whose documentation contains 'deprecated'" <|
+            \() ->
+                """module A exposing (..)
+a = something
+
+{-| This is deprecated -}
+something = 1
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "something"
+                            }
+                            |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 15 } }
+                        ]
         , test "should report an error when referencing a function from a module whose name contains 'deprecated' (qualified import)" <|
             \() ->
                 [ """module A exposing (..)
