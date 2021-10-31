@@ -23,6 +23,8 @@ REPLACEME You can configure this rule to only trigger for a specific module, fun
 REPLACEME TODO Would this require renaming the rule maybe?
 
 
+TODO Also report `.thingDeprecated` or `a.thingDeprecated`
+
 ## Fail
 
     a =
