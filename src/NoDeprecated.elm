@@ -100,6 +100,7 @@ type alias ProjectContext =
 
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
+    , currentModuleName : ModuleName
     , deprecatedModules : Set ModuleName
     , deprecatedValues : Set ( ModuleName, String )
     , deprecatedTypes : Set ( ModuleName, String )
@@ -111,11 +112,17 @@ fromProjectToModule : Configuration -> Rule.ContextCreator ProjectContext Module
 fromProjectToModule (Configuration configuration) =
     Rule.initContextCreator
         (\metadata lookupTable projectContext ->
+            let
+                moduleName : ModuleName
+                moduleName =
+                    Rule.moduleNameFromMetadata metadata
+            in
             { lookupTable = lookupTable
+            , currentModuleName = moduleName
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
             , deprecatedValues = Set.fromList projectContext.deprecatedValues
             , deprecatedTypes = Set.fromList projectContext.deprecatedTypes
-            , isModuleDeprecated = configuration.moduleNamePredicate (Rule.moduleNameFromMetadata metadata)
+            , isModuleDeprecated = configuration.moduleNamePredicate moduleName
             }
         )
         |> Rule.withMetadata
@@ -338,16 +345,25 @@ registerFunctionDeclaration (Configuration configuration) declaration context =
         name =
             declaration.declaration |> Node.value |> .name |> Node.value
     in
-    case declaration.documentation of
-        Just (Node _ str) ->
-            if configuration.documentationPredicate str then
-                { context | deprecatedValues = Set.insert ( [], name ) context.deprecatedValues }
+    if configuration.elementPredicate context.currentModuleName name then
+        register name context
 
-            else
+    else
+        case declaration.documentation of
+            Just (Node _ str) ->
+                if configuration.documentationPredicate str then
+                    register name context
+
+                else
+                    context
+
+            Nothing ->
                 context
 
-        Nothing ->
-            context
+
+register : String -> ModuleContext -> ModuleContext
+register name context =
+    { context | deprecatedValues = Set.insert ( [], name ) context.deprecatedValues }
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
