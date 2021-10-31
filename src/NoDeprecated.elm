@@ -75,7 +75,7 @@ rule configuration =
         |> Rule.withDependenciesProjectVisitor (\dict ctx -> ( [], dependenciesVisitor configuration dict ctx ))
         |> Rule.withModuleVisitor (moduleVisitor configuration)
         |> Rule.withModuleContextUsingContextCreator
-            { fromProjectToModule = fromProjectToModule
+            { fromProjectToModule = fromProjectToModule configuration
             , fromModuleToProject = fromModuleToProject
             , foldProjectContexts = foldProjectContexts
             }
@@ -107,8 +107,8 @@ type alias ModuleContext =
     }
 
 
-fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
-fromProjectToModule =
+fromProjectToModule : Configuration -> Rule.ContextCreator ProjectContext ModuleContext
+fromProjectToModule (Configuration configuration) =
     Rule.initContextCreator
         (\lookupTable projectContext ->
             { lookupTable = lookupTable
