@@ -15,7 +15,12 @@ all : Test
 all =
     describe "NoDeprecated"
         [ valueTests
-        , mainTests
+        , typeTests
+        , parametersTests
+        , letTests
+        , caseExpressionTests
+        , propertiesTests
+        , portsTests
         , dependencyTests
         ]
 
@@ -95,9 +100,9 @@ a = { something | b = 1 }
         ]
 
 
-mainTests : Test
-mainTests =
-    describe "Main"
+typeTests : Test
+typeTests =
+    describe "Types"
         [ test "should report an error when referencing a custom type constructor whose name contains 'deprecated'" <|
             \() ->
                 """module A exposing (..)
@@ -159,7 +164,13 @@ a (Deprecated value) = 1
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
                         ]
-        , test "should report an error when having a parameter whose name contains 'deprecated' (top-level declaration)" <|
+        ]
+
+
+parametersTests : Test
+parametersTests =
+    describe "Parameters"
+        [ test "should report an error when having a parameter whose name contains 'deprecated' (top-level declaration)" <|
             \() ->
                 """module A exposing (..)
 a thingDeprecated = 1
@@ -198,7 +209,13 @@ a (( x, y ) as deprecated) = 1
                             , under = "deprecated"
                             }
                         ]
-        , test "should report an error when referencing a type whose name contains 'deprecated' (let declaration annotation)" <|
+        ]
+
+
+letTests : Test
+letTests =
+    describe "Let expressions"
+        [ test "should report an error when referencing a type whose name contains 'deprecated' (let declaration annotation)" <|
             \() ->
                 """module A exposing (..)
 type Deprecated = Int
@@ -273,7 +290,13 @@ a =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 10 }, end = { row = 5, column = 20 } }
                         ]
-        , test "should report an error when referencing a type whose name contains 'deprecated' (case expression)" <|
+        ]
+
+
+caseExpressionTests : Test
+caseExpressionTests =
+    describe "Case expressions"
+        [ test "should report an error when referencing a type whose name contains 'deprecated' (case expression)" <|
             \() ->
                 """module A exposing (..)
 a =
@@ -288,7 +311,13 @@ a =
                             , under = "ThingDeprecated"
                             }
                         ]
-        , test "should report an error when referencing a type whose name contains 'deprecated' (custom type declaration)" <|
+        ]
+
+
+propertiesTests : Test
+propertiesTests =
+    describe "Properties"
+        [ test "should report an error when referencing a type whose name contains 'deprecated' (custom type declaration)" <|
             \() ->
                 """module A exposing (..)
 type A = Thing ( A, { b : Deprecated } )
@@ -304,7 +333,7 @@ type A = Thing ( A, { b : Deprecated } )
         , test "should report an error when referencing a type whose name contains 'deprecated' (type alias declaration)" <|
             \() ->
                 """module A exposing (..)
-type alias A = Thing{ b : Deprecated }
+type alias A = Thing { b : Deprecated }
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
@@ -314,7 +343,13 @@ type alias A = Thing{ b : Deprecated }
                             , under = "Deprecated"
                             }
                         ]
-        , test "should report an error when referencing a type whose name contains 'deprecated' (Sub port)" <|
+        ]
+
+
+portsTests : Test
+portsTests =
+    describe "Ports"
+        [ test "should report an error when referencing a type whose name contains 'deprecated' (Sub port)" <|
             \() ->
                 """module A exposing (..)
 port input : (DeprecatedString -> msg) -> Sub msg
