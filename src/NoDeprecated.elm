@@ -307,7 +307,10 @@ registerDeclaration documentationPredicate node context =
             case type_.documentation of
                 Just (Node _ str) ->
                     if documentationPredicate str then
-                        { context | deprecatedValues = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues }
+                        { context
+                            | deprecatedValues = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+                            , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+                        }
 
                     else
                         context
