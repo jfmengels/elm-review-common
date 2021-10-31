@@ -345,12 +345,12 @@ dependencyTests =
 import ModuleFromDependency_1
 a = ModuleFromDependency_1.something
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-                            , under = "DeprecatedString"
+                            , under = "ModuleFromDependency_1.something"
                             }
                         ]
         ]
