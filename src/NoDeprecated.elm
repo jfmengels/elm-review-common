@@ -468,7 +468,7 @@ reportValue (Configuration configuration) context rangeForLookupTable rangeForRe
         Just moduleName ->
             if
                 configuration.elementPredicate moduleName name
-                    || configuration.moduleNamePredicate moduleName
+                    || isModuleDeprecated context configuration.moduleNamePredicate moduleName
             then
                 [ error (rangeForReport ()) ]
 
@@ -477,6 +477,11 @@ reportValue (Configuration configuration) context rangeForLookupTable rangeForRe
 
         Nothing ->
             []
+
+
+isModuleDeprecated : ModuleContext -> (ModuleName -> Bool) -> ModuleName -> Bool
+isModuleDeprecated moduleContext moduleNamePredicate moduleName =
+    moduleNamePredicate moduleName
 
 
 reportParameter : Configuration -> Range -> String -> Maybe (Rule.Error {})
