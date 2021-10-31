@@ -47,6 +47,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 -}
 
 import Dict exposing (Dict)
+import Elm.Docs
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
@@ -177,6 +178,17 @@ dependenciesVisitor (Configuration configuration) dict =
             |> List.filter (.comment >> configuration.documentationPredicate)
             |> List.map (.name >> String.split ".")
     }
+
+
+registerDeprecatedThings : Configuration -> Elm.Docs.Module -> { deprecatedModules : List ModuleName }
+registerDeprecatedThings (Configuration configuration) module_ =
+    if configuration.documentationPredicate module_.comment then
+        { deprecatedModules = [ String.split "." module_.name ]
+        }
+
+    else
+        { deprecatedModules = []
+        }
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
