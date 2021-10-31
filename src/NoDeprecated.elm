@@ -326,7 +326,7 @@ registerDeclaration documentationPredicate node context =
                 Just (Node _ str) ->
                     if documentationPredicate str then
                         { context
-                            | deprecatedValues = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+                            | deprecatedValues = List.foldl (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name )) context.deprecatedValues type_.constructors
                             , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
                         }
 

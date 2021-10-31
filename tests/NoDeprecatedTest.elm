@@ -218,18 +218,18 @@ type Something = Foo Int
         , test "should report an error when referencing a custom type constructor whose documentation contains 'deprecated' (top-level declaration)" <|
             \() ->
                 """module A exposing (..)
-a (Something value) = 1
+a (A value) = 1
 {-| This is deprecated -}
-type Something = Something Int
+type Something = A Int
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-                            , under = "Something"
+                            , under = "A"
                             }
-                            |> Review.Test.atExactly { start = { row = 2, column = 4 }, end = { row = 2, column = 13 } }
+                            |> Review.Test.atExactly { start = { row = 2, column = 4 }, end = { row = 2, column = 5 } }
                         ]
         , test "should report an error when referencing a type alias whose documentation contains 'deprecated' (top-level declaration)" <|
             \() ->
