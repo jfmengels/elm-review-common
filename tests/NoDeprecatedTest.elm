@@ -212,7 +212,7 @@ type Something = Something Int
                             , details = [ "REPLACEME" ]
                             , under = "Something"
                             }
-                            |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
+                            |> Review.Test.atExactly { start = { row = 2, column = 4 }, end = { row = 2, column = 13 } }
                         ]
         ]
 

@@ -304,7 +304,16 @@ registerDeclaration documentationPredicate node context =
             context
 
         Declaration.CustomTypeDeclaration type_ ->
-            context
+            case type_.documentation of
+                Just (Node _ str) ->
+                    if documentationPredicate str then
+                        { context | deprecatedValues = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues }
+
+                    else
+                        context
+
+                Nothing ->
+                    context
 
         _ ->
             context
