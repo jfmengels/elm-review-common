@@ -119,7 +119,12 @@ fromModuleToProject =
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
-    previousContext
+    if List.isEmpty newContext.deprecatedModules then
+        previousContext
+
+    else
+        { deprecatedModules = List.append newContext.deprecatedModules previousContext.deprecatedModules
+        }
 
 
 moduleVisitor : Configuration -> Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
