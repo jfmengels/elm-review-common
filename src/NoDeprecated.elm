@@ -150,6 +150,7 @@ foldProjectContexts newContext previousContext =
 moduleVisitor : Configuration -> Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
 moduleVisitor configuration schema =
     schema
+        |> Rule.withCommentsVisitor (\comments context -> ( [], commentsVisitor configuration comments context ))
         |> Rule.withDeclarationEnterVisitor (\node context -> ( declarationVisitor configuration node context, context ))
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
 
@@ -262,6 +263,20 @@ isRecordTypeAlias alias =
 
         _ ->
             False
+
+
+commentsVisitor : Configuration -> List (Node String) -> ModuleContext -> ModuleContext
+commentsVisitor (Configuration configuration) comments moduleContext =
+    if moduleContext.isModuleDeprecated then
+        moduleContext
+
+    else
+        case find (\(Node _ comment) -> String.startsWith "{-|" comment) comments of
+            Just (Node _ moduleDocumentation) ->
+                { moduleContext | isModuleDeprecated = configuration.documentationPredicate moduleDocumentation }
+
+            Nothing ->
+                moduleContext
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
@@ -612,3 +627,21 @@ error range =
         , details = [ "REPLACEME" ]
         }
         range
+
+
+{-| Find the first element that satisfies a predicate and return
+Just that element. If none match, return Nothing.
+find (\\num -> num > 5) [2, 4, 6, 8] == Just 6
+-}
+find : (a -> Bool) -> List a -> Maybe a
+find predicate list =
+    case list of
+        [] ->
+            Nothing
+
+        first :: rest ->
+            if predicate first then
+                Just first
+
+            else
+                find predicate rest
