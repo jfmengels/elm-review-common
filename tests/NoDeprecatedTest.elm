@@ -246,7 +246,23 @@ type alias Something = Int
                             , details = [ "REPLACEME" ]
                             , under = "Something"
                             }
-                            |> Review.Test.atExactly { start = { row = 2, column = 4 }, end = { row = 2, column = 13 } }
+                            |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
+                        ]
+        , test "should report an error when referencing a type alias constructor whose documentation contains 'deprecated' (top-level declaration)" <|
+            \() ->
+                """module A exposing (..)
+a = Something 1
+{-| This is deprecated -}
+type alias Something = { b : Int }
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Something"
+                            }
+                            |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
                         ]
         ]
 

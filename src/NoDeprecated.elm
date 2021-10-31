@@ -301,7 +301,25 @@ registerDeclaration documentationPredicate node context =
                     context
 
         Declaration.AliasDeclaration type_ ->
-            context
+            case type_.documentation of
+                Just (Node _ str) ->
+                    if documentationPredicate str then
+                        { context
+                            | deprecatedValues =
+                                case Node.value type_.typeAnnotation of
+                                    TypeAnnotation.Record _ ->
+                                        Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+
+                                    _ ->
+                                        context.deprecatedValues
+                            , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+                        }
+
+                    else
+                        context
+
+                Nothing ->
+                    context
 
         Declaration.CustomTypeDeclaration type_ ->
             case type_.documentation of
