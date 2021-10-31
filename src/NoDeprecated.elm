@@ -86,12 +86,14 @@ initialProjectContext : ProjectContext
 initialProjectContext =
     { deprecatedModules = []
     , deprecatedValues = []
+    , deprecatedTypes = []
     }
 
 
 type alias ProjectContext =
     { deprecatedModules : List ModuleName
     , deprecatedValues : List ( ModuleName, String )
+    , deprecatedTypes : List ( ModuleName, String )
     }
 
 
@@ -99,6 +101,7 @@ type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , deprecatedModules : Set ModuleName
     , deprecatedValues : Set ( ModuleName, String )
+    , deprecatedTypes : Set ( ModuleName, String )
     }
 
 
@@ -109,6 +112,7 @@ fromProjectToModule =
             { lookupTable = lookupTable
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
             , deprecatedValues = Set.fromList projectContext.deprecatedValues
+            , deprecatedTypes = Set.fromList projectContext.deprecatedTypes
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -120,6 +124,7 @@ fromModuleToProject =
         (\_ ->
             { deprecatedModules = []
             , deprecatedValues = []
+            , deprecatedTypes = []
             }
         )
 
@@ -128,6 +133,7 @@ foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
     { deprecatedModules = List.append newContext.deprecatedModules previousContext.deprecatedModules
     , deprecatedValues = List.append newContext.deprecatedValues previousContext.deprecatedValues
+    , deprecatedTypes = List.append newContext.deprecatedTypes previousContext.deprecatedTypes
     }
 
 
@@ -197,6 +203,7 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
     if configuration.documentationPredicate module_.comment then
         { deprecatedModules = moduleName :: acc.deprecatedModules
         , deprecatedValues = acc.deprecatedValues
+        , deprecatedTypes = acc.deprecatedTypes
         }
 
     else
@@ -222,6 +229,10 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
         in
         { deprecatedModules = acc.deprecatedModules
         , deprecatedValues = List.append newValues acc.deprecatedValues
+        , deprecatedTypes =
+            List.append
+                (List.map (\{ name } -> ( moduleName, name )) deprecatedAliases)
+                acc.deprecatedValues
         }
 
 
