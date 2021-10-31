@@ -186,14 +186,25 @@ dependenciesVisitor configuration dict projectContext =
 
 registerDeprecatedThings : Configuration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
 registerDeprecatedThings (Configuration configuration) module_ acc =
+    let
+        moduleName : List String
+        moduleName =
+            String.split "." module_.name
+    in
     if configuration.documentationPredicate module_.comment then
-        { deprecatedModules = String.split "." module_.name :: acc.deprecatedModules
+        { deprecatedModules = moduleName :: acc.deprecatedModules
         , values = acc.values
         }
 
     else
         { deprecatedModules = acc.deprecatedModules
-        , values = acc.values
+        , values =
+            List.append
+                (module_.values
+                    |> List.filter (.comment >> configuration.documentationPredicate)
+                    |> List.map (\value -> ( moduleName, value.name ))
+                )
+                acc.values
         }
 
 
