@@ -451,12 +451,25 @@ expressionVisitor configuration (Node nodeRange node) context =
                 []
 
         Expression.RecordUpdateExpression (Node range name) _ ->
+            -- TODO report deprecated fields
             reportValue
                 configuration
                 context
                 range
                 (always range)
                 name
+
+        Expression.RecordExpr _ ->
+            -- TODO report deprecated fields
+            []
+
+        Expression.RecordAccess _ _ ->
+            -- TODO report deprecated fields
+            []
+
+        Expression.RecordAccessFunction _ ->
+            -- TODO report deprecated fields
+            []
 
         _ ->
             []
