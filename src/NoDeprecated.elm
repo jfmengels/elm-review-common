@@ -196,7 +196,7 @@ dependenciesVisitor configuration dict projectContext =
 registerDeprecatedThings : Configuration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
 registerDeprecatedThings (Configuration configuration) module_ acc =
     let
-        moduleName : List String
+        moduleName : ModuleName
         moduleName =
             String.split "." module_.name
     in
@@ -213,13 +213,18 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
                 module_.aliases
                     |> List.filter (.comment >> configuration.documentationPredicate)
 
+            deprecatedUnions : List Elm.Docs.Union
+            deprecatedUnions =
+                module_.unions
+                    |> List.filter (.comment >> configuration.documentationPredicate)
+
+            newValues : List ( ModuleName, String )
             newValues =
                 List.concat
                     [ module_.values
                         |> List.filter (.comment >> configuration.documentationPredicate)
                         |> List.map (\value -> ( moduleName, value.name ))
-                    , module_.unions
-                        |> List.filter (.comment >> configuration.documentationPredicate)
+                    , deprecatedUnions
                         |> List.concatMap .tags
                         |> List.map (\( name, _ ) -> ( moduleName, name ))
                     , deprecatedAliases
@@ -231,8 +236,11 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
         , deprecatedValues = List.append newValues acc.deprecatedValues
         , deprecatedTypes =
             List.append
-                (List.map (\{ name } -> ( moduleName, name )) deprecatedAliases)
-                acc.deprecatedValues
+                (List.map (\{ name } -> ( moduleName, name )) deprecatedUnions)
+                (List.append
+                    (List.map (\{ name } -> ( moduleName, name )) deprecatedAliases)
+                    acc.deprecatedValues
+                )
         }
 
 
