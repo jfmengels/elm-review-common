@@ -699,6 +699,7 @@ deprecatedModule =
     """module OtherModule exposing (..)
 {-| This is deprecated.
 -}
+import Basics
 a = 1
 """
 
