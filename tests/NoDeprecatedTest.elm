@@ -21,6 +21,7 @@ all =
         , caseExpressionTests
         , propertiesTests
         , portsTests
+        , fromOtherModulesTests
         , dependencyTests
         ]
 
@@ -512,6 +513,178 @@ a = ModuleFromDependency_2.RecordAlias
                             }
                         ]
         ]
+
+
+fromOtherModulesTests : Test
+fromOtherModulesTests =
+    describe "From other modules"
+        [ test "should report an error when referencing a value from a deprecated module" <|
+            \() ->
+                [ """module A exposing (..)
+import OtherModule
+a = OtherModule.something
+""", deprecatedModule ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "OtherModule.something"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a custom type from a deprecated module" <|
+            \() ->
+                [ """module A exposing (..)
+import OtherModule
+a : OtherModule.CustomType
+a = 1
+""", deprecatedModule ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "OtherModule.CustomType"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a custom type constructor from a deprecated module" <|
+            \() ->
+                [ """module A exposing (..)
+import OtherModule
+a = OtherModule.Constructor
+""", deprecatedModule ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "OtherModule.Constructor"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a type alias from a deprecated module" <|
+            \() ->
+                [ """module A exposing (..)
+import OtherModule
+a : OtherModule.Alias
+a = 1
+""" ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "ModuleFromDependency_1.Alias"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a deprecated value from a different module" <|
+            \() ->
+                [ """module A exposing (..)
+import ModuleFromDependency_2
+a = ModuleFromDependency_2.value
+""" ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "ModuleFromDependency_2.value"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a deprecated custom type from a different module" <|
+            \() ->
+                [ """module A exposing (..)
+import ModuleFromDependency_2
+a : ModuleFromDependency_2.CustomType
+a = 1
+""" ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "ModuleFromDependency_2.CustomType"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a constructor of a deprecated custom type from a different module" <|
+            \() ->
+                [ """module A exposing (..)
+import ModuleFromDependency_2
+a = ModuleFromDependency_2.Constructor
+""" ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "ModuleFromDependency_2.Constructor"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a deprecated type alias from a different module" <|
+            \() ->
+                [ """module A exposing (..)
+import ModuleFromDependency_2
+a : ModuleFromDependency_2.Alias
+a = 1
+""" ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "ModuleFromDependency_2.Alias"
+                                }
+                            ]
+                          )
+                        ]
+        , test "should report an error when referencing a constructor of a deprecated record alias from a different module" <|
+            \() ->
+                [ """module A exposing (..)
+import ModuleFromDependency_2
+a = ModuleFromDependency_2.RecordAlias
+""" ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "ModuleFromDependency_2.RecordAlias"
+                                }
+                            ]
+                          )
+                        ]
+        ]
+
+
+deprecatedModule : String
+deprecatedModule =
+    """module OtherModule exposing (..)
+{-| This is deprecated.
+-}
+a = 1
+"""
 
 
 projectWithDeprecations : Project
