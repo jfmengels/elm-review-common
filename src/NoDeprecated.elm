@@ -71,7 +71,7 @@ import Set exposing (Set)
 rule : Configuration -> Rule
 rule configuration =
     Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
-        |> Rule.withDependenciesProjectVisitor (\dict _ -> ( [], dependenciesVisitor configuration dict ))
+        |> Rule.withDependenciesProjectVisitor (\dict ctx -> ( [], dependenciesVisitor configuration dict ctx ))
         |> Rule.withModuleVisitor (moduleVisitor configuration)
         |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModule
@@ -169,25 +169,29 @@ checkInName =
         }
 
 
-dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext
-dependenciesVisitor (Configuration configuration) dict =
-    { deprecatedModules =
-        dict
-            |> Dict.values
-            |> List.concatMap Review.Project.Dependency.modules
-            |> List.filter (.comment >> configuration.documentationPredicate)
-            |> List.map (.name >> String.split ".")
-    }
+dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ProjectContext
+dependenciesVisitor configuration dict projectContext =
+    let
+        modules : List Elm.Docs.Module
+        modules =
+            dict
+                |> Dict.values
+                |> List.concatMap Review.Project.Dependency.modules
+    in
+    List.foldl
+        (registerDeprecatedThings configuration)
+        projectContext
+        modules
 
 
-registerDeprecatedThings : Configuration -> Elm.Docs.Module -> { deprecatedModules : List ModuleName }
-registerDeprecatedThings (Configuration configuration) module_ =
+registerDeprecatedThings : Configuration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
+registerDeprecatedThings (Configuration configuration) module_ { deprecatedModules } =
     if configuration.documentationPredicate module_.comment then
-        { deprecatedModules = [ String.split "." module_.name ]
+        { deprecatedModules = String.split "." module_.name :: deprecatedModules
         }
 
     else
-        { deprecatedModules = []
+        { deprecatedModules = deprecatedModules
         }
 
 
