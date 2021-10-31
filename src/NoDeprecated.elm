@@ -201,7 +201,7 @@ declarationVisitor configuration node context =
                 destructuringErrors =
                     reportPatterns
                         configuration
-                        context.lookupTable
+                        context
                         (declaration.declaration |> Node.value |> .arguments)
                         []
             in
@@ -232,8 +232,8 @@ declarationVisitor configuration node context =
             []
 
 
-reportLetDeclaration : Configuration -> ModuleNameLookupTable -> Node Expression.LetDeclaration -> List (Rule.Error {})
-reportLetDeclaration configuration lookupTable letDeclaration =
+reportLetDeclaration : Configuration -> ModuleContext -> Node Expression.LetDeclaration -> List (Rule.Error {})
+reportLetDeclaration configuration context letDeclaration =
     case Node.value letDeclaration of
         Expression.LetFunction function ->
             let
@@ -243,7 +243,7 @@ reportLetDeclaration configuration lookupTable letDeclaration =
                         Just signature ->
                             reportTypes
                                 configuration
-                                lookupTable
+                                context.lookupTable
                                 [ (Node.value signature).typeAnnotation ]
                                 []
 
@@ -254,7 +254,7 @@ reportLetDeclaration configuration lookupTable letDeclaration =
                 destructuringErrors =
                     reportPatterns
                         configuration
-                        lookupTable
+                        context
                         (function.declaration |> Node.value |> .arguments)
                         []
             in
@@ -263,7 +263,7 @@ reportLetDeclaration configuration lookupTable letDeclaration =
         Expression.LetDestructuring pattern _ ->
             reportPatterns
                 configuration
-                lookupTable
+                context
                 [ pattern ]
                 []
 
@@ -319,8 +319,8 @@ reportTypes configuration lookupTable nodes acc =
                     reportTypes configuration lookupTable restOfNodes acc
 
 
-reportPatterns : Configuration -> ModuleNameLookupTable -> List (Node Pattern) -> List (Rule.Error {}) -> List (Rule.Error {})
-reportPatterns configuration lookupTable nodes acc =
+reportPatterns : Configuration -> ModuleContext -> List (Node Pattern) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportPatterns configuration context nodes acc =
     case nodes of
         [] ->
             acc
@@ -330,24 +330,24 @@ reportPatterns configuration lookupTable nodes acc =
                 Pattern.ParenthesizedPattern subPattern ->
                     reportPatterns
                         configuration
-                        lookupTable
+                        context
                         (subPattern :: restOfNodes)
                         acc
 
                 Pattern.TuplePattern subPatterns ->
-                    reportPatterns configuration lookupTable (List.append subPatterns restOfNodes) acc
+                    reportPatterns configuration context (List.append subPatterns restOfNodes) acc
 
                 Pattern.RecordPattern fields ->
                     reportPatterns configuration
-                        lookupTable
+                        context
                         restOfNodes
                         (List.append (List.filterMap (reportField configuration) fields) acc)
 
                 Pattern.UnConsPattern left right ->
-                    reportPatterns configuration lookupTable (left :: right :: restOfNodes) acc
+                    reportPatterns configuration context (left :: right :: restOfNodes) acc
 
                 Pattern.ListPattern subPatterns ->
-                    reportPatterns configuration lookupTable (List.append subPatterns restOfNodes) acc
+                    reportPatterns configuration context (List.append subPatterns restOfNodes) acc
 
                 Pattern.VarPattern name ->
                     let
@@ -362,7 +362,7 @@ reportPatterns configuration lookupTable nodes acc =
                     in
                     reportPatterns
                         configuration
-                        lookupTable
+                        context
                         restOfNodes
                         newAcc
 
@@ -372,14 +372,14 @@ reportPatterns configuration lookupTable nodes acc =
                         errors =
                             reportValue
                                 configuration
-                                lookupTable
+                                context.lookupTable
                                 (Node.range pattern)
                                 (\() -> rangeForNamedPattern pattern qualifiedNameRef)
                                 qualifiedNameRef.name
                     in
                     reportPatterns
                         configuration
-                        lookupTable
+                        context
                         (List.append subPatterns restOfNodes)
                         (List.append errors acc)
 
@@ -394,10 +394,10 @@ reportPatterns configuration lookupTable nodes acc =
                                 Nothing ->
                                     acc
                     in
-                    reportPatterns configuration lookupTable (subPattern :: restOfNodes) newAcc
+                    reportPatterns configuration context (subPattern :: restOfNodes) newAcc
 
                 _ ->
-                    reportPatterns configuration lookupTable restOfNodes acc
+                    reportPatterns configuration context restOfNodes acc
 
 
 rangeForNamedPattern : Node a -> Pattern.QualifiedNameRef -> Range
@@ -440,13 +440,13 @@ expressionVisitor configuration (Node nodeRange node) context =
 
         Expression.LetExpression letBlock ->
             List.concatMap
-                (reportLetDeclaration configuration context.lookupTable)
+                (reportLetDeclaration configuration context)
                 letBlock.declarations
 
         Expression.CaseExpression { cases } ->
             reportPatterns
                 configuration
-                context.lookupTable
+                context
                 (List.map Tuple.first cases)
                 []
 
