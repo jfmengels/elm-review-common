@@ -55,6 +55,7 @@ import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
+import Elm.Type
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Project.Dependency
 import Review.Rule as Rule exposing (Rule)
@@ -199,6 +200,12 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
         }
 
     else
+        let
+            deprecatedAliases : List Elm.Docs.Alias
+            deprecatedAliases =
+                module_.aliases
+                    |> List.filter (.comment >> configuration.documentationPredicate)
+        in
         { deprecatedModules = acc.deprecatedModules
         , deprecatedValues =
             List.concat
@@ -209,9 +216,25 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
                     |> List.filter (.comment >> configuration.documentationPredicate)
                     |> List.concatMap .tags
                     |> List.map (\( name, _ ) -> ( moduleName, name ))
+                , deprecatedAliases
+                    |> List.filter isRecordTypeAlias
+                    |> List.map (\{ name } -> ( moduleName, name ))
+
+                --, deprecatedAliases
+                --    |> List.map (\{ name } -> ( moduleName, name ))
                 , acc.deprecatedValues
                 ]
         }
+
+
+isRecordTypeAlias : Elm.Docs.Alias -> Bool
+isRecordTypeAlias alias =
+    case alias.tipe of
+        Elm.Type.Record _ Nothing ->
+            True
+
+        _ ->
+            False
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
