@@ -21,7 +21,7 @@ all =
         , caseExpressionTests
         , propertiesTests
         , portsTests
-        , fromOtherModulesTests
+        , Test.skip fromOtherModulesTests
         , dependencyTests
         ]
 
