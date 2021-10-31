@@ -190,7 +190,7 @@ declarationVisitor configuration node context =
                         Just signature ->
                             reportTypes
                                 configuration
-                                context.lookupTable
+                                context
                                 [ (Node.value signature).typeAnnotation ]
                                 []
 
@@ -210,21 +210,21 @@ declarationVisitor configuration node context =
         Declaration.CustomTypeDeclaration type_ ->
             reportTypes
                 configuration
-                context.lookupTable
+                context
                 (List.concatMap (Node.value >> .arguments) type_.constructors)
                 []
 
         Declaration.AliasDeclaration type_ ->
             reportTypes
                 configuration
-                context.lookupTable
+                context
                 [ type_.typeAnnotation ]
                 []
 
         Declaration.PortDeclaration signature ->
             reportTypes
                 configuration
-                context.lookupTable
+                context
                 [ signature.typeAnnotation ]
                 []
 
@@ -243,7 +243,7 @@ reportLetDeclaration configuration context letDeclaration =
                         Just signature ->
                             reportTypes
                                 configuration
-                                context.lookupTable
+                                context
                                 [ (Node.value signature).typeAnnotation ]
                                 []
 
@@ -268,8 +268,8 @@ reportLetDeclaration configuration context letDeclaration =
                 []
 
 
-reportTypes : Configuration -> ModuleNameLookupTable -> List (Node TypeAnnotation) -> List (Rule.Error {}) -> List (Rule.Error {})
-reportTypes configuration lookupTable nodes acc =
+reportTypes : Configuration -> ModuleContext -> List (Node TypeAnnotation) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportTypes configuration context nodes acc =
     case nodes of
         [] ->
             acc
@@ -280,7 +280,7 @@ reportTypes configuration lookupTable nodes acc =
                     let
                         newAcc : List (Rule.Error {})
                         newAcc =
-                            case reportType configuration lookupTable range name of
+                            case reportType configuration context range name of
                                 Just err ->
                                     err :: acc
 
@@ -289,12 +289,12 @@ reportTypes configuration lookupTable nodes acc =
                     in
                     reportTypes
                         configuration
-                        lookupTable
+                        context
                         (List.append args restOfNodes)
                         newAcc
 
                 TypeAnnotation.Tupled nodesToLookAt ->
-                    reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
+                    reportTypes configuration context (nodesToLookAt ++ restOfNodes) acc
 
                 TypeAnnotation.Record recordDefinition ->
                     let
@@ -302,7 +302,7 @@ reportTypes configuration lookupTable nodes acc =
                         nodesToLookAt =
                             List.map (Node.value >> Tuple.second) recordDefinition
                     in
-                    reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
+                    reportTypes configuration context (nodesToLookAt ++ restOfNodes) acc
 
                 TypeAnnotation.GenericRecord _ recordDefinition ->
                     let
@@ -310,13 +310,13 @@ reportTypes configuration lookupTable nodes acc =
                         nodesToLookAt =
                             List.map (Node.value >> Tuple.second) (Node.value recordDefinition)
                     in
-                    reportTypes configuration lookupTable (nodesToLookAt ++ restOfNodes) acc
+                    reportTypes configuration context (nodesToLookAt ++ restOfNodes) acc
 
                 TypeAnnotation.FunctionTypeAnnotation left right ->
-                    reportTypes configuration lookupTable (left :: right :: restOfNodes) acc
+                    reportTypes configuration context (left :: right :: restOfNodes) acc
 
                 _ ->
-                    reportTypes configuration lookupTable restOfNodes acc
+                    reportTypes configuration context restOfNodes acc
 
 
 reportPatterns : Configuration -> ModuleContext -> List (Node Pattern) -> List (Rule.Error {}) -> List (Rule.Error {})
@@ -494,9 +494,9 @@ reportParameter (Configuration configuration) range name =
         Nothing
 
 
-reportType : Configuration -> ModuleNameLookupTable -> Range -> String -> Maybe (Rule.Error {})
-reportType (Configuration configuration) lookupTable range name =
-    case ModuleNameLookupTable.moduleNameAt lookupTable range of
+reportType : Configuration -> ModuleContext -> Range -> String -> Maybe (Rule.Error {})
+reportType (Configuration configuration) context range name =
+    case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
             if
                 configuration.typePredicate moduleName name
