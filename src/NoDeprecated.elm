@@ -110,14 +110,15 @@ type alias ModuleContext =
 fromProjectToModule : Configuration -> Rule.ContextCreator ProjectContext ModuleContext
 fromProjectToModule (Configuration configuration) =
     Rule.initContextCreator
-        (\lookupTable projectContext ->
+        (\metadata lookupTable projectContext ->
             { lookupTable = lookupTable
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
             , deprecatedValues = Set.fromList projectContext.deprecatedValues
             , deprecatedTypes = Set.fromList projectContext.deprecatedTypes
-            , isModuleDeprecated = False
+            , isModuleDeprecated = configuration.moduleNamePredicate (Rule.moduleNameFromMetadata metadata)
             }
         )
+        |> Rule.withMetadata
         |> Rule.withModuleNameLookupTable
 
 
