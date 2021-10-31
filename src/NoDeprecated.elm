@@ -103,6 +103,7 @@ type alias ModuleContext =
     , deprecatedModules : Set ModuleName
     , deprecatedValues : Set ( ModuleName, String )
     , deprecatedTypes : Set ( ModuleName, String )
+    , isModuleDeprecated : Bool
     }
 
 
@@ -114,6 +115,7 @@ fromProjectToModule =
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
             , deprecatedValues = Set.fromList projectContext.deprecatedValues
             , deprecatedTypes = Set.fromList projectContext.deprecatedTypes
+            , isModuleDeprecated = False
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -122,12 +124,18 @@ fromProjectToModule =
 fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
-        (\_ ->
-            { deprecatedModules = []
+        (\metadata moduleContext ->
+            { deprecatedModules =
+                if moduleContext.isModuleDeprecated then
+                    [ Rule.moduleNameFromMetadata metadata ]
+
+                else
+                    []
             , deprecatedValues = []
             , deprecatedTypes = []
             }
         )
+        |> Rule.withMetadata
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
