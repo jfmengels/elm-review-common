@@ -151,6 +151,7 @@ moduleVisitor : Configuration -> Rule.ModuleRuleSchema schemaState ModuleContext
 moduleVisitor configuration schema =
     schema
         |> Rule.withCommentsVisitor (\comments context -> ( [], commentsVisitor configuration comments context ))
+        |> Rule.withDeclarationListVisitor (\nodes context -> ( [], declarationListVisitor configuration nodes context ))
         |> Rule.withDeclarationEnterVisitor (\node context -> ( declarationVisitor configuration node context, context ))
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
 
@@ -277,6 +278,36 @@ commentsVisitor (Configuration configuration) comments moduleContext =
 
             Nothing ->
                 moduleContext
+
+
+declarationListVisitor : Configuration -> List (Node Declaration) -> ModuleContext -> ModuleContext
+declarationListVisitor (Configuration configuration) nodes context =
+    List.foldl (registerDeclaration configuration.documentationPredicate) context nodes
+
+
+registerDeclaration : (String -> Bool) -> Node Declaration -> ModuleContext -> ModuleContext
+registerDeclaration documentationPredicate node context =
+    case Node.value node of
+        Declaration.FunctionDeclaration declaration ->
+            case declaration.documentation of
+                Just (Node _ str) ->
+                    if documentationPredicate str then
+                        { context | deprecatedValues = Set.insert ( [], declaration.declaration |> Node.value |> .name |> Node.value ) context.deprecatedValues }
+
+                    else
+                        context
+
+                Nothing ->
+                    context
+
+        Declaration.AliasDeclaration type_ ->
+            context
+
+        Declaration.CustomTypeDeclaration type_ ->
+            context
+
+        _ ->
+            context
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})

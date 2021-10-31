@@ -70,7 +70,7 @@ something = 1
                             , details = [ "REPLACEME" ]
                             , under = "something"
                             }
-                            |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 15 } }
+                            |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
                         ]
         , test "should report an error when referencing a function from a module whose name contains 'deprecated' (qualified import)" <|
             \() ->
