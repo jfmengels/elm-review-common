@@ -281,17 +281,17 @@ commentsVisitor (Configuration configuration) comments moduleContext =
 
 
 declarationListVisitor : Configuration -> List (Node Declaration) -> ModuleContext -> ModuleContext
-declarationListVisitor (Configuration configuration) nodes context =
-    List.foldl (registerDeclaration configuration.documentationPredicate) context nodes
+declarationListVisitor configuration nodes context =
+    List.foldl (registerDeclaration configuration) context nodes
 
 
-registerDeclaration : (String -> Bool) -> Node Declaration -> ModuleContext -> ModuleContext
-registerDeclaration documentationPredicate node context =
+registerDeclaration : Configuration -> Node Declaration -> ModuleContext -> ModuleContext
+registerDeclaration (Configuration configuration) node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
             case declaration.documentation of
                 Just (Node _ str) ->
-                    if documentationPredicate str then
+                    if configuration.documentationPredicate str then
                         { context | deprecatedValues = Set.insert ( [], declaration.declaration |> Node.value |> .name |> Node.value ) context.deprecatedValues }
 
                     else
@@ -303,7 +303,7 @@ registerDeclaration documentationPredicate node context =
         Declaration.AliasDeclaration type_ ->
             case type_.documentation of
                 Just (Node _ str) ->
-                    if documentationPredicate str then
+                    if configuration.documentationPredicate str then
                         { context
                             | deprecatedValues =
                                 case Node.value type_.typeAnnotation of
@@ -324,7 +324,7 @@ registerDeclaration documentationPredicate node context =
         Declaration.CustomTypeDeclaration type_ ->
             case type_.documentation of
                 Just (Node _ str) ->
-                    if documentationPredicate str then
+                    if configuration.documentationPredicate str then
                         { context
                             | deprecatedValues = List.foldl (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name )) context.deprecatedValues type_.constructors
                             , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
