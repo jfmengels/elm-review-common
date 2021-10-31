@@ -205,6 +205,10 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
                 [ module_.values
                     |> List.filter (.comment >> configuration.documentationPredicate)
                     |> List.map (\value -> ( moduleName, value.name ))
+                , module_.unions
+                    |> List.filter (.comment >> configuration.documentationPredicate)
+                    |> List.concatMap .tags
+                    |> List.map (\( name, _ ) -> ( moduleName, name ))
                 , acc.deprecatedValues
                 ]
         }
