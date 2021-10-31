@@ -500,7 +500,7 @@ reportType (Configuration configuration) context range name =
         Just moduleName ->
             if
                 configuration.typePredicate moduleName name
-                    || configuration.moduleNamePredicate moduleName
+                    || isModuleDeprecated context configuration.moduleNamePredicate moduleName
             then
                 Just (error range)
 
