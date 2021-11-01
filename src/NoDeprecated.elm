@@ -351,25 +351,29 @@ registerAliasDeclaration (Configuration configuration) type_ context =
         name =
             Node.value type_.name
     in
-    case type_.documentation of
-        Just (Node _ str) ->
-            if configuration.documentationPredicate str then
-                { context
-                    | deprecatedValues =
-                        case Node.value type_.typeAnnotation of
-                            TypeAnnotation.Record _ ->
-                                Set.insert ( [], name ) context.deprecatedValues
+    if configuration.typePredicate context.currentModuleName name then
+        register name context
 
-                            _ ->
-                                context.deprecatedValues
-                    , deprecatedTypes = Set.insert ( [], name ) context.deprecatedValues
-                }
+    else
+        case type_.documentation of
+            Just (Node _ str) ->
+                if configuration.documentationPredicate str then
+                    { context
+                        | deprecatedValues =
+                            case Node.value type_.typeAnnotation of
+                                TypeAnnotation.Record _ ->
+                                    Set.insert ( [], name ) context.deprecatedValues
 
-            else
+                                _ ->
+                                    context.deprecatedValues
+                        , deprecatedTypes = Set.insert ( [], name ) context.deprecatedValues
+                    }
+
+                else
+                    context
+
+            Nothing ->
                 context
-
-        Nothing ->
-            context
 
 
 register : String -> ModuleContext -> ModuleContext
