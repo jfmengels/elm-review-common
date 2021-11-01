@@ -168,6 +168,7 @@ type Configuration
         , elementPredicate : ModuleName -> String -> Bool
         , recordFieldPredicate : String -> Bool
         , parameterPredicate : String -> Bool
+        , deprecatedDependencies : List String
         }
 
 
@@ -188,12 +189,13 @@ checkInName =
         , elementPredicate = \_ name -> containsDeprecated name
         , recordFieldPredicate = containsDeprecated
         , parameterPredicate = containsDeprecated
+        , deprecatedDependencies = []
         }
 
 
 deprecateUsageOfPackages : List String -> Configuration -> Configuration
 deprecateUsageOfPackages dependencyNames (Configuration configuration) =
-    Configuration configuration
+    Configuration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
 
 
 dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ProjectContext
