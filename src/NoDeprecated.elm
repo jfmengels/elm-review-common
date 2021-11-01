@@ -72,7 +72,7 @@ import Set exposing (Set)
 rule : Configuration -> Rule
 rule configuration =
     Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
-        |> Rule.withDependenciesProjectVisitor (\dict ctx -> ( [], dependenciesVisitor configuration dict ctx ))
+        |> Rule.withDependenciesProjectVisitor (dependenciesVisitor configuration)
         |> Rule.withModuleVisitor (moduleVisitor configuration)
         |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModule configuration
@@ -198,26 +198,35 @@ deprecateUsageOfPackages dependencyNames (Configuration configuration) =
     Configuration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
 
 
-dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ProjectContext
+dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
 dependenciesVisitor (Configuration configuration) dict projectContext =
-    List.foldl
-        (\( packageName, dependency ) acc ->
-            let
-                modules : List Elm.Docs.Module
-                modules =
-                    Review.Project.Dependency.modules dependency
-            in
-            if List.member packageName configuration.deprecatedDependencies then
-                { acc | deprecatedModules = List.append (List.map (.name >> String.split ".") modules) acc.deprecatedModules }
+    let
+        dependencies : List ( String, Review.Project.Dependency.Dependency )
+        dependencies =
+            Dict.toList dict
 
-            else
-                List.foldl
-                    (registerDeprecatedThings (Configuration configuration))
-                    acc
-                    modules
-        )
-        projectContext
-        (Dict.toList dict)
+        newContext : ProjectContext
+        newContext =
+            List.foldl
+                (\( packageName, dependency ) acc ->
+                    let
+                        modules : List Elm.Docs.Module
+                        modules =
+                            Review.Project.Dependency.modules dependency
+                    in
+                    if List.member packageName configuration.deprecatedDependencies then
+                        { acc | deprecatedModules = List.append (List.map (.name >> String.split ".") modules) acc.deprecatedModules }
+
+                    else
+                        List.foldl
+                            (registerDeprecatedThings (Configuration configuration))
+                            acc
+                            modules
+                )
+                projectContext
+                dependencies
+    in
+    ( [], newContext )
 
 
 registerDeprecatedThings : Configuration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
