@@ -420,6 +420,7 @@ propertiesTests =
         [ test "should report an error when referencing a type whose name contains 'deprecated' (custom type declaration)" <|
             \() ->
                 """module A exposing (..)
+type alias Deprecated = String
 type A = Thing ( A, { b : Deprecated } )
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -429,10 +430,12 @@ type A = Thing ( A, { b : Deprecated } )
                             , details = [ "REPLACEME" ]
                             , under = "Deprecated"
                             }
+                            |> Review.Test.atExactly { start = { row = 3, column = 27 }, end = { row = 3, column = 37 } }
                         ]
         , test "should report an error when referencing a type whose name contains 'deprecated' (type alias declaration)" <|
             \() ->
                 """module A exposing (..)
+type alias Deprecated = String
 type alias A = Thing { b : Deprecated }
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -442,6 +445,7 @@ type alias A = Thing { b : Deprecated }
                             , details = [ "REPLACEME" ]
                             , under = "Deprecated"
                             }
+                            |> Review.Test.atExactly { start = { row = 3, column = 28 }, end = { row = 3, column = 38 } }
                         ]
         ]
 
@@ -452,6 +456,7 @@ portsTests =
         [ test "should report an error when referencing a type whose name contains 'deprecated' (Sub port)" <|
             \() ->
                 """module A exposing (..)
+type alias DeprecatedString = String
 port input : (DeprecatedString -> msg) -> Sub msg
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -461,10 +466,12 @@ port input : (DeprecatedString -> msg) -> Sub msg
                             , details = [ "REPLACEME" ]
                             , under = "DeprecatedString"
                             }
+                            |> Review.Test.atExactly { start = { row = 3, column = 15 }, end = { row = 3, column = 31 } }
                         ]
         , test "should report an error when referencing a type whose name contains 'deprecated' (Cmd port)" <|
             \() ->
                 """module A exposing (..)
+type alias DeprecatedString = String
 port output : DeprecatedString -> Cmd msg
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -474,6 +481,7 @@ port output : DeprecatedString -> Cmd msg
                             , details = [ "REPLACEME" ]
                             , under = "DeprecatedString"
                             }
+                            |> Review.Test.atExactly { start = { row = 3, column = 15 }, end = { row = 3, column = 31 } }
                         ]
         ]
 
