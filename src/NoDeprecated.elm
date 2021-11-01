@@ -264,16 +264,6 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
         }
 
 
-isRecordTypeAlias : Elm.Docs.Alias -> Bool
-isRecordTypeAlias alias =
-    case alias.tipe of
-        Elm.Type.Record _ Nothing ->
-            True
-
-        _ ->
-            False
-
-
 commentsVisitor : Configuration -> List (Node String) -> ModuleContext -> ModuleContext
 commentsVisitor (Configuration configuration) comments moduleContext =
     if moduleContext.isModuleDeprecated then
