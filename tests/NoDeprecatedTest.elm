@@ -264,6 +264,36 @@ type alias Something = { b : Int }
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
                         ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (custom type declaration)" <|
+            \() ->
+                """module A exposing (..)
+type alias Deprecated = String
+type A = Thing ( A, { b : Deprecated } )
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 27 }, end = { row = 3, column = 37 } }
+                        ]
+        , test "should report an error when referencing a type whose name contains 'deprecated' (type alias declaration)" <|
+            \() ->
+                """module A exposing (..)
+type alias Deprecated = String
+type alias A = Thing { b : Deprecated }
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "Deprecated"
+                            }
+                            |> Review.Test.atExactly { start = { row = 3, column = 28 }, end = { row = 3, column = 38 } }
+                        ]
         ]
 
 
@@ -419,35 +449,23 @@ a =
 propertiesTests : Test
 propertiesTests =
     describe "Properties"
-        [ test "should report an error when referencing a type whose name contains 'deprecated' (custom type declaration)" <|
+        [ test "should report an error when referencing a function from a module whose name contains 'deprecated' (record update)" <|
             \() ->
-                """module A exposing (..)
-type alias Deprecated = String
-type A = Thing ( A, { b : Deprecated } )
-"""
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
-                            , under = "Deprecated"
-                            }
-                            |> Review.Test.atExactly { start = { row = 3, column = 27 }, end = { row = 3, column = 37 } }
-                        ]
-        , test "should report an error when referencing a type whose name contains 'deprecated' (type alias declaration)" <|
-            \() ->
-                """module A exposing (..)
-type alias Deprecated = String
-type alias A = Thing { b : Deprecated }
-"""
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
-                    |> Review.Test.expectErrors
-                        [ Review.Test.error
-                            { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
-                            , under = "Deprecated"
-                            }
-                            |> Review.Test.atExactly { start = { row = 3, column = 28 }, end = { row = 3, column = 38 } }
+                [ """module A exposing (..)
+import Some.DeprecatedModule exposing (something)
+a = { something | b = 1 }
+""", moduleWithDeprecatedInItsName ]
+                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrorsForModules
+                        [ ( "A"
+                          , [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details = [ "REPLACEME" ]
+                                , under = "something"
+                                }
+                                |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
+                            ]
+                          )
                         ]
         ]
 
