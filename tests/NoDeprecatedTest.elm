@@ -682,7 +682,7 @@ a = 1
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
                                 , details = [ "REPLACEME" ]
-                                , under = "ModuleFromDependency_1.Alias"
+                                , under = "OtherModule.Alias"
                                 }
                             ]
                           )
