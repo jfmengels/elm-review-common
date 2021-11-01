@@ -666,9 +666,13 @@ expressionVisitor configuration (Node nodeRange node) context =
                 Nothing ->
                     []
 
-        Expression.RecordAccessFunction _ ->
-            -- TODO report deprecated fields
-            []
+        Expression.RecordAccessFunction fieldName ->
+            case reportField configuration (Node nodeRange fieldName) of
+                Just err ->
+                    [ err ]
+
+                Nothing ->
+                    []
 
         _ ->
             []

@@ -449,7 +449,7 @@ a =
 propertiesTests : Test
 propertiesTests =
     describe "Properties"
-        [ test "should report an error when referencing a function from a module whose name contains 'deprecated' (record update)" <|
+        [ test "should report an error when referencing a property whose name contains 'deprecated' (record access)" <|
             \() ->
                 """module A exposing (..)
 a = some.thingDeprecated
@@ -460,6 +460,19 @@ a = some.thingDeprecated
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
                             , under = "thingDeprecated"
+                            }
+                        ]
+        , test "should report an error when referencing a property whose name contains 'deprecated' (record access function)" <|
+            \() ->
+                """module A exposing (..)
+a = .thingDeprecated
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = ".thingDeprecated"
                             }
                         ]
         ]
