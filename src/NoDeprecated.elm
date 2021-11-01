@@ -678,8 +678,7 @@ reportValue (Configuration configuration) context rangeForLookupTable rangeForRe
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
             if
-                configuration.elementPredicate moduleName name
-                    || Set.member moduleName context.deprecatedModules
+                Set.member moduleName context.deprecatedModules
                     || Set.member ( moduleName, name ) context.deprecatedElements
             then
                 [ error (rangeForReport ()) ]
