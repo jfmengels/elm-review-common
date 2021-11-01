@@ -479,7 +479,7 @@ reportTypes context nodes acc =
                     let
                         newAcc : List (Rule.Error {})
                         newAcc =
-                            case reportElement context range name of
+                            case reportElementAsMaybe context range name of
                                 Just err ->
                                     err :: acc
 
@@ -568,7 +568,7 @@ reportPatterns configuration context nodes acc =
                     let
                         errors : List (Rule.Error {})
                         errors =
-                            reportValue
+                            reportElementAsList
                                 context
                                 (Node.range pattern)
                                 (\() -> rangeForNamedPattern pattern qualifiedNameRef)
@@ -628,7 +628,7 @@ expressionVisitor : Configuration -> Node Expression -> ModuleContext -> List (R
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
-            reportValue
+            reportElementAsList
                 context
                 nodeRange
                 (always nodeRange)
@@ -648,7 +648,7 @@ expressionVisitor configuration (Node nodeRange node) context =
 
         Expression.RecordUpdateExpression (Node range name) _ ->
             -- TODO report deprecated fields
-            reportValue
+            reportElementAsList
                 context
                 range
                 (always range)
@@ -670,8 +670,8 @@ expressionVisitor configuration (Node nodeRange node) context =
             []
 
 
-reportValue : ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {})
-reportValue context rangeForLookupTable rangeForReport name =
+reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {})
+reportElementAsList context rangeForLookupTable rangeForReport name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
             if
@@ -687,8 +687,8 @@ reportValue context rangeForLookupTable rangeForReport name =
             []
 
 
-reportElement : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
-reportElement context range name =
+reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
+reportElementAsMaybe context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
             if
