@@ -328,20 +328,14 @@ registerFunctionDeclaration (Configuration configuration) declaration context =
         name =
             declaration.declaration |> Node.value |> .name |> Node.value
     in
-    if configuration.elementPredicate context.currentModuleName name then
+    if
+        configuration.elementPredicate context.currentModuleName name
+            || checkDocumentation configuration.documentationPredicate declaration.documentation
+    then
         registerValue name context
 
     else
-        case declaration.documentation of
-            Just (Node _ str) ->
-                if configuration.documentationPredicate str then
-                    registerValue name context
-
-                else
-                    context
-
-            Nothing ->
-                context
+        context
 
 
 registerAliasDeclaration : Configuration -> Elm.Syntax.TypeAlias.TypeAlias -> ModuleContext -> ModuleContext
