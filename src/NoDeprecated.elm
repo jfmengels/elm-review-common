@@ -372,13 +372,8 @@ registerAliasDeclaration (Configuration configuration) type_ context =
     then
         register context
 
-    else if configuration.elementPredicate context.currentModuleName name then
-        case Node.value type_.typeAnnotation of
-            TypeAnnotation.Record _ ->
-                registerValue name context
-
-            _ ->
-                context
+    else if isRecordAlias && configuration.elementPredicate context.currentModuleName name then
+        registerValue name context
 
     else
         context
