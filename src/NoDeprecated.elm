@@ -569,7 +569,6 @@ reportPatterns configuration context nodes acc =
                         errors : List (Rule.Error {})
                         errors =
                             reportValue
-                                configuration
                                 context
                                 (Node.range pattern)
                                 (\() -> rangeForNamedPattern pattern qualifiedNameRef)
@@ -630,7 +629,6 @@ expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
             reportValue
-                configuration
                 context
                 nodeRange
                 (always nodeRange)
@@ -651,7 +649,6 @@ expressionVisitor configuration (Node nodeRange node) context =
         Expression.RecordUpdateExpression (Node range name) _ ->
             -- TODO report deprecated fields
             reportValue
-                configuration
                 context
                 range
                 (always range)
@@ -673,8 +670,8 @@ expressionVisitor configuration (Node nodeRange node) context =
             []
 
 
-reportValue : Configuration -> ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {})
-reportValue (Configuration configuration) context rangeForLookupTable rangeForReport name =
+reportValue : ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {})
+reportValue context rangeForLookupTable rangeForReport name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
             if
