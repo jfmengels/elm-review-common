@@ -351,16 +351,24 @@ registerAliasDeclaration (Configuration configuration) type_ context =
         name =
             Node.value type_.name
 
+        isRecordAlias : Bool
+        isRecordAlias =
+            case Node.value type_.typeAnnotation of
+                TypeAnnotation.Record _ ->
+                    True
+
+                _ ->
+                    False
+
         register : ModuleContext -> ModuleContext
         register ctx =
             { ctx
                 | deprecatedValues =
-                    case Node.value type_.typeAnnotation of
-                        TypeAnnotation.Record _ ->
-                            Set.insert ( [], name ) ctx.deprecatedValues
+                    if isRecordAlias then
+                        Set.insert ( [], name ) ctx.deprecatedValues
 
-                        _ ->
-                            ctx.deprecatedValues
+                    else
+                        ctx.deprecatedValues
                 , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues
             }
     in
