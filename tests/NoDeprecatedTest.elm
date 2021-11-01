@@ -920,6 +920,18 @@ dependencyModules =
             ]
       , binops = []
       }
+    , { name = "OkModule"
+      , comment = ""
+      , unions = []
+      , aliases = []
+      , values =
+            [ { name = "value"
+              , comment = ""
+              , tipe = Elm.Type.Tuple []
+              }
+            ]
+      , binops = []
+      }
     ]
 
 
