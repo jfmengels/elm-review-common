@@ -23,6 +23,7 @@ all =
         , portsTests
         , fromOtherModulesTests
         , dependencyElementsTests
+        , dependencyTests
         ]
 
 
@@ -808,6 +809,30 @@ a = ModuleFromDependency_2.RecordAlias
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
                             , under = "ModuleFromDependency_2.RecordAlias"
+                            }
+                        ]
+        ]
+
+
+dependencyTests : Test
+dependencyTests =
+    describe "Deprecating dependencies"
+        [ test "should report an error when referencing a value from a deprecated dependency module" <|
+            \() ->
+                """module A exposing (..)
+import OkModule
+a = OkModule.something
+"""
+                    |> Review.Test.runWithProjectData projectWithDeprecations
+                        (NoDeprecated.checkInName
+                            |> NoDeprecated.deprecateUsageOfPackages [ "author/package" ]
+                            |> rule
+                        )
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "OtherModule.something"
                             }
                         ]
         ]
