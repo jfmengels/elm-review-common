@@ -329,13 +329,13 @@ registerFunctionDeclaration (Configuration configuration) declaration context =
             declaration.declaration |> Node.value |> .name |> Node.value
     in
     if configuration.elementPredicate context.currentModuleName name then
-        register name context
+        registerValue name context
 
     else
         case declaration.documentation of
             Just (Node _ str) ->
                 if configuration.documentationPredicate str then
-                    register name context
+                    registerValue name context
 
                 else
                     context
@@ -350,24 +350,28 @@ registerAliasDeclaration (Configuration configuration) type_ context =
         name : String
         name =
             Node.value type_.name
+
+        register : ModuleContext -> ModuleContext
+        register ctx =
+            { ctx
+                | deprecatedValues =
+                    case Node.value type_.typeAnnotation of
+                        TypeAnnotation.Record _ ->
+                            Set.insert ( [], name ) ctx.deprecatedValues
+
+                        _ ->
+                            ctx.deprecatedValues
+                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues
+            }
     in
     if configuration.typePredicate context.currentModuleName name then
-        register name context
+        registerValue name context
 
     else
         case type_.documentation of
             Just (Node _ str) ->
                 if configuration.documentationPredicate str then
-                    { context
-                        | deprecatedValues =
-                            case Node.value type_.typeAnnotation of
-                                TypeAnnotation.Record _ ->
-                                    Set.insert ( [], name ) context.deprecatedValues
-
-                                _ ->
-                                    context.deprecatedValues
-                        , deprecatedTypes = Set.insert ( [], name ) context.deprecatedValues
-                    }
+                    register context
 
                 else
                     context
@@ -376,8 +380,8 @@ registerAliasDeclaration (Configuration configuration) type_ context =
                 context
 
 
-register : String -> ModuleContext -> ModuleContext
-register name context =
+registerValue : String -> ModuleContext -> ModuleContext
+registerValue name context =
     { context | deprecatedValues = Set.insert ( [], name ) context.deprecatedValues }
 
 
