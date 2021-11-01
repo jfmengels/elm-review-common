@@ -244,10 +244,11 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
                         |> List.filter (.comment >> configuration.documentationPredicate)
                         |> List.map (\value -> ( moduleName, value.name ))
                     , deprecatedUnions
+                        |> List.map (\{ name } -> ( moduleName, name ))
+                    , deprecatedUnions
                         |> List.concatMap .tags
                         |> List.map (\( name, _ ) -> ( moduleName, name ))
                     , deprecatedAliases
-                        |> List.filter isRecordTypeAlias
                         |> List.map (\{ name } -> ( moduleName, name ))
                     ]
         in
