@@ -201,10 +201,6 @@ deprecateUsageOfPackages dependencyNames (Configuration configuration) =
 dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
 dependenciesVisitor (Configuration configuration) dict projectContext =
     let
-        dependencies : List ( String, Review.Project.Dependency.Dependency )
-        dependencies =
-            Dict.toList dict
-
         newContext : ProjectContext
         newContext =
             List.foldl
@@ -224,7 +220,7 @@ dependenciesVisitor (Configuration configuration) dict projectContext =
                             modules
                 )
                 projectContext
-                dependencies
+                (Dict.toList dict)
 
         unknownDependenciesErrors : List (Rule.Error global)
         unknownDependenciesErrors =
