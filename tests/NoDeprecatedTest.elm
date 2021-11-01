@@ -399,6 +399,7 @@ caseExpressionTests =
         [ test "should report an error when referencing a type whose name contains 'deprecated' (case expression)" <|
             \() ->
                 """module A exposing (..)
+type A = ThingDeprecated Int | Thing
 a =
     case x of
         ThingDeprecated b -> 1
@@ -410,6 +411,7 @@ a =
                             , details = [ "REPLACEME" ]
                             , under = "ThingDeprecated"
                             }
+                            |> Review.Test.atExactly { start = { row = 5, column = 9 }, end = { row = 5, column = 24 } }
                         ]
         ]
 
