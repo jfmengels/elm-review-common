@@ -22,8 +22,6 @@ for instance) will give you the more precise problems and locations.
 REPLACEME You can configure this rule to only trigger for a specific module, function or element, and create multiple of these. TODO Mention performance
 REPLACEME TODO Would this require renaming the rule maybe?
 
-TODO Also report `.thingDeprecated` or `a.thingDeprecated`
-
 
 ## Fail
 
@@ -647,16 +645,11 @@ expressionVisitor configuration (Node nodeRange node) context =
                 []
 
         Expression.RecordUpdateExpression (Node range name) _ ->
-            -- TODO report deprecated fields
             reportElementAsList
                 context
                 range
                 (always range)
                 name
-
-        Expression.RecordExpr _ ->
-            -- TODO report deprecated fields
-            []
 
         Expression.RecordAccess _ field ->
             case reportField configuration field of
