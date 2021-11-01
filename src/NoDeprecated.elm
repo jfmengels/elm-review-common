@@ -341,13 +341,10 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
 
         register : ModuleContext -> ModuleContext
         register ctx =
-            { ctx
-                | deprecatedElements =
-                    List.foldl
-                        (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name ))
-                        (Set.insert ( [], name ) context.deprecatedElements)
-                        type_.constructors
-            }
+            List.foldl
+                (\(Node _ constructor) -> registerElement (Node.value constructor.name))
+                (registerElement name ctx)
+                type_.constructors
     in
     if
         configuration.elementPredicate context.currentModuleName name
@@ -380,7 +377,10 @@ checkDocumentation documentationPredicate documentationNode =
 
 registerElement : String -> ModuleContext -> ModuleContext
 registerElement name context =
-    { context | deprecatedElements = Set.insert ( [], name ) context.deprecatedElements }
+    { context
+        | deprecatedElements = Set.insert ( [], name ) context.deprecatedElements
+        , localDeprecatedElements = ( context.currentModuleName, name ) :: context.localDeprecatedElements
+    }
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
