@@ -233,7 +233,7 @@ dependenciesVisitor (Configuration configuration) dict projectContext =
                 |> List.map
                     (\name ->
                         Rule.globalError
-                            { message = "Could not find package `author/package`"
+                            { message = "Could not find package `" ++ name ++ "`"
                             , details =
                                 [ "You marked this package as deprecated, but I can't find it in your dependencies."
                                 , "It could be a typo, or maybe you've successfully removed it from your project?"
