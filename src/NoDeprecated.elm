@@ -103,6 +103,7 @@ type alias ModuleContext =
     , deprecatedModules : Set ModuleName
     , deprecatedElements : Set ( ModuleName, String )
     , isModuleDeprecated : Bool
+    , localDeprecatedElements : List ( ModuleName, String )
     }
 
 
@@ -120,6 +121,7 @@ fromProjectToModule (Configuration configuration) =
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
             , deprecatedElements = Set.fromList projectContext.deprecatedElements
             , isModuleDeprecated = configuration.moduleNamePredicate moduleName
+            , localDeprecatedElements = []
             }
         )
         |> Rule.withMetadata
