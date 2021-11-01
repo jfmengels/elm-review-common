@@ -57,7 +57,6 @@ import Elm.Syntax.Range as Range exposing (Range)
 import Elm.Syntax.Type
 import Elm.Syntax.TypeAlias
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
-import Elm.Type
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Project.Dependency
 import Review.Rule as Rule exposing (Rule)
@@ -105,7 +104,6 @@ type alias ModuleContext =
     , currentModuleName : ModuleName
     , deprecatedModules : Set ModuleName
     , deprecatedElements : Set ( ModuleName, String )
-    , deprecatedTypes : Set ( ModuleName, String )
     , isModuleDeprecated : Bool
     }
 
@@ -123,7 +121,6 @@ fromProjectToModule (Configuration configuration) =
             , currentModuleName = moduleName
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
             , deprecatedElements = Set.fromList projectContext.deprecatedElements
-            , deprecatedTypes = Set.fromList projectContext.deprecatedTypes
             , isModuleDeprecated = configuration.moduleNamePredicate moduleName
             }
         )
@@ -331,17 +328,12 @@ registerAliasDeclaration (Configuration configuration) type_ context =
 
                 _ ->
                     False
-
-        register : ModuleContext -> ModuleContext
-        register ctx =
-            { ctx | deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedTypes }
-                |> registerElement name
     in
     if
         configuration.elementPredicate context.currentModuleName name
             || checkDocumentation configuration.documentationPredicate type_.documentation
     then
-        register context
+        registerElement name context
 
     else if isRecordAlias then
         registerElement name context
@@ -365,7 +357,6 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
                         (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name ))
                         (Set.insert ( [], name ) context.deprecatedElements)
                         type_.constructors
-                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedTypes
             }
     in
     if
