@@ -88,14 +88,12 @@ initialProjectContext : ProjectContext
 initialProjectContext =
     { deprecatedModules = []
     , deprecatedElements = []
-    , deprecatedTypes = []
     }
 
 
 type alias ProjectContext =
     { deprecatedModules : List ModuleName
     , deprecatedElements : List ( ModuleName, String )
-    , deprecatedTypes : List ( ModuleName, String )
     }
 
 
@@ -139,7 +137,6 @@ fromModuleToProject =
                 else
                     []
             , deprecatedElements = []
-            , deprecatedTypes = []
             }
         )
         |> Rule.withMetadata
@@ -149,7 +146,6 @@ foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
     { deprecatedModules = List.append newContext.deprecatedModules previousContext.deprecatedModules
     , deprecatedElements = List.append newContext.deprecatedElements previousContext.deprecatedElements
-    , deprecatedTypes = List.append newContext.deprecatedTypes previousContext.deprecatedTypes
     }
 
 
@@ -219,7 +215,6 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
     if configuration.documentationPredicate module_.comment then
         { deprecatedModules = moduleName :: acc.deprecatedModules
         , deprecatedElements = acc.deprecatedElements
-        , deprecatedTypes = acc.deprecatedTypes
         }
 
     else
@@ -251,13 +246,6 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
         in
         { deprecatedModules = acc.deprecatedModules
         , deprecatedElements = List.append newValues acc.deprecatedElements
-        , deprecatedTypes =
-            List.append
-                (List.map (\{ name } -> ( moduleName, name )) deprecatedUnions)
-                (List.append
-                    (List.map (\{ name } -> ( moduleName, name )) deprecatedAliases)
-                    acc.deprecatedTypes
-                )
         }
 
 
