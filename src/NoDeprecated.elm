@@ -373,7 +373,7 @@ registerAliasDeclaration (Configuration configuration) type_ context =
             }
     in
     if configuration.typePredicate context.currentModuleName name then
-        registerValue name context
+        register context
 
     else
         case type_.documentation of
