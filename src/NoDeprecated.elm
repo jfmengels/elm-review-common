@@ -732,7 +732,7 @@ reportType (Configuration configuration) context range name =
             if
                 configuration.elementPredicate moduleName name
                     || Set.member moduleName context.deprecatedModules
-                    || Set.member ( moduleName, name ) context.deprecatedTypes
+                    || Set.member ( moduleName, name ) context.deprecatedElements
             then
                 Just (error range)
 
