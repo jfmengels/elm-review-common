@@ -208,9 +208,14 @@ dependenciesVisitor configuration dict projectContext =
                 |> List.concatMap Review.Project.Dependency.modules
     in
     List.foldl
-        (registerDeprecatedThings configuration "")
+        (\( packageName, dependency ) acc ->
+            List.foldl
+                (registerDeprecatedThings configuration packageName)
+                acc
+                (Review.Project.Dependency.modules dependency)
+        )
         projectContext
-        modules
+        (Dict.toList dict)
 
 
 registerDeprecatedThings : Configuration -> String -> Elm.Docs.Module -> ProjectContext -> ProjectContext
