@@ -54,6 +54,7 @@ import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Range)
+import Elm.Syntax.Type
 import Elm.Syntax.TypeAlias
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
@@ -295,6 +296,7 @@ declarationListVisitor configuration nodes context =
 
 registerDeclaration : Configuration -> Node Declaration -> ModuleContext -> ModuleContext
 registerDeclaration (Configuration configuration) node context =
+    -- TODO stop destructuring
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
             registerFunctionDeclaration (Configuration configuration) declaration context
@@ -303,19 +305,7 @@ registerDeclaration (Configuration configuration) node context =
             registerAliasDeclaration (Configuration configuration) type_ context
 
         Declaration.CustomTypeDeclaration type_ ->
-            case type_.documentation of
-                Just (Node _ str) ->
-                    if configuration.documentationPredicate str then
-                        { context
-                            | deprecatedValues = List.foldl (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name )) context.deprecatedValues type_.constructors
-                            , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
-                        }
-
-                    else
-                        context
-
-                Nothing ->
-                    context
+            registerCustomTypeDeclaration (Configuration configuration) type_ context
 
         _ ->
             context
@@ -377,6 +367,39 @@ registerAliasDeclaration (Configuration configuration) type_ context =
 
     else
         context
+
+
+registerCustomTypeDeclaration : Configuration -> Elm.Syntax.Type.Type -> ModuleContext -> ModuleContext
+registerCustomTypeDeclaration (Configuration configuration) type_ context =
+    let
+        name : String
+        name =
+            Node.value type_.name
+
+        register : ModuleContext -> ModuleContext
+        register ctx =
+            { ctx
+                | deprecatedValues = List.foldl (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name )) context.deprecatedValues type_.constructors
+                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues
+            }
+    in
+    if
+        configuration.typePredicate context.currentModuleName name
+            || checkDocumentation configuration.documentationPredicate type_.documentation
+    then
+        register context
+
+    else
+        List.foldl
+            (\(Node _ constructor) ctx ->
+                if configuration.elementPredicate ctx.currentModuleName (Node.value constructor.name) then
+                    registerValue (Node.value constructor.name) ctx
+
+                else
+                    ctx
+            )
+            context
+            type_.constructors
 
 
 checkDocumentation : (String -> Bool) -> Maybe (Node String) -> Bool
