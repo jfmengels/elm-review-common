@@ -451,21 +451,16 @@ propertiesTests =
     describe "Properties"
         [ test "should report an error when referencing a function from a module whose name contains 'deprecated' (record update)" <|
             \() ->
-                [ """module A exposing (..)
-import Some.DeprecatedModule exposing (something)
-a = { something | b = 1 }
-""", moduleWithDeprecatedInItsName ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
-                    |> Review.Test.expectErrorsForModules
-                        [ ( "A"
-                          , [ Review.Test.error
-                                { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
-                                , under = "something"
-                                }
-                                |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
-                            ]
-                          )
+                """module A exposing (..)
+a = some.thingDeprecated
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Found new usage of deprecated element"
+                            , details = [ "REPLACEME" ]
+                            , under = "some.thingDeprecated"
+                            }
                         ]
         ]
 
