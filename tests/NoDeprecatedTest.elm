@@ -835,6 +835,25 @@ a = OkModule.something
                             , under = "OkModule.something"
                             }
                         ]
+        , test "should report a global error when deprecating a package not in the dependencies" <|
+            \() ->
+                """module A exposing (..)
+import OkModule
+a = OkModule.something
+"""
+                    |> Review.Test.run
+                        (NoDeprecated.checkInName
+                            |> NoDeprecated.deprecateUsageOfPackages [ "author/package" ]
+                            |> rule
+                        )
+                    |> Review.Test.expectGlobalErrors
+                        [ { message = "Could not find package `author/package`"
+                          , details =
+                                [ "You marked this package as deprecated, but I can't find it in your dependencies."
+                                , "It could be a typo, or maybe you've successfully removed it from your project?"
+                                ]
+                          }
+                        ]
         ]
 
 
