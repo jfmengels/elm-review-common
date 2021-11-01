@@ -372,20 +372,32 @@ registerAliasDeclaration (Configuration configuration) type_ context =
                 , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues
             }
     in
-    if configuration.typePredicate context.currentModuleName name then
+    if
+        configuration.typePredicate context.currentModuleName name
+            || checkDocumentation configuration.documentationPredicate type_.documentation
+    then
         register context
 
-    else
-        case type_.documentation of
-            Just (Node _ str) ->
-                if configuration.documentationPredicate str then
-                    register context
+    else if configuration.elementPredicate context.currentModuleName name then
+        case Node.value type_.typeAnnotation of
+            TypeAnnotation.Record _ ->
+                registerValue name context
 
-                else
-                    context
-
-            Nothing ->
+            _ ->
                 context
+
+    else
+        context
+
+
+checkDocumentation : (String -> Bool) -> Maybe (Node String) -> Bool
+checkDocumentation documentationPredicate documentationNode =
+    case documentationNode of
+        Just (Node _ str) ->
+            documentationPredicate str
+
+        Nothing ->
+            False
 
 
 registerValue : String -> ModuleContext -> ModuleContext
