@@ -687,15 +687,6 @@ reportValue context rangeForLookupTable rangeForReport name =
             []
 
 
-reportParameter : Configuration -> Range -> String -> Maybe (Rule.Error {})
-reportParameter (Configuration configuration) range name =
-    if configuration.parameterPredicate name then
-        Just (error range)
-
-    else
-        Nothing
-
-
 reportElement : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
 reportElement context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
@@ -711,6 +702,15 @@ reportElement context range name =
 
         Nothing ->
             Nothing
+
+
+reportParameter : Configuration -> Range -> String -> Maybe (Rule.Error {})
+reportParameter (Configuration configuration) range name =
+    if configuration.parameterPredicate name then
+        Just (error range)
+
+    else
+        Nothing
 
 
 error : Range -> Rule.Error {}
