@@ -310,7 +310,7 @@ registerFunctionDeclaration (Configuration configuration) declaration context =
         configuration.elementPredicate context.currentModuleName name
             || checkDocumentation configuration.documentationPredicate declaration.documentation
     then
-        registerValue name context
+        registerElement name context
 
     else
         context
@@ -335,7 +335,7 @@ registerAliasDeclaration (Configuration configuration) type_ context =
         register : ModuleContext -> ModuleContext
         register ctx =
             { ctx | deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedElements }
-                |> registerValue name
+                |> registerElement name
     in
     if
         configuration.elementPredicate context.currentModuleName name
@@ -344,7 +344,7 @@ registerAliasDeclaration (Configuration configuration) type_ context =
         register context
 
     else if isRecordAlias then
-        registerValue name context
+        registerElement name context
 
     else
         context
@@ -374,7 +374,7 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
         List.foldl
             (\(Node _ constructor) ctx ->
                 if configuration.elementPredicate ctx.currentModuleName (Node.value constructor.name) then
-                    registerValue (Node.value constructor.name) ctx
+                    registerElement (Node.value constructor.name) ctx
 
                 else
                     ctx
@@ -393,8 +393,8 @@ checkDocumentation documentationPredicate documentationNode =
             False
 
 
-registerValue : String -> ModuleContext -> ModuleContext
-registerValue name context =
+registerElement : String -> ModuleContext -> ModuleContext
+registerElement name context =
     { context | deprecatedElements = Set.insert ( [], name ) context.deprecatedElements }
 
 
