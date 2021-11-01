@@ -172,7 +172,6 @@ type Configuration
         { moduleNamePredicate : ModuleName -> Bool
         , documentationPredicate : String -> Bool
         , elementPredicate : ModuleName -> String -> Bool
-        , typePredicate : ModuleName -> String -> Bool
         , recordFieldPredicate : String -> Bool
         , parameterPredicate : String -> Bool
         }
@@ -193,7 +192,6 @@ checkInName =
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
         , documentationPredicate = containsDeprecated
         , elementPredicate = \_ name -> containsDeprecated name
-        , typePredicate = \_ name -> containsDeprecated name
         , recordFieldPredicate = containsDeprecated
         , parameterPredicate = containsDeprecated
         }
@@ -346,23 +344,16 @@ registerAliasDeclaration (Configuration configuration) type_ context =
 
         register : ModuleContext -> ModuleContext
         register ctx =
-            { ctx
-                | deprecatedValues =
-                    if isRecordAlias then
-                        Set.insert ( [], name ) ctx.deprecatedValues
-
-                    else
-                        ctx.deprecatedValues
-                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues
-            }
+            { ctx | deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues }
+                |> registerValue name
     in
     if
-        configuration.typePredicate context.currentModuleName name
+        configuration.elementPredicate context.currentModuleName name
             || checkDocumentation configuration.documentationPredicate type_.documentation
     then
         register context
 
-    else if isRecordAlias && configuration.elementPredicate context.currentModuleName name then
+    else if isRecordAlias then
         registerValue name context
 
     else
@@ -384,7 +375,7 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
             }
     in
     if
-        configuration.typePredicate context.currentModuleName name
+        configuration.elementPredicate context.currentModuleName name
             || checkDocumentation configuration.documentationPredicate type_.documentation
     then
         register context
@@ -745,7 +736,7 @@ reportType (Configuration configuration) context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
             if
-                configuration.typePredicate moduleName name
+                configuration.elementPredicate moduleName name
                     || Set.member moduleName context.deprecatedModules
                     || Set.member ( moduleName, name ) context.deprecatedTypes
             then
