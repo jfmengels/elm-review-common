@@ -479,7 +479,7 @@ reportTypes context nodes acc =
                     let
                         newAcc : List (Rule.Error {})
                         newAcc =
-                            case reportType context range name of
+                            case reportElement context range name of
                                 Just err ->
                                     err :: acc
 
@@ -700,8 +700,8 @@ reportParameter (Configuration configuration) range name =
         Nothing
 
 
-reportType : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
-reportType context range name =
+reportElement : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
+reportElement context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
             if
