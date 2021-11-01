@@ -54,6 +54,7 @@ import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Range)
+import Elm.Syntax.TypeAlias
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Elm.Type
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
@@ -299,25 +300,7 @@ registerDeclaration (Configuration configuration) node context =
             registerFunctionDeclaration (Configuration configuration) declaration context
 
         Declaration.AliasDeclaration type_ ->
-            case type_.documentation of
-                Just (Node _ str) ->
-                    if configuration.documentationPredicate str then
-                        { context
-                            | deprecatedValues =
-                                case Node.value type_.typeAnnotation of
-                                    TypeAnnotation.Record _ ->
-                                        Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
-
-                                    _ ->
-                                        context.deprecatedValues
-                            , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
-                        }
-
-                    else
-                        context
-
-                Nothing ->
-                    context
+            registerAliasDeclaration (Configuration configuration) type_ context
 
         Declaration.CustomTypeDeclaration type_ ->
             case type_.documentation of
@@ -359,6 +342,29 @@ registerFunctionDeclaration (Configuration configuration) declaration context =
 
             Nothing ->
                 context
+
+
+registerAliasDeclaration : Configuration -> Elm.Syntax.TypeAlias.TypeAlias -> ModuleContext -> ModuleContext
+registerAliasDeclaration (Configuration configuration) type_ context =
+    case type_.documentation of
+        Just (Node _ str) ->
+            if configuration.documentationPredicate str then
+                { context
+                    | deprecatedValues =
+                        case Node.value type_.typeAnnotation of
+                            TypeAnnotation.Record _ ->
+                                Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+
+                            _ ->
+                                context.deprecatedValues
+                    , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+                }
+
+            else
+                context
+
+        Nothing ->
+            context
 
 
 register : String -> ModuleContext -> ModuleContext
