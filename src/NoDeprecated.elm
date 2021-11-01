@@ -1,6 +1,7 @@
 module NoDeprecated exposing
     ( rule
     , Configuration, checkInName
+    , deprecateUsageOfPackages
     )
 
 {-|
@@ -188,6 +189,11 @@ checkInName =
         , recordFieldPredicate = containsDeprecated
         , parameterPredicate = containsDeprecated
         }
+
+
+deprecateUsageOfPackages : List String -> Configuration -> Configuration
+deprecateUsageOfPackages dependencyNames (Configuration configuration) =
+    Configuration configuration
 
 
 dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ProjectContext
