@@ -360,7 +360,11 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
         register : ModuleContext -> ModuleContext
         register ctx =
             { ctx
-                | deprecatedElements = List.foldl (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name )) context.deprecatedElements type_.constructors
+                | deprecatedElements =
+                    List.foldl
+                        (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name ))
+                        context.deprecatedElements
+                        type_.constructors
                 , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedElements
             }
     in
