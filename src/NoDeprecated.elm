@@ -138,7 +138,7 @@ fromModuleToProject =
 
                 else
                     []
-            , deprecatedElements = []
+            , deprecatedElements = moduleContext.localDeprecatedElements
             }
         )
         |> Rule.withMetadata
