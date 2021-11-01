@@ -346,6 +346,11 @@ registerFunctionDeclaration (Configuration configuration) declaration context =
 
 registerAliasDeclaration : Configuration -> Elm.Syntax.TypeAlias.TypeAlias -> ModuleContext -> ModuleContext
 registerAliasDeclaration (Configuration configuration) type_ context =
+    let
+        name : String
+        name =
+            Node.value type_.name
+    in
     case type_.documentation of
         Just (Node _ str) ->
             if configuration.documentationPredicate str then
@@ -353,11 +358,11 @@ registerAliasDeclaration (Configuration configuration) type_ context =
                     | deprecatedValues =
                         case Node.value type_.typeAnnotation of
                             TypeAnnotation.Record _ ->
-                                Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+                                Set.insert ( [], name ) context.deprecatedValues
 
                             _ ->
                                 context.deprecatedValues
-                    , deprecatedTypes = Set.insert ( [], type_.name |> Node.value ) context.deprecatedValues
+                    , deprecatedTypes = Set.insert ( [], name ) context.deprecatedValues
                 }
 
             else
