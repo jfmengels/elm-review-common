@@ -284,17 +284,16 @@ declarationListVisitor configuration nodes context =
 
 
 registerDeclaration : Configuration -> Node Declaration -> ModuleContext -> ModuleContext
-registerDeclaration (Configuration configuration) node context =
-    -- TODO stop destructuring
+registerDeclaration configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
-            registerFunctionDeclaration (Configuration configuration) declaration context
+            registerFunctionDeclaration configuration declaration context
 
         Declaration.AliasDeclaration type_ ->
-            registerAliasDeclaration (Configuration configuration) type_ context
+            registerAliasDeclaration configuration type_ context
 
         Declaration.CustomTypeDeclaration type_ ->
-            registerCustomTypeDeclaration (Configuration configuration) type_ context
+            registerCustomTypeDeclaration configuration type_ context
 
         _ ->
             context
