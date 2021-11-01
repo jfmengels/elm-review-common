@@ -22,7 +22,7 @@ all =
         , propertiesTests
         , portsTests
         , fromOtherModulesTests
-        , dependencyTests
+        , dependencyElementsTests
         ]
 
 
@@ -677,9 +677,9 @@ a = OtherModule.RecordAlias
         ]
 
 
-dependencyTests : Test
-dependencyTests =
-    describe "Dependencies"
+dependencyElementsTests : Test
+dependencyElementsTests =
+    describe "Elements from dependencies"
         [ test "should report an error when referencing a value from a deprecated dependency module" <|
             \() ->
                 """module A exposing (..)
