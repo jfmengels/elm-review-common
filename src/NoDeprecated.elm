@@ -104,7 +104,7 @@ type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , currentModuleName : ModuleName
     , deprecatedModules : Set ModuleName
-    , deprecatedValues : Set ( ModuleName, String )
+    , deprecatedElements : Set ( ModuleName, String )
     , deprecatedTypes : Set ( ModuleName, String )
     , isModuleDeprecated : Bool
     }
@@ -122,7 +122,7 @@ fromProjectToModule (Configuration configuration) =
             { lookupTable = lookupTable
             , currentModuleName = moduleName
             , deprecatedModules = Set.fromList projectContext.deprecatedModules
-            , deprecatedValues = Set.fromList projectContext.deprecatedValues
+            , deprecatedElements = Set.fromList projectContext.deprecatedValues
             , deprecatedTypes = Set.fromList projectContext.deprecatedTypes
             , isModuleDeprecated = configuration.moduleNamePredicate moduleName
             }
@@ -344,7 +344,7 @@ registerAliasDeclaration (Configuration configuration) type_ context =
 
         register : ModuleContext -> ModuleContext
         register ctx =
-            { ctx | deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues }
+            { ctx | deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedElements }
                 |> registerValue name
     in
     if
@@ -370,8 +370,8 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
         register : ModuleContext -> ModuleContext
         register ctx =
             { ctx
-                | deprecatedValues = List.foldl (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name )) context.deprecatedValues type_.constructors
-                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedValues
+                | deprecatedElements = List.foldl (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name )) context.deprecatedElements type_.constructors
+                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedElements
             }
     in
     if
@@ -405,7 +405,7 @@ checkDocumentation documentationPredicate documentationNode =
 
 registerValue : String -> ModuleContext -> ModuleContext
 registerValue name context =
-    { context | deprecatedValues = Set.insert ( [], name ) context.deprecatedValues }
+    { context | deprecatedElements = Set.insert ( [], name ) context.deprecatedElements }
 
 
 declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
@@ -711,7 +711,7 @@ reportValue (Configuration configuration) context rangeForLookupTable rangeForRe
             if
                 configuration.elementPredicate moduleName name
                     || Set.member moduleName context.deprecatedModules
-                    || Set.member ( moduleName, name ) context.deprecatedValues
+                    || Set.member ( moduleName, name ) context.deprecatedElements
             then
                 [ error (rangeForReport ()) ]
 
