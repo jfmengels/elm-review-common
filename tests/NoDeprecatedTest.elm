@@ -459,7 +459,7 @@ a = some.thingDeprecated
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-                            , under = "some.thingDeprecated"
+                            , under = "thingDeprecated"
                             }
                         ]
         ]
