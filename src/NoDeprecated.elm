@@ -334,7 +334,7 @@ registerAliasDeclaration (Configuration configuration) type_ context =
 
         register : ModuleContext -> ModuleContext
         register ctx =
-            { ctx | deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedElements }
+            { ctx | deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedTypes }
                 |> registerElement name
     in
     if
