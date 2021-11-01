@@ -199,27 +199,29 @@ deprecateUsageOfPackages dependencyNames (Configuration configuration) =
 
 
 dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ProjectContext
-dependenciesVisitor configuration dict projectContext =
-    let
-        modules : List Elm.Docs.Module
-        modules =
-            dict
-                |> Dict.values
-                |> List.concatMap Review.Project.Dependency.modules
-    in
+dependenciesVisitor (Configuration configuration) dict projectContext =
     List.foldl
         (\( packageName, dependency ) acc ->
-            List.foldl
-                (registerDeprecatedThings configuration packageName)
-                acc
-                (Review.Project.Dependency.modules dependency)
+            let
+                modules : List Elm.Docs.Module
+                modules =
+                    Review.Project.Dependency.modules dependency
+            in
+            if List.member packageName configuration.deprecatedDependencies then
+                { acc | deprecatedModules = List.append (List.map (.name >> String.split ".") modules) acc.deprecatedModules }
+
+            else
+                List.foldl
+                    (registerDeprecatedThings (Configuration configuration))
+                    acc
+                    modules
         )
         projectContext
         (Dict.toList dict)
 
 
-registerDeprecatedThings : Configuration -> String -> Elm.Docs.Module -> ProjectContext -> ProjectContext
-registerDeprecatedThings (Configuration configuration) packageName module_ acc =
+registerDeprecatedThings : Configuration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
+registerDeprecatedThings (Configuration configuration) module_ acc =
     let
         moduleName : ModuleName
         moduleName =

@@ -832,7 +832,7 @@ a = OkModule.something
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
                             , details = [ "REPLACEME" ]
-                            , under = "OtherModule.something"
+                            , under = "OkModule.something"
                             }
                         ]
         ]
