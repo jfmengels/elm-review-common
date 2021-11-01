@@ -365,7 +365,7 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
                         (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name ))
                         (Set.insert ( [], name ) context.deprecatedElements)
                         type_.constructors
-                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedElements
+                , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedTypes
             }
     in
     if
