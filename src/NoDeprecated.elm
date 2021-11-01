@@ -363,7 +363,7 @@ registerCustomTypeDeclaration (Configuration configuration) type_ context =
                 | deprecatedElements =
                     List.foldl
                         (\(Node _ constructor) -> Set.insert ( [], Node.value constructor.name ))
-                        context.deprecatedElements
+                        (Set.insert ( [], name ) context.deprecatedElements)
                         type_.constructors
                 , deprecatedTypes = Set.insert ( [], name ) ctx.deprecatedElements
             }
