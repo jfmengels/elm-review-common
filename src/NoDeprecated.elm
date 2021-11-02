@@ -342,23 +342,11 @@ registerAliasDeclaration (Configuration configuration) type_ context =
         name : String
         name =
             Node.value type_.name
-
-        isRecordAlias : Bool
-        isRecordAlias =
-            case Node.value type_.typeAnnotation of
-                TypeAnnotation.Record _ ->
-                    True
-
-                _ ->
-                    False
     in
     if
         configuration.elementPredicate context.currentModuleName name
             || checkDocumentation configuration.documentationPredicate type_.documentation
     then
-        registerElement name context
-
-    else if isRecordAlias then
         registerElement name context
 
     else
