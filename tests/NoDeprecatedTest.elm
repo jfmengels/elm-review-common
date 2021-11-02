@@ -168,6 +168,15 @@ a = Deprecated
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
                         ]
+        , test "should not report an error when referencing a non-deprecated type alias or type alias constructor" <|
+            \() ->
+                """module A exposing (..)
+type alias TypeAlias = {}
+a : TypeAlias
+a = TypeAlias
+"""
+                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.expectNoErrors
         , test "should report an error when referencing a type whose name contains 'deprecated' (top-level declaration annotation)" <|
             \() ->
                 """module A exposing (..)
