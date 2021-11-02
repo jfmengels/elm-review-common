@@ -300,7 +300,11 @@ commentsVisitor (Configuration configuration) comments moduleContext =
 
 declarationListVisitor : Configuration -> List (Node Declaration) -> ModuleContext -> ModuleContext
 declarationListVisitor configuration nodes context =
-    List.foldl (registerDeclaration configuration) context nodes
+    if context.isModuleDeprecated then
+        context
+
+    else
+        List.foldl (registerDeclaration configuration) context nodes
 
 
 registerDeclaration : Configuration -> Node Declaration -> ModuleContext -> ModuleContext
