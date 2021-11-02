@@ -1,7 +1,7 @@
 module NoDeprecated exposing
     ( rule
     , Configuration, checkInName
-    , deprecateUsageOfPackages
+    , dependencies
     )
 
 {-|
@@ -193,8 +193,8 @@ checkInName =
         }
 
 
-deprecateUsageOfPackages : List String -> Configuration -> Configuration
-deprecateUsageOfPackages dependencyNames (Configuration configuration) =
+dependencies : List String -> Configuration -> Configuration
+dependencies dependencyNames (Configuration configuration) =
     Configuration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
 
 

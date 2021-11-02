@@ -834,7 +834,7 @@ a = OkModule.something
 """
                     |> Review.Test.runWithProjectData projectWithDeprecations
                         (NoDeprecated.checkInName
-                            |> NoDeprecated.deprecateUsageOfPackages [ "author/package" ]
+                            |> NoDeprecated.dependencies [ "author/package" ]
                             |> rule
                         )
                     |> Review.Test.expectErrors
@@ -852,7 +852,7 @@ a = OkModule.something
 """
                     |> Review.Test.run
                         (NoDeprecated.checkInName
-                            |> NoDeprecated.deprecateUsageOfPackages [ "author/package" ]
+                            |> NoDeprecated.dependencies [ "author/package" ]
                             |> rule
                         )
                     |> Review.Test.expectGlobalErrors
