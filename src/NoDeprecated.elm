@@ -1,6 +1,6 @@
 module NoDeprecated exposing
     ( rule
-    , StableConfiguration, checkInName, withExceptionsForElements, dependencies
+    , Configuration, checkInName, withExceptionsForElements, dependencies
     )
 
 {-|
@@ -68,13 +68,14 @@ import Set exposing (Set)
         ]
 
 -}
-rule : StableConfiguration -> Rule
-rule configuration =
+rule : Configuration -> Rule
+rule (Configuration configuration) =
+    let stableConfiguration = StableConfiguration configuration in
     Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
-        |> Rule.withDependenciesProjectVisitor (dependenciesVisitor configuration)
-        |> Rule.withModuleVisitor (moduleVisitor configuration)
+        |> Rule.withDependenciesProjectVisitor (dependenciesVisitor stableConfiguration)
+        |> Rule.withModuleVisitor (moduleVisitor stableConfiguration)
         |> Rule.withModuleContextUsingContextCreator
-            { fromProjectToModule = fromProjectToModule configuration
+            { fromProjectToModule = fromProjectToModule stableConfiguration
             , fromModuleToProject = fromModuleToProject
             , foldProjectContexts = foldProjectContexts
             }
@@ -157,6 +158,17 @@ moduleVisitor configuration schema =
         |> Rule.withDeclarationEnterVisitor (\node context -> ( declarationVisitor configuration node context, context ))
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
 
+{-| REPLACEME
+-}
+type Configuration
+    = Configuration
+        { moduleNamePredicate : ModuleName -> Bool
+        , documentationPredicate : String -> Bool
+        , elementPredicate : ModuleName -> String -> Bool
+        , recordFieldPredicate : String -> Bool
+        , parameterPredicate : String -> Bool
+        , deprecatedDependencies : List String
+        }
 
 {-| REPLACEME
 -}
@@ -173,7 +185,7 @@ type StableConfiguration
 
 {-| REPLACEME
 -}
-checkInName : StableConfiguration
+checkInName : Configuration
 checkInName =
     let
         containsDeprecated : String -> Bool
@@ -188,7 +200,7 @@ checkInName =
                 |> String.lines
                 |> List.any (String.startsWith "@deprecated")
     in
-    StableConfiguration
+    Configuration
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
         , documentationPredicate = documentationPredicate
         , elementPredicate = \_ name -> containsDeprecated name
@@ -198,14 +210,14 @@ checkInName =
         }
 
 
-withExceptionsForElements : List ( ModuleName, String ) -> StableConfiguration -> StableConfiguration
-withExceptionsForElements elements (StableConfiguration configuration) =
-    StableConfiguration configuration
+withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
+withExceptionsForElements elements (Configuration configuration) =
+    Configuration configuration
 
 
-dependencies : List String -> StableConfiguration -> StableConfiguration
-dependencies dependencyNames (StableConfiguration configuration) =
-    StableConfiguration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
+dependencies : List String -> Configuration -> Configuration
+dependencies dependencyNames (Configuration configuration) =
+    Configuration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
 
 
 dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
