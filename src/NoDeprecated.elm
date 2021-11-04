@@ -1,7 +1,6 @@
 module NoDeprecated exposing
     ( rule
-    , Configuration, checkInName
-    , dependencies
+    , Configuration, checkInName, withExceptionsForElements, dependencies
     )
 
 {-|
@@ -18,7 +17,7 @@ An additional benefit is that the suppressed errors will make it easy to have an
 deprecated elements are used and where they are located. Looking at the error reports (using `elm-review --unsuppress`
 for instance) will give you the more precise problems and locations.
 
-@docs Configuration, checkInName
+@docs Configuration, checkInName, withExceptionsForElements, dependencies
 
 REPLACEME You can configure this rule to only trigger for a specific module, function or element, and create multiple of these. TODO Mention performance
 REPLACEME TODO Would this require renaming the rule maybe?
@@ -197,6 +196,11 @@ checkInName =
         , parameterPredicate = containsDeprecated
         , deprecatedDependencies = []
         }
+
+
+withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
+withExceptionsForElements elements (Configuration configuration) =
+    Configuration configuration
 
 
 dependencies : List String -> Configuration -> Configuration
