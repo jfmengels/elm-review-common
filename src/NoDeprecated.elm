@@ -69,8 +69,12 @@ import Set exposing (Set)
 
 -}
 rule : Configuration -> Rule
-rule (Configuration configuration) =
-    let stableConfiguration = StableConfiguration configuration in
+rule configuration =
+    let
+        stableConfiguration : StableConfiguration
+        stableConfiguration =
+            userConfigurationToStableConfiguration configuration
+    in
     Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
         |> Rule.withDependenciesProjectVisitor (dependenciesVisitor stableConfiguration)
         |> Rule.withModuleVisitor (moduleVisitor stableConfiguration)
@@ -158,6 +162,7 @@ moduleVisitor configuration schema =
         |> Rule.withDeclarationEnterVisitor (\node context -> ( declarationVisitor configuration node context, context ))
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
 
+
 {-| REPLACEME
 -}
 type Configuration
@@ -165,10 +170,12 @@ type Configuration
         { moduleNamePredicate : ModuleName -> Bool
         , documentationPredicate : String -> Bool
         , elementPredicate : ModuleName -> String -> Bool
+        , exceptionsForElements : List ( ModuleName, String )
         , recordFieldPredicate : String -> Bool
         , parameterPredicate : String -> Bool
         , deprecatedDependencies : List String
         }
+
 
 {-| REPLACEME
 -}
@@ -177,9 +184,23 @@ type StableConfiguration
         { moduleNamePredicate : ModuleName -> Bool
         , documentationPredicate : String -> Bool
         , elementPredicate : ModuleName -> String -> Bool
+        , exceptionsForElements : Set ( ModuleName, String )
         , recordFieldPredicate : String -> Bool
         , parameterPredicate : String -> Bool
         , deprecatedDependencies : List String
+        }
+
+
+userConfigurationToStableConfiguration : Configuration -> StableConfiguration
+userConfigurationToStableConfiguration (Configuration configuration) =
+    StableConfiguration
+        { moduleNamePredicate = configuration.moduleNamePredicate
+        , documentationPredicate = configuration.documentationPredicate
+        , elementPredicate = configuration.elementPredicate
+        , exceptionsForElements = Set.fromList configuration.exceptionsForElements
+        , recordFieldPredicate = configuration.recordFieldPredicate
+        , parameterPredicate = configuration.parameterPredicate
+        , deprecatedDependencies = configuration.deprecatedDependencies
         }
 
 
@@ -204,6 +225,7 @@ checkInName =
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
         , documentationPredicate = documentationPredicate
         , elementPredicate = \_ name -> containsDeprecated name
+        , exceptionsForElements = []
         , recordFieldPredicate = containsDeprecated
         , parameterPredicate = containsDeprecated
         , deprecatedDependencies = []
@@ -211,8 +233,8 @@ checkInName =
 
 
 withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
-withExceptionsForElements elements (Configuration configuration) =
-    Configuration configuration
+withExceptionsForElements exceptionsForElements (Configuration configuration) =
+    Configuration { configuration | exceptionsForElements = List.append exceptionsForElements configuration.exceptionsForElements }
 
 
 dependencies : List String -> Configuration -> Configuration
