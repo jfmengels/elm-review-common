@@ -128,6 +128,32 @@ a = { something | b = 1 }
                             ]
                           )
                         ]
+        , test "should not report an error when referencing a function whose name contains deprecated but is marked as an exception (local reference)" <|
+            \() ->
+                """module A exposing (..)
+type Status = Deprecated | NotDeprecated
+a = [ Deprecated, NotDeprecated ]
+"""
+                    |> Review.Test.run
+                        (NoDeprecated.checkInName
+                            |> NoDeprecated.withExceptionsForElements [ ( [ "A" ], "Deprecated" ), ( [ "A" ], "NotDeprecated" ) ]
+                            |> rule
+                        )
+                    |> Review.Test.expectNoErrors
+        , test "should not report an error when referencing a function whose name contains deprecated but is marked as an exception (other module reference)" <|
+            \() ->
+                [ """module A exposing (..)
+import Status
+a = [ Status.Deprecated, Status.NotDeprecated ]
+""", """module Status exposing (Status)
+type Status = Deprecated | NotDeprecated
+""" ]
+                    |> Review.Test.runOnModules
+                        (NoDeprecated.checkInName
+                            |> NoDeprecated.withExceptionsForElements [ ( [ "Status" ], "Deprecated" ), ( [ "Status" ], "NotDeprecated" ) ]
+                            |> rule
+                        )
+                    |> Review.Test.expectNoErrors
         ]
 
 
