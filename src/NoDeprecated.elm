@@ -1,6 +1,6 @@
 module NoDeprecated exposing
     ( rule
-    , Configuration, checkInName, withExceptionsForElements, dependencies
+    , StableConfiguration, checkInName, withExceptionsForElements, dependencies
     )
 
 {-|
@@ -68,7 +68,7 @@ import Set exposing (Set)
         ]
 
 -}
-rule : Configuration -> Rule
+rule : StableConfiguration -> Rule
 rule configuration =
     Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
         |> Rule.withDependenciesProjectVisitor (dependenciesVisitor configuration)
@@ -105,8 +105,8 @@ type alias ModuleContext =
     }
 
 
-fromProjectToModule : Configuration -> Rule.ContextCreator ProjectContext ModuleContext
-fromProjectToModule (Configuration configuration) =
+fromProjectToModule : StableConfiguration -> Rule.ContextCreator ProjectContext ModuleContext
+fromProjectToModule (StableConfiguration configuration) =
     Rule.initContextCreator
         (\metadata lookupTable projectContext ->
             let
@@ -149,7 +149,7 @@ foldProjectContexts newContext previousContext =
     }
 
 
-moduleVisitor : Configuration -> Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
+moduleVisitor : StableConfiguration -> Rule.ModuleRuleSchema schemaState ModuleContext -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
 moduleVisitor configuration schema =
     schema
         |> Rule.withCommentsVisitor (\comments context -> ( [], commentsVisitor configuration comments context ))
@@ -160,8 +160,8 @@ moduleVisitor configuration schema =
 
 {-| REPLACEME
 -}
-type Configuration
-    = Configuration
+type StableConfiguration
+    = StableConfiguration
         { moduleNamePredicate : ModuleName -> Bool
         , documentationPredicate : String -> Bool
         , elementPredicate : ModuleName -> String -> Bool
@@ -173,7 +173,7 @@ type Configuration
 
 {-| REPLACEME
 -}
-checkInName : Configuration
+checkInName : StableConfiguration
 checkInName =
     let
         containsDeprecated : String -> Bool
@@ -188,7 +188,7 @@ checkInName =
                 |> String.lines
                 |> List.any (String.startsWith "@deprecated")
     in
-    Configuration
+    StableConfiguration
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
         , documentationPredicate = documentationPredicate
         , elementPredicate = \_ name -> containsDeprecated name
@@ -198,18 +198,18 @@ checkInName =
         }
 
 
-withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
-withExceptionsForElements elements (Configuration configuration) =
-    Configuration configuration
+withExceptionsForElements : List ( ModuleName, String ) -> StableConfiguration -> StableConfiguration
+withExceptionsForElements elements (StableConfiguration configuration) =
+    StableConfiguration configuration
 
 
-dependencies : List String -> Configuration -> Configuration
-dependencies dependencyNames (Configuration configuration) =
-    Configuration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
+dependencies : List String -> StableConfiguration -> StableConfiguration
+dependencies dependencyNames (StableConfiguration configuration) =
+    StableConfiguration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
 
 
-dependenciesVisitor : Configuration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
-dependenciesVisitor (Configuration configuration) dict projectContext =
+dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
+dependenciesVisitor (StableConfiguration configuration) dict projectContext =
     let
         newContext : ProjectContext
         newContext =
@@ -225,7 +225,7 @@ dependenciesVisitor (Configuration configuration) dict projectContext =
 
                     else
                         List.foldl
-                            (registerDeprecatedThings (Configuration configuration))
+                            (registerDeprecatedThings (StableConfiguration configuration))
                             acc
                             modules
                 )
@@ -250,8 +250,8 @@ dependenciesVisitor (Configuration configuration) dict projectContext =
     ( unknownDependenciesErrors, newContext )
 
 
-registerDeprecatedThings : Configuration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
-registerDeprecatedThings (Configuration configuration) module_ acc =
+registerDeprecatedThings : StableConfiguration -> Elm.Docs.Module -> ProjectContext -> ProjectContext
+registerDeprecatedThings (StableConfiguration configuration) module_ acc =
     let
         moduleName : ModuleName
         moduleName =
@@ -294,8 +294,8 @@ registerDeprecatedThings (Configuration configuration) module_ acc =
         }
 
 
-commentsVisitor : Configuration -> List (Node String) -> ModuleContext -> ModuleContext
-commentsVisitor (Configuration configuration) comments moduleContext =
+commentsVisitor : StableConfiguration -> List (Node String) -> ModuleContext -> ModuleContext
+commentsVisitor (StableConfiguration configuration) comments moduleContext =
     if moduleContext.isModuleDeprecated then
         moduleContext
 
@@ -308,7 +308,7 @@ commentsVisitor (Configuration configuration) comments moduleContext =
                 moduleContext
 
 
-declarationListVisitor : Configuration -> List (Node Declaration) -> ModuleContext -> ModuleContext
+declarationListVisitor : StableConfiguration -> List (Node Declaration) -> ModuleContext -> ModuleContext
 declarationListVisitor configuration nodes context =
     if context.isModuleDeprecated then
         context
@@ -317,7 +317,7 @@ declarationListVisitor configuration nodes context =
         List.foldl (registerDeclaration configuration) context nodes
 
 
-registerDeclaration : Configuration -> Node Declaration -> ModuleContext -> ModuleContext
+registerDeclaration : StableConfiguration -> Node Declaration -> ModuleContext -> ModuleContext
 registerDeclaration configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
@@ -333,8 +333,8 @@ registerDeclaration configuration node context =
             context
 
 
-registerFunctionDeclaration : Configuration -> Expression.Function -> ModuleContext -> ModuleContext
-registerFunctionDeclaration (Configuration configuration) declaration context =
+registerFunctionDeclaration : StableConfiguration -> Expression.Function -> ModuleContext -> ModuleContext
+registerFunctionDeclaration (StableConfiguration configuration) declaration context =
     let
         name : String
         name =
@@ -350,8 +350,8 @@ registerFunctionDeclaration (Configuration configuration) declaration context =
         context
 
 
-registerAliasDeclaration : Configuration -> Elm.Syntax.TypeAlias.TypeAlias -> ModuleContext -> ModuleContext
-registerAliasDeclaration (Configuration configuration) type_ context =
+registerAliasDeclaration : StableConfiguration -> Elm.Syntax.TypeAlias.TypeAlias -> ModuleContext -> ModuleContext
+registerAliasDeclaration (StableConfiguration configuration) type_ context =
     let
         name : String
         name =
@@ -367,8 +367,8 @@ registerAliasDeclaration (Configuration configuration) type_ context =
         context
 
 
-registerCustomTypeDeclaration : Configuration -> Elm.Syntax.Type.Type -> ModuleContext -> ModuleContext
-registerCustomTypeDeclaration (Configuration configuration) type_ context =
+registerCustomTypeDeclaration : StableConfiguration -> Elm.Syntax.Type.Type -> ModuleContext -> ModuleContext
+registerCustomTypeDeclaration (StableConfiguration configuration) type_ context =
     let
         name : String
         name =
@@ -418,7 +418,7 @@ registerElement name context =
     }
 
 
-declarationVisitor : Configuration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
+declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
 declarationVisitor configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
@@ -467,7 +467,7 @@ declarationVisitor configuration node context =
             []
 
 
-reportLetDeclaration : Configuration -> ModuleContext -> Node Expression.LetDeclaration -> List (Rule.Error {})
+reportLetDeclaration : StableConfiguration -> ModuleContext -> Node Expression.LetDeclaration -> List (Rule.Error {})
 reportLetDeclaration configuration context letDeclaration =
     case Node.value letDeclaration of
         Expression.LetFunction function ->
@@ -552,7 +552,7 @@ reportTypes context nodes acc =
                     reportTypes context restOfNodes acc
 
 
-reportPatterns : Configuration -> ModuleContext -> List (Node Pattern) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportPatterns : StableConfiguration -> ModuleContext -> List (Node Pattern) -> List (Rule.Error {}) -> List (Rule.Error {})
 reportPatterns configuration context nodes acc =
     case nodes of
         [] ->
@@ -650,8 +650,8 @@ rangeForNamedPattern (Node parentRange _) { moduleName, name } =
     }
 
 
-reportField : Configuration -> Node String -> Maybe (Rule.Error {})
-reportField (Configuration configuration) field =
+reportField : StableConfiguration -> Node String -> Maybe (Rule.Error {})
+reportField (StableConfiguration configuration) field =
     if configuration.recordFieldPredicate (Node.value field) then
         Just (error (Node.range field))
 
@@ -659,7 +659,7 @@ reportField (Configuration configuration) field =
         Nothing
 
 
-expressionVisitor : Configuration -> Node Expression -> ModuleContext -> List (Rule.Error {})
+expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> List (Rule.Error {})
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
@@ -742,8 +742,8 @@ reportElementAsMaybe context range name =
             Nothing
 
 
-reportParameter : Configuration -> Range -> String -> Maybe (Rule.Error {})
-reportParameter (Configuration configuration) range name =
+reportParameter : StableConfiguration -> Range -> String -> Maybe (Rule.Error {})
+reportParameter (StableConfiguration configuration) range name =
     if configuration.parameterPredicate name then
         Just (error range)
 
