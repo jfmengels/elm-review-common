@@ -184,7 +184,6 @@ type StableConfiguration
         { moduleNamePredicate : ModuleName -> Bool
         , documentationPredicate : String -> Bool
         , elementPredicate : ModuleName -> String -> Bool
-        , exceptionsForElements : Set ( ModuleName, String )
         , recordFieldPredicate : String -> Bool
         , parameterPredicate : String -> Bool
         , deprecatedDependencies : List String
@@ -193,11 +192,18 @@ type StableConfiguration
 
 userConfigurationToStableConfiguration : Configuration -> StableConfiguration
 userConfigurationToStableConfiguration (Configuration configuration) =
+    let
+        exceptionsForElements : Set ( ModuleName, String )
+        exceptionsForElements =
+            Set.fromList configuration.exceptionsForElements
+    in
     StableConfiguration
         { moduleNamePredicate = configuration.moduleNamePredicate
         , documentationPredicate = configuration.documentationPredicate
-        , elementPredicate = configuration.elementPredicate
-        , exceptionsForElements = Set.fromList configuration.exceptionsForElements
+        , elementPredicate =
+            \moduleName name ->
+                configuration.elementPredicate moduleName name
+                    && not (Set.member ( moduleName, name ) exceptionsForElements)
         , recordFieldPredicate = configuration.recordFieldPredicate
         , parameterPredicate = configuration.parameterPredicate
         , deprecatedDependencies = configuration.deprecatedDependencies
