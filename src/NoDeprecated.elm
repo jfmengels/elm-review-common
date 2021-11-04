@@ -182,10 +182,16 @@ checkInName =
             name
                 |> String.toLower
                 |> String.contains "deprecated"
+
+        documentationPredicate : String -> Bool
+        documentationPredicate doc =
+            doc
+                |> String.lines
+                |> List.any (String.startsWith "@deprecated")
     in
     Configuration
         { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
-        , documentationPredicate = containsDeprecated
+        , documentationPredicate = documentationPredicate
         , elementPredicate = \_ name -> containsDeprecated name
         , recordFieldPredicate = containsDeprecated
         , parameterPredicate = containsDeprecated

@@ -61,7 +61,10 @@ a = somethingDeprecated
                 """module A exposing (..)
 a = something
 
-{-| This is deprecated -}
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
+-}
 something = 1
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -213,7 +216,10 @@ a (Deprecated value) = 1
                 """module A exposing (..)
 a : Something
 a = 1
-{-| This is deprecated -}
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
+-}
 type Something = Foo Int
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -229,7 +235,10 @@ type Something = Foo Int
             \() ->
                 """module A exposing (..)
 a (A value) = 1
-{-| This is deprecated -}
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
+-}
 type Something = A Int
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -246,7 +255,10 @@ type Something = A Int
                 """module A exposing (..)
 a : Something
 a = 1
-{-| This is deprecated -}
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
+-}
 type alias Something = Int
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -262,7 +274,10 @@ type alias Something = Int
             \() ->
                 """module A exposing (..)
 a = Something 1
-{-| This is deprecated -}
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
+-}
 type alias Something = { b : Int }
 """
                     |> Review.Test.run (rule NoDeprecated.checkInName)
@@ -869,7 +884,9 @@ a = OkModule.something
 deprecatedModule : String
 deprecatedModule =
     """module OtherModule exposing (..)
-{-| This is deprecated.
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
 -}
 import Basics
 a = 1
@@ -880,16 +897,24 @@ modulesWithDeprecatedThings : String
 modulesWithDeprecatedThings =
     """module OtherModule exposing (..)
 import Basics
-{-| This is deprecated.
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
 -}
 type CustomType = Constructor
-{-| This is deprecated.
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
 -}
 type alias Alias = Int
-{-| This is deprecated.
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
 -}
 type alias RecordAlias = {}
-{-| This is deprecated.
+{-| Does X.
+
+@deprecated This is deprecated, use Y instead.
 -}
 value = 1
 """
@@ -921,7 +946,10 @@ createElmJsonProject rawElmJson =
 dependencyModules : List Elm.Docs.Module
 dependencyModules =
     [ { name = "ModuleFromDependency_1"
-      , comment = "{-| This is deprecated, use X instead. -}"
+      , comment = """{-| Does X.
+
+@deprecated This is deprecated, use Y instead. -}
+"""
       , unions =
             [ { name = "CustomType"
               , comment = ""
@@ -948,26 +976,38 @@ dependencyModules =
       , comment = ""
       , unions =
             [ { name = "CustomType"
-              , comment = "{-| This is deprecated -}"
+              , comment = """{-| Does X.
+
+@deprecated This is deprecated, use Y instead. -}
+"""
               , args = []
               , tags = [ ( "Constructor", [] ) ]
               }
             ]
       , aliases =
             [ { name = "Alias"
-              , comment = "{-| This is deprecated -}"
+              , comment = """{-| Does X.
+
+@deprecated This is deprecated, use Y instead. -}
+"""
               , args = []
               , tipe = Elm.Type.Tuple []
               }
             , { name = "RecordAlias"
-              , comment = "{-| This is deprecated -}"
+              , comment = """{-| Does X.
+
+@deprecated This is deprecated, use Y instead. -}
+"""
               , args = []
               , tipe = Elm.Type.Record [] Nothing
               }
             ]
       , values =
             [ { name = "value"
-              , comment = "{-| This is deprecated -}"
+              , comment = """{-| Does X.
+
+@deprecated This is deprecated, use Y instead. -}
+"""
               , tipe = Elm.Type.Tuple []
               }
             ]
