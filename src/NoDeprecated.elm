@@ -149,8 +149,8 @@ fromModuleToProject =
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
-    { deprecatedModules = List.append newContext.deprecatedModules previousContext.deprecatedModules
-    , deprecatedElements = List.append newContext.deprecatedElements previousContext.deprecatedElements
+    { deprecatedModules = newContext.deprecatedModules ++ previousContext.deprecatedModules
+    , deprecatedElements = newContext.deprecatedElements ++ previousContext.deprecatedElements
     }
 
 
@@ -240,12 +240,12 @@ checkInName =
 
 withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
 withExceptionsForElements exceptionsForElements (Configuration configuration) =
-    Configuration { configuration | exceptionsForElements = List.append exceptionsForElements configuration.exceptionsForElements }
+    Configuration { configuration | exceptionsForElements = exceptionsForElements ++ configuration.exceptionsForElements }
 
 
 dependencies : List String -> Configuration -> Configuration
 dependencies dependencyNames (Configuration configuration) =
-    Configuration { configuration | deprecatedDependencies = List.append configuration.deprecatedDependencies dependencyNames }
+    Configuration { configuration | deprecatedDependencies = configuration.deprecatedDependencies ++ dependencyNames }
 
 
 dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
@@ -334,7 +334,7 @@ registerDeprecatedThings (StableConfiguration configuration) module_ acc =
                     ]
         in
         { deprecatedModules = acc.deprecatedModules
-        , deprecatedElements = List.append newValues acc.deprecatedElements
+        , deprecatedElements = newValues ++ acc.deprecatedElements
         }
 
 
@@ -487,7 +487,7 @@ declarationVisitor configuration node context =
                         (declaration.declaration |> Node.value |> .arguments)
                         []
             in
-            List.append destructuringErrors signatureErrors
+            destructuringErrors ++ signatureErrors
 
         Declaration.CustomTypeDeclaration type_ ->
             reportTypes
@@ -536,7 +536,7 @@ reportLetDeclaration configuration context letDeclaration =
                         (function.declaration |> Node.value |> .arguments)
                         []
             in
-            List.append destructuringErrors signatureErrors
+            destructuringErrors ++ signatureErrors
 
         Expression.LetDestructuring pattern _ ->
             reportPatterns
@@ -567,7 +567,7 @@ reportTypes context nodes acc =
                     in
                     reportTypes
                         context
-                        (List.append args restOfNodes)
+                        (args ++ restOfNodes)
                         newAcc
 
                 TypeAnnotation.Tupled nodesToLookAt ->
@@ -612,19 +612,19 @@ reportPatterns configuration context nodes acc =
                         acc
 
                 Pattern.TuplePattern subPatterns ->
-                    reportPatterns configuration context (List.append subPatterns restOfNodes) acc
+                    reportPatterns configuration context (subPatterns ++ restOfNodes) acc
 
                 Pattern.RecordPattern fields ->
                     reportPatterns configuration
                         context
                         restOfNodes
-                        (List.append (List.filterMap (reportField configuration) fields) acc)
+                        (List.filterMap (reportField configuration) fields ++ acc)
 
                 Pattern.UnConsPattern left right ->
                     reportPatterns configuration context (left :: right :: restOfNodes) acc
 
                 Pattern.ListPattern subPatterns ->
-                    reportPatterns configuration context (List.append subPatterns restOfNodes) acc
+                    reportPatterns configuration context (subPatterns ++ restOfNodes) acc
 
                 Pattern.VarPattern name ->
                     let
@@ -656,8 +656,8 @@ reportPatterns configuration context nodes acc =
                     reportPatterns
                         configuration
                         context
-                        (List.append subPatterns restOfNodes)
-                        (List.append errors acc)
+                        (subPatterns ++ restOfNodes)
+                        (errors ++ acc)
 
                 Pattern.AsPattern subPattern name ->
                     let
