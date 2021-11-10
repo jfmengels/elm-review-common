@@ -228,7 +228,7 @@ checkInName =
                 |> List.any (String.startsWith "@deprecated")
     in
     Configuration
-        { moduleNamePredicate = String.join "." >> String.toLower >> containsDeprecated
+        { moduleNamePredicate = String.join "." >> containsDeprecated
         , documentationPredicate = documentationPredicate
         , elementPredicate = \_ name -> containsDeprecated name
         , exceptionsForElements = []
