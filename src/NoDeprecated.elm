@@ -228,7 +228,7 @@ checkInName =
                 |> List.any (String.startsWith "@deprecated")
     in
     Configuration
-        { moduleNamePredicate = String.join "." >> containsDeprecated
+        { moduleNamePredicate = \moduleName -> containsDeprecated (String.join "." moduleName)
         , documentationPredicate = documentationPredicate
         , elementPredicate = \_ name -> containsDeprecated name
         , exceptionsForElements = []
@@ -261,7 +261,7 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
                             Review.Project.Dependency.modules dependency
                     in
                     if List.member packageName configuration.deprecatedDependencies then
-                        { acc | deprecatedModules = List.append (List.map (.name >> String.split ".") modules) acc.deprecatedModules }
+                        { acc | deprecatedModules = List.map (\{ name } -> String.split "." name) modules ++ acc.deprecatedModules }
 
                     else
                         List.foldl
@@ -304,21 +304,25 @@ registerDeprecatedThings (StableConfiguration configuration) module_ acc =
 
     else
         let
+            commentIndicatesDeprecation : { a | comment : String } -> Bool
+            commentIndicatesDeprecation { comment } =
+                configuration.documentationPredicate comment
+
             deprecatedAliases : List Elm.Docs.Alias
             deprecatedAliases =
                 module_.aliases
-                    |> List.filter (.comment >> configuration.documentationPredicate)
+                    |> List.filter commentIndicatesDeprecation
 
             deprecatedUnions : List Elm.Docs.Union
             deprecatedUnions =
                 module_.unions
-                    |> List.filter (.comment >> configuration.documentationPredicate)
+                    |> List.filter commentIndicatesDeprecation
 
             newValues : List ( ModuleName, String )
             newValues =
                 List.concat
                     [ module_.values
-                        |> List.filter (.comment >> configuration.documentationPredicate)
+                        |> List.filter commentIndicatesDeprecation
                         |> List.map (\value -> ( moduleName, value.name ))
                     , deprecatedUnions
                         |> List.map (\{ name } -> ( moduleName, name ))
@@ -488,7 +492,7 @@ declarationVisitor configuration node context =
         Declaration.CustomTypeDeclaration type_ ->
             reportTypes
                 context
-                (List.concatMap (Node.value >> .arguments) type_.constructors)
+                (List.concatMap (\(Node _ { arguments }) -> arguments) type_.constructors)
                 []
 
         Declaration.AliasDeclaration type_ ->
@@ -573,7 +577,7 @@ reportTypes context nodes acc =
                     let
                         nodesToLookAt : List (Node TypeAnnotation)
                         nodesToLookAt =
-                            List.map (Node.value >> Tuple.second) recordDefinition
+                            List.map (\(Node _ ( _, fieldValue )) -> fieldValue) recordDefinition
                     in
                     reportTypes context (nodesToLookAt ++ restOfNodes) acc
 
@@ -581,7 +585,7 @@ reportTypes context nodes acc =
                     let
                         nodesToLookAt : List (Node TypeAnnotation)
                         nodesToLookAt =
-                            List.map (Node.value >> Tuple.second) (Node.value recordDefinition)
+                            List.map (\(Node _ ( _, fieldValue )) -> fieldValue) (Node.value recordDefinition)
                     in
                     reportTypes context (nodesToLookAt ++ restOfNodes) acc
 
