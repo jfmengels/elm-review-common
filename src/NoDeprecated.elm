@@ -763,6 +763,13 @@ reportElementAsList context rangeForLookupTable rangeForReport name =
                 -- TODO Change Element
                 [ error Element (rangeForReport ()) ]
 
+            else if
+                Set.member moduleName context.deprecatedModules
+                    || Set.member ( moduleName, name ) context.deprecatedElements
+            then
+                -- TODO Change Element
+                [ error Element (rangeForReport ()) ]
+
             else
                 []
 
