@@ -65,6 +65,12 @@ elm-review --template jfmengels/elm-review-common/example --rules NoDeprecated
 
 -}
 
+{-
+   TODO Report when using deprecated module aliases
+   TODO Add an exception for the rule itself
+   TODO Report when using exceptions that could not be found
+-}
+
 import Dict exposing (Dict)
 import Elm.Docs
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
