@@ -19,7 +19,7 @@ all =
         , parametersTests
         , letTests
         , caseExpressionTests
-        , propertiesTests
+        , fieldsTests
         , portsTests
         , fromOtherModulesTests
         , dependencyElementsTests
@@ -565,10 +565,10 @@ a =
         ]
 
 
-propertiesTests : Test
-propertiesTests =
-    describe "Properties"
-        [ test "should report an error when referencing a property whose name contains 'deprecated' (record access)" <|
+fieldsTests : Test
+fieldsTests =
+    describe "Fields"
+        [ test "should report an error when referencing a field whose name contains 'deprecated' (record access)" <|
             \() ->
                 """module A exposing (..)
 a = some.thingDeprecated
@@ -584,7 +584,7 @@ a = some.thingDeprecated
                             , under = "thingDeprecated"
                             }
                         ]
-        , test "should report an error when referencing a property whose name contains 'deprecated' (record access function)" <|
+        , test "should report an error when referencing a field whose name contains 'deprecated' (record access function)" <|
             \() ->
                 """module A exposing (..)
 a = .thingDeprecated
