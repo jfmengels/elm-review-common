@@ -756,17 +756,11 @@ reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List 
 reportElementAsList context rangeForLookupTable rangeForReport name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
-            if
-                Set.member moduleName context.deprecatedModules
-                    || Set.member ( moduleName, name ) context.deprecatedElements
-            then
+            if Set.member moduleName context.deprecatedModules then
                 -- TODO Change Element
                 [ error Element (rangeForReport ()) ]
 
-            else if
-                Set.member moduleName context.deprecatedModules
-                    || Set.member ( moduleName, name ) context.deprecatedElements
-            then
+            else if Set.member ( moduleName, name ) context.deprecatedElements then
                 -- TODO Change Element
                 [ error Element (rangeForReport ()) ]
 
