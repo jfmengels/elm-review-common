@@ -1,6 +1,6 @@
 module NoDeprecated exposing
     ( rule
-    , Configuration, checkInName, withExceptionsForElements, dependencies
+    , Configuration, defaults, dependencies, withExceptionsForElements
     )
 
 {-|
@@ -17,15 +17,36 @@ An additional benefit is that the suppressed errors will make it easy to have an
 deprecated elements are used and where they are located. Looking at the error reports (using `elm-review --unsuppress`
 for instance) will give you the more precise problems and locations.
 
-@docs Configuration, checkInName, withExceptionsForElements, dependencies
 
-REPLACEME You can configure this rule to only trigger for a specific module, function or element, and create multiple of these. TODO Mention performance
-REPLACEME TODO Would this require renaming the rule maybe?
+## Recommendations
+
+I recommend making it extra explicit when deprecating elements in your application code, for instance by renaming
+deprecated elements to include "deprecated" in their name, or in their module name for modules.
+
+That way, it will be very explicit for you and your teammates when you're using something that is deprecated, even in
+Git diffs.
+
+For packages, renaming something is a breaking chance so that is not a viable option (if it is, remove the function and
+release a new major version). Instead, what you can do is to start a line in your module/value/type's documentation
+with `@deprecated`. There is no official nor conventional approach around deprecation in the Elm community, but this may
+be a good start. But definitely pitch in the discussion around making a standard!
+(I'll put a link here soon. If I haven't, please remind me!)
+
+For both application and packages, when you deprecate something, I highly recommend documenting (in the most appropriate
+location) why it is deprecate but especially what alternatives should be used or explored. It can be frustrating to
+learn that something is deprecated without an explanation or any guidance what to use instead.
+
+@docs Configuration, defaults, dependencies, withExceptionsForElements
 
 
 ## Fail
 
+    import DeprecatedModule
+
     a =
+        DeprecatedModule.view "..."
+
+    b =
         Button.view_DEPRECATED "Click me!" OnClick
 
 
@@ -168,7 +189,11 @@ moduleVisitor configuration schema =
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
 
 
-{-| REPLACEME
+{-| Configuration for the rule.
+
+Create one using [`defaults`](#defaults), then change it using functions like [`dependencies`](#dependencies) and
+[`withExceptionsForElements`](#withExceptionsForElements).
+
 -}
 type Configuration
     = Configuration
@@ -215,10 +240,20 @@ userConfigurationToStableConfiguration (Configuration configuration) =
         }
 
 
-{-| REPLACEME
+{-| Default configuration.
+
+By default are considered as deprecated:
+
+  - Values / types / modules that contain "deprecated" (case insensitive) in their name.
+  - Values / types / modules whose documentation comment has a line starting with "@deprecated"
+  - Values / types from modules that are considered as deprecated
+
+Configure this further using functions like [`dependencies`](#dependencies) and
+[`withExceptionsForElements`](#withExceptionsForElements).
+
 -}
-checkInName : Configuration
-checkInName =
+defaults : Configuration
+defaults =
     let
         containsDeprecated : String -> Bool
         containsDeprecated name =
@@ -243,14 +278,14 @@ checkInName =
         }
 
 
-withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
-withExceptionsForElements exceptionsForElements (Configuration configuration) =
-    Configuration { configuration | exceptionsForElements = exceptionsForElements ++ configuration.exceptionsForElements }
-
-
 dependencies : List String -> Configuration -> Configuration
 dependencies dependencyNames (Configuration configuration) =
     Configuration { configuration | deprecatedDependencies = configuration.deprecatedDependencies ++ dependencyNames }
+
+
+withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
+withExceptionsForElements exceptionsForElements (Configuration configuration) =
+    Configuration { configuration | exceptionsForElements = exceptionsForElements ++ configuration.exceptionsForElements }
 
 
 dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )

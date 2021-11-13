@@ -38,7 +38,7 @@ a = Other.normalFunction
 """, """module Other exposing (..)
 normalFunction = 1
 """ ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectNoErrors
         , test "should report an error when referencing a local function whose name contains 'deprecated'" <|
             \() ->
@@ -47,7 +47,7 @@ somethingDeprecated = 1
 
 a = somethingDeprecated
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -70,7 +70,7 @@ a = something
 -}
 something = 1
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -88,7 +88,7 @@ something = 1
 import Some.DeprecatedModule
 a = Some.DeprecatedModule.something
 """, moduleWithDeprecatedInItsName ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -108,7 +108,7 @@ a = Some.DeprecatedModule.something
 import Some.DeprecatedModule as S
 a = S.something
 """, moduleWithDeprecatedInItsName ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -128,7 +128,7 @@ a = S.something
 import Some.DeprecatedModule exposing (something)
 a = { something | b = 1 }
 """, moduleWithDeprecatedInItsName ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -150,7 +150,7 @@ type Status = Deprecated | NotDeprecated
 a = [ Deprecated, NotDeprecated ]
 """
                     |> Review.Test.run
-                        (NoDeprecated.checkInName
+                        (NoDeprecated.defaults
                             |> NoDeprecated.withExceptionsForElements [ ( [ "A" ], "Deprecated" ), ( [ "A" ], "NotDeprecated" ) ]
                             |> rule
                         )
@@ -164,7 +164,7 @@ a = [ Status.Deprecated, Status.NotDeprecated ]
 type Status = Deprecated | NotDeprecated
 """ ]
                     |> Review.Test.runOnModules
-                        (NoDeprecated.checkInName
+                        (NoDeprecated.defaults
                             |> NoDeprecated.withExceptionsForElements [ ( [ "Status" ], "Deprecated" ), ( [ "Status" ], "NotDeprecated" ) ]
                             |> rule
                         )
@@ -188,7 +188,7 @@ typeTests =
 type Deprecated = Deprecated
 a = Deprecated
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -206,7 +206,7 @@ a = Deprecated
 type alias Deprecated = {}
 a = Deprecated
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -225,7 +225,7 @@ type alias TypeAlias = {}
 a : TypeAlias
 a = TypeAlias
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectNoErrors
         , test "should report an error when referencing a type whose name contains 'deprecated' (top-level declaration annotation)" <|
             \() ->
@@ -234,7 +234,7 @@ type Deprecated = Int
 a : Deprecated
 a = 1
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -252,7 +252,7 @@ a = 1
 type Deprecated = Deprecated Int
 a (Deprecated value) = 1
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -275,7 +275,7 @@ a = 1
 -}
 type Something = Foo Int
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -297,7 +297,7 @@ a (A value) = 1
 -}
 type Something = A Int
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -320,7 +320,7 @@ a = 1
 -}
 type alias Something = Int
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -342,7 +342,7 @@ a = Something 1
 -}
 type alias Something = { b : Int }
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -360,7 +360,7 @@ type alias Something = { b : Int }
 type alias Deprecated = String
 type A = Thing ( A, { b : Deprecated } )
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -378,7 +378,7 @@ type A = Thing ( A, { b : Deprecated } )
 type alias Deprecated = String
 type alias A = Thing { b : Deprecated }
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -401,7 +401,7 @@ parametersTests =
                 """module A exposing (..)
 a thingDeprecated = 1
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -416,7 +416,7 @@ a thingDeprecated = 1
                 """module A exposing (..)
 a ({deprecated}) = 1
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -432,7 +432,7 @@ a ({deprecated}) = 1
                 """module A exposing (..)
 a (( x, y ) as deprecated) = 1
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -459,7 +459,7 @@ a =
     in
     b
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -481,7 +481,7 @@ a =
     in
     b
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -502,7 +502,7 @@ a =
     in
     b
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -522,7 +522,7 @@ a =
     in
     b
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -548,7 +548,7 @@ a =
     case x of
         ThingDeprecated b -> 1
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -571,7 +571,7 @@ fieldsTests =
                 """module A exposing (..)
 a = some.thingDeprecated
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -587,7 +587,7 @@ a = some.thingDeprecated
                 """module A exposing (..)
 a = .thingDeprecated
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -610,7 +610,7 @@ portsTests =
 type alias DeprecatedString = String
 port input : (DeprecatedString -> msg) -> Sub msg
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -628,7 +628,7 @@ port input : (DeprecatedString -> msg) -> Sub msg
 type alias DeprecatedString = String
 port output : DeprecatedString -> Cmd msg
 """
-                    |> Review.Test.run (rule NoDeprecated.checkInName)
+                    |> Review.Test.run (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -652,7 +652,7 @@ fromOtherModulesTests =
 import OtherModule
 a = OtherModule.something
 """, deprecatedModule ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -673,7 +673,7 @@ import OtherModule
 a : OtherModule.CustomType
 a = 1
 """, deprecatedModule ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -693,7 +693,7 @@ a = 1
 import OtherModule
 a = OtherModule.Constructor
 """, deprecatedModule ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -714,7 +714,7 @@ import OtherModule
 a : OtherModule.Alias
 a = 1
 """, modulesWithDeprecatedThings ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -734,7 +734,7 @@ a = 1
 import OtherModule
 a = OtherModule.value
 """, modulesWithDeprecatedThings ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -755,7 +755,7 @@ import OtherModule
 a : OtherModule.CustomType
 a = 1
 """, modulesWithDeprecatedThings ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -775,7 +775,7 @@ a = 1
 import OtherModule
 a = OtherModule.Constructor
 """, modulesWithDeprecatedThings ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -796,7 +796,7 @@ import OtherModule
 a : OtherModule.Alias
 a = 1
 """, modulesWithDeprecatedThings ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -816,7 +816,7 @@ a = 1
 import OtherModule
 a = OtherModule.RecordAlias
 """, modulesWithDeprecatedThings ]
-                    |> Review.Test.runOnModules (rule NoDeprecated.checkInName)
+                    |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrorsForModules
                         [ ( "A"
                           , [ Review.Test.error
@@ -842,7 +842,7 @@ dependencyElementsTests =
 import ModuleFromDependency_1
 a = ModuleFromDependency_1.something
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -860,7 +860,7 @@ import ModuleFromDependency_1
 a : ModuleFromDependency_1.CustomType
 a = 1
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -877,7 +877,7 @@ a = 1
 import ModuleFromDependency_1
 a = ModuleFromDependency_1.Constructor
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -895,7 +895,7 @@ import ModuleFromDependency_1
 a : ModuleFromDependency_1.Alias
 a = 1
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -912,7 +912,7 @@ a = 1
 import ModuleFromDependency_2
 a = ModuleFromDependency_2.value
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -930,7 +930,7 @@ import ModuleFromDependency_2
 a : ModuleFromDependency_2.CustomType
 a = 1
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -947,7 +947,7 @@ a = 1
 import ModuleFromDependency_2
 a = ModuleFromDependency_2.Constructor
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -965,7 +965,7 @@ import ModuleFromDependency_2
 a : ModuleFromDependency_2.Alias
 a = 1
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -982,7 +982,7 @@ a = 1
 import ModuleFromDependency_2
 a = ModuleFromDependency_2.RecordAlias
 """
-                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.checkInName)
+                    |> Review.Test.runWithProjectData projectWithDeprecations (rule NoDeprecated.defaults)
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
@@ -1006,7 +1006,7 @@ import OkModule
 a = OkModule.something
 """
                     |> Review.Test.runWithProjectData projectWithDeprecations
-                        (NoDeprecated.checkInName
+                        (NoDeprecated.defaults
                             |> NoDeprecated.dependencies [ "author/package" ]
                             |> rule
                         )
@@ -1027,7 +1027,7 @@ import OkModule
 a = OkModule.something
 """
                     |> Review.Test.run
-                        (NoDeprecated.checkInName
+                        (NoDeprecated.defaults
                             |> NoDeprecated.dependencies [ "author/package" ]
                             |> rule
                         )
