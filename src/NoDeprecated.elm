@@ -103,11 +103,15 @@ type alias ProjectContext =
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , currentModuleName : ModuleName
-    , deprecatedModules : Dict ModuleName ()
+    , deprecatedModules : Dict ModuleName DeprecationReason
     , deprecatedElements : Set ( ModuleName, String )
     , isModuleDeprecated : Bool
     , localDeprecatedElements : List ( ModuleName, String )
     }
+
+
+type alias DeprecationReason =
+    ()
 
 
 fromProjectToModule : StableConfiguration -> Rule.ContextCreator ProjectContext ModuleContext
