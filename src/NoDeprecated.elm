@@ -808,9 +808,20 @@ error origin range =
     let
         details : List String
         details =
-            [ "This element was marked as deprecated and should not be used anymore."
-            , "Please check its documentation to know the alternative solutions."
-            ]
+            case origin of
+                Element ->
+                    [ "This element was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation to know the alternative solutions."
+                    ]
+
+                Field ->
+                    [ "This element was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation to know the alternative solutions."
+                    ]
+
+                Parameter ->
+                    [ "This element was marked as deprecated and should not be used anymore."
+                    ]
     in
     Rule.error
         { message = "Found new usage of deprecated element"
