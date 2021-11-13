@@ -407,7 +407,6 @@ a thingDeprecated = 1
                             { message = "Found new usage of deprecated element"
                             , details =
                                 [ "This element was marked as deprecated and should not be used anymore."
-                                , "Please check its documentation to know the alternative solutions."
                                 ]
                             , under = "thingDeprecated"
                             }
@@ -439,7 +438,6 @@ a (( x, y ) as deprecated) = 1
                             { message = "Found new usage of deprecated element"
                             , details =
                                 [ "This element was marked as deprecated and should not be used anymore."
-                                , "Please check its documentation to know the alternative solutions."
                                 ]
                             , under = "deprecated"
                             }
