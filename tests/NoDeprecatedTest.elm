@@ -51,7 +51,10 @@ a = somethingDeprecated
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "somethingDeprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 24 } }
@@ -71,7 +74,10 @@ something = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "something"
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
@@ -87,7 +93,10 @@ a = Some.DeprecatedModule.something
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "Some.DeprecatedModule.something"
                                 }
                             ]
@@ -104,7 +113,10 @@ a = S.something
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "S.something"
                                 }
                             ]
@@ -121,7 +133,10 @@ a = { something | b = 1 }
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "something"
                                 }
                                 |> Review.Test.atExactly { start = { row = 3, column = 7 }, end = { row = 3, column = 16 } }
@@ -177,7 +192,10 @@ a = Deprecated
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
@@ -192,7 +210,10 @@ a = Deprecated
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
@@ -217,7 +238,10 @@ a = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 5 }, end = { row = 3, column = 15 } }
@@ -232,7 +256,10 @@ a (Deprecated value) = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
@@ -252,7 +279,10 @@ type Something = Foo Int
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Something"
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
@@ -271,7 +301,10 @@ type Something = A Int
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "A"
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 4 }, end = { row = 2, column = 5 } }
@@ -291,7 +324,10 @@ type alias Something = Int
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Something"
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
@@ -310,7 +346,10 @@ type alias Something = { b : Int }
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Something"
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
@@ -325,7 +364,10 @@ type A = Thing ( A, { b : Deprecated } )
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 27 }, end = { row = 3, column = 37 } }
@@ -340,7 +382,10 @@ type alias A = Thing { b : Deprecated }
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 28 }, end = { row = 3, column = 38 } }
@@ -360,7 +405,10 @@ a thingDeprecated = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "thingDeprecated"
                             }
                         ]
@@ -373,7 +421,10 @@ a ({deprecated}) = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "deprecated"
                             }
                         ]
@@ -386,7 +437,10 @@ a (( x, y ) as deprecated) = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "deprecated"
                             }
                         ]
@@ -411,7 +465,10 @@ a =
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 13 }, end = { row = 5, column = 23 } }
@@ -430,7 +487,10 @@ a =
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 12 }, end = { row = 5, column = 22 } }
@@ -448,7 +508,9 @@ a =
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                ]
                             , under = "thingDeprecated"
                             }
                         ]
@@ -466,7 +528,10 @@ a =
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "Deprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 10 }, end = { row = 5, column = 20 } }
@@ -489,7 +554,10 @@ a =
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ThingDeprecated"
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 9 }, end = { row = 5, column = 24 } }
@@ -509,7 +577,10 @@ a = some.thingDeprecated
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "thingDeprecated"
                             }
                         ]
@@ -522,7 +593,10 @@ a = .thingDeprecated
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = ".thingDeprecated"
                             }
                         ]
@@ -542,7 +616,10 @@ port input : (DeprecatedString -> msg) -> Sub msg
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "DeprecatedString"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 15 }, end = { row = 3, column = 31 } }
@@ -557,7 +634,10 @@ port output : DeprecatedString -> Cmd msg
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "DeprecatedString"
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 15 }, end = { row = 3, column = 31 } }
@@ -579,7 +659,10 @@ a = OtherModule.something
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.something"
                                 }
                             ]
@@ -597,7 +680,10 @@ a = 1
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.CustomType"
                                 }
                             ]
@@ -614,7 +700,10 @@ a = OtherModule.Constructor
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.Constructor"
                                 }
                             ]
@@ -632,7 +721,10 @@ a = 1
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.Alias"
                                 }
                             ]
@@ -649,7 +741,10 @@ a = OtherModule.value
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.value"
                                 }
                             ]
@@ -667,7 +762,10 @@ a = 1
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.CustomType"
                                 }
                             ]
@@ -684,7 +782,10 @@ a = OtherModule.Constructor
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.Constructor"
                                 }
                             ]
@@ -702,7 +803,10 @@ a = 1
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.Alias"
                                 }
                             ]
@@ -719,7 +823,10 @@ a = OtherModule.RecordAlias
                         [ ( "A"
                           , [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
-                                , details = [ "REPLACEME" ]
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Please check its documentation to know the alternative solutions."
+                                    ]
                                 , under = "OtherModule.RecordAlias"
                                 }
                             ]
@@ -741,7 +848,10 @@ a = ModuleFromDependency_1.something
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_1.something"
                             }
                         ]
@@ -756,7 +866,10 @@ a = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_1.CustomType"
                             }
                         ]
@@ -770,7 +883,10 @@ a = ModuleFromDependency_1.Constructor
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_1.Constructor"
                             }
                         ]
@@ -785,7 +901,10 @@ a = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_1.Alias"
                             }
                         ]
@@ -799,7 +918,10 @@ a = ModuleFromDependency_2.value
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_2.value"
                             }
                         ]
@@ -814,7 +936,10 @@ a = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_2.CustomType"
                             }
                         ]
@@ -828,7 +953,10 @@ a = ModuleFromDependency_2.Constructor
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_2.Constructor"
                             }
                         ]
@@ -843,7 +971,10 @@ a = 1
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_2.Alias"
                             }
                         ]
@@ -857,7 +988,10 @@ a = ModuleFromDependency_2.RecordAlias
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "This element was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation to know the alternative solutions."
+                                ]
                             , under = "ModuleFromDependency_2.RecordAlias"
                             }
                         ]
@@ -881,7 +1015,10 @@ a = OkModule.something
                     |> Review.Test.expectErrors
                         [ Review.Test.error
                             { message = "Found new usage of deprecated element"
-                            , details = [ "REPLACEME" ]
+                            , details =
+                                [ "The dependency where this element is defined was marked as deprecated and should not be used anymore."
+                                , "Please check its documentation or your review configuration to know the alternative solutions."
+                                ]
                             , under = "OkModule.something"
                             }
                         ]
