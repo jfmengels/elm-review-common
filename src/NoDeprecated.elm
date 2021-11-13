@@ -95,7 +95,7 @@ initialProjectContext =
 
 
 type alias ProjectContext =
-    { deprecatedModules : List ModuleName
+    { deprecatedModules : List ( ModuleName, () )
     , deprecatedElements : List ( ModuleName, String )
     }
 
@@ -103,7 +103,7 @@ type alias ProjectContext =
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , currentModuleName : ModuleName
-    , deprecatedModules : Set ModuleName
+    , deprecatedModules : Dict ModuleName ()
     , deprecatedElements : Set ( ModuleName, String )
     , isModuleDeprecated : Bool
     , localDeprecatedElements : List ( ModuleName, String )
@@ -121,7 +121,7 @@ fromProjectToModule (StableConfiguration configuration) =
             in
             { lookupTable = lookupTable
             , currentModuleName = moduleName
-            , deprecatedModules = Set.fromList projectContext.deprecatedModules
+            , deprecatedModules = Dict.fromList projectContext.deprecatedModules
             , deprecatedElements = Set.fromList projectContext.deprecatedElements
             , isModuleDeprecated = configuration.moduleNamePredicate moduleName
             , localDeprecatedElements = []
@@ -137,7 +137,7 @@ fromModuleToProject =
         (\metadata moduleContext ->
             { deprecatedModules =
                 if moduleContext.isModuleDeprecated then
-                    [ Rule.moduleNameFromMetadata metadata ]
+                    [ ( Rule.moduleNameFromMetadata metadata, () ) ]
 
                 else
                     []
@@ -261,7 +261,7 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
                             Review.Project.Dependency.modules dependency
                     in
                     if List.member packageName configuration.deprecatedDependencies then
-                        { acc | deprecatedModules = List.map (\{ name } -> String.split "." name) modules ++ acc.deprecatedModules }
+                        { acc | deprecatedModules = List.map (\{ name } -> ( String.split "." name, () )) modules ++ acc.deprecatedModules }
 
                     else
                         List.foldl
@@ -298,7 +298,7 @@ registerDeprecatedThings (StableConfiguration configuration) module_ acc =
             String.split "." module_.name
     in
     if configuration.documentationPredicate module_.comment then
-        { deprecatedModules = moduleName :: acc.deprecatedModules
+        { deprecatedModules = ( moduleName, () ) :: acc.deprecatedModules
         , deprecatedElements = acc.deprecatedElements
         }
 
@@ -756,7 +756,7 @@ reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List 
 reportElementAsList context rangeForLookupTable rangeForReport name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
-            if Set.member moduleName context.deprecatedModules then
+            if Dict.member moduleName context.deprecatedModules then
                 [ error Module (rangeForReport ()) ]
 
             else if Set.member ( moduleName, name ) context.deprecatedElements then
@@ -774,7 +774,7 @@ reportElementAsMaybe context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
             if
-                Set.member moduleName context.deprecatedModules
+                Dict.member moduleName context.deprecatedModules
                     || Set.member ( moduleName, name ) context.deprecatedElements
             then
                 -- TODO Change Element
