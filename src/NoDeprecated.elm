@@ -757,11 +757,9 @@ reportElementAsList context rangeForLookupTable rangeForReport name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
             if Set.member moduleName context.deprecatedModules then
-                -- TODO Change Element
-                [ error Element (rangeForReport ()) ]
+                [ error Module (rangeForReport ()) ]
 
             else if Set.member ( moduleName, name ) context.deprecatedElements then
-                -- TODO Change Element
                 [ error Element (rangeForReport ()) ]
 
             else
