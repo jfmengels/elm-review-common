@@ -95,7 +95,7 @@ initialProjectContext =
 
 
 type alias ProjectContext =
-    { deprecatedModules : List ( ModuleName, () )
+    { deprecatedModules : List ( ModuleName, DeprecationReason )
     , deprecatedElements : List ( ModuleName, String )
     }
 
@@ -110,8 +110,9 @@ type alias ModuleContext =
     }
 
 
-type alias DeprecationReason =
-    ()
+type DeprecationReason
+    = DeprecatedModule
+    | DeprecatedDependency
 
 
 fromProjectToModule : StableConfiguration -> Rule.ContextCreator ProjectContext ModuleContext
@@ -141,7 +142,7 @@ fromModuleToProject =
         (\metadata moduleContext ->
             { deprecatedModules =
                 if moduleContext.isModuleDeprecated then
-                    [ ( Rule.moduleNameFromMetadata metadata, () ) ]
+                    [ ( Rule.moduleNameFromMetadata metadata, DeprecatedModule ) ]
 
                 else
                     []
@@ -265,7 +266,13 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
                             Review.Project.Dependency.modules dependency
                     in
                     if List.member packageName configuration.deprecatedDependencies then
-                        { acc | deprecatedModules = List.map (\{ name } -> ( String.split "." name, () )) modules ++ acc.deprecatedModules }
+                        { acc
+                            | deprecatedModules =
+                                List.map
+                                    (\{ name } -> ( String.split "." name, DeprecatedDependency ))
+                                    modules
+                                    ++ acc.deprecatedModules
+                        }
 
                     else
                         List.foldl
@@ -302,7 +309,7 @@ registerDeprecatedThings (StableConfiguration configuration) module_ acc =
             String.split "." module_.name
     in
     if configuration.documentationPredicate module_.comment then
-        { deprecatedModules = ( moduleName, () ) :: acc.deprecatedModules
+        { deprecatedModules = ( moduleName, DeprecatedModule ) :: acc.deprecatedModules
         , deprecatedElements = acc.deprecatedElements
         }
 
