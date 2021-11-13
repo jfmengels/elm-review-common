@@ -772,7 +772,7 @@ reportElementAsList context rangeForLookupTable rangeForReport name =
                     [ error Module (rangeForReport ()) ]
 
                 Just DeprecatedDependency ->
-                    [ error Module (rangeForReport ()) ]
+                    [ error Dependency (rangeForReport ()) ]
 
                 Nothing ->
                     if Set.member ( moduleName, name ) context.deprecatedElements then
@@ -815,6 +815,7 @@ reportParameter (StableConfiguration configuration) range name =
 type Origin
     = Element
     | Module
+    | Dependency
     | Field
     | Parameter
 
@@ -833,6 +834,11 @@ error origin range =
                 Module ->
                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
                     , "Please check its documentation to know the alternative solutions."
+                    ]
+
+                Dependency ->
+                    [ "The dependency where this element is defined was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation or your review configuration to know the alternative solutions."
                     ]
 
                 Field ->
