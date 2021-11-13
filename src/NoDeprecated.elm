@@ -799,7 +799,10 @@ error : Range -> Rule.Error {}
 error range =
     Rule.error
         { message = "Found new usage of deprecated element"
-        , details = [ "REPLACEME" ]
+        , details =
+            [ "This element was marked as deprecated and should not be used anymore."
+            , "Please check its documentation to know the alternative solutions."
+            ]
         }
         range
 
