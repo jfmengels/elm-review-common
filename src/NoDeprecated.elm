@@ -697,7 +697,7 @@ rangeForNamedPattern (Node parentRange _) { moduleName, name } =
 reportField : StableConfiguration -> Node String -> Maybe (Rule.Error {})
 reportField (StableConfiguration configuration) field =
     if configuration.recordFieldPredicate (Node.value field) then
-        Just (error (Node.range field))
+        Just (error Field (Node.range field))
 
     else
         Nothing
@@ -760,7 +760,8 @@ reportElementAsList context rangeForLookupTable rangeForReport name =
                 Set.member moduleName context.deprecatedModules
                     || Set.member ( moduleName, name ) context.deprecatedElements
             then
-                [ error (rangeForReport ()) ]
+                -- TODO Change Element
+                [ error Element (rangeForReport ()) ]
 
             else
                 []
@@ -777,7 +778,8 @@ reportElementAsMaybe context range name =
                 Set.member moduleName context.deprecatedModules
                     || Set.member ( moduleName, name ) context.deprecatedElements
             then
-                Just (error range)
+                -- TODO Change Element
+                Just (error Element range)
 
             else
                 Nothing
@@ -789,14 +791,20 @@ reportElementAsMaybe context range name =
 reportParameter : StableConfiguration -> Range -> String -> Maybe (Rule.Error {})
 reportParameter (StableConfiguration configuration) range name =
     if configuration.parameterPredicate name then
-        Just (error range)
+        Just (error Parameter range)
 
     else
         Nothing
 
 
-error : Range -> Rule.Error {}
-error range =
+type Origin
+    = Element
+    | Field
+    | Parameter
+
+
+error : Origin -> Range -> Rule.Error {}
+error origin range =
     Rule.error
         { message = "Found new usage of deprecated element"
         , details =
