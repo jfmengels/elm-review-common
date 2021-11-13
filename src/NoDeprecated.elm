@@ -7,7 +7,7 @@ module NoDeprecated exposing
 
 @docs rule
 
-This rule is useful to stop the spread of the usage of deprecated functions and types.
+This rule is useful to stop the spread of the usage of deprecated values and types.
 
 This rule is recommended to be used with `elm-review`'s suppression system (see `elm-review suppress --help`).
 That way, current uses of deprecated elements won't be reported, but the rule will report new usages, in practice
@@ -82,7 +82,7 @@ import Review.Rule as Rule exposing (Rule)
 import Set exposing (Set)
 
 
-{-| Reports usages of deprecated functions and types.
+{-| Reports usages of deprecated values and types.
 
     config =
         [ NoDeprecated.rule NoDeprecated.defaults
@@ -207,8 +207,6 @@ type Configuration
         }
 
 
-{-| REPLACEME
--}
 type StableConfiguration
     = StableConfiguration
         { moduleNamePredicate : ModuleName -> Bool
@@ -287,11 +285,32 @@ defaults =
         }
 
 
+{-| Mark one or more dependencies as deprecated.
+
+    config =
+        [ NoDeprecated.defaults
+            |> NoDeprecated.dependencies [ "jfmengels/some-deprecated-dependency" ]
+            |> NoDeprecated.rule
+        ]
+
+Every usage of something defined in that dependency in the project's code wil be reported.
+
+-}
 dependencies : List String -> Configuration -> Configuration
 dependencies dependencyNames (Configuration configuration) =
     Configuration { configuration | deprecatedDependencies = configuration.deprecatedDependencies ++ dependencyNames }
 
 
+{-| Add exceptions for the reporting elements. This can for instance be used for values and that
+contain "deprecated" in their name without actually being deprecated.
+
+    config =
+        [ NoDeprecated.defaults
+            |> NoDeprecated.withExceptionsForElements [ "SomeModule.listOfDeprecatedFunctions" ]
+            |> NoDeprecated.rule
+        ]
+
+-}
 withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
 withExceptionsForElements exceptionsForElements (Configuration configuration) =
     Configuration { configuration | exceptionsForElements = exceptionsForElements ++ configuration.exceptionsForElements }
