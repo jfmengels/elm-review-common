@@ -799,6 +799,7 @@ reportParameter (StableConfiguration configuration) range name =
 
 type Origin
     = Element
+    | Module
     | Field
     | Parameter
 
@@ -811,6 +812,11 @@ error origin range =
             case origin of
                 Element ->
                     [ "This element was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation to know the alternative solutions."
+                    ]
+
+                Module ->
+                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
                     , "Please check its documentation to know the alternative solutions."
                     ]
 
