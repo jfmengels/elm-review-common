@@ -767,14 +767,19 @@ reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List 
 reportElementAsList context rangeForLookupTable rangeForReport name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
-            if Dict.member moduleName context.deprecatedModules then
-                [ error Module (rangeForReport ()) ]
+            case Dict.get moduleName context.deprecatedModules of
+                Just DeprecatedModule ->
+                    [ error Module (rangeForReport ()) ]
 
-            else if Set.member ( moduleName, name ) context.deprecatedElements then
-                [ error Element (rangeForReport ()) ]
+                Just DeprecatedDependency ->
+                    [ error Module (rangeForReport ()) ]
 
-            else
-                []
+                Nothing ->
+                    if Set.member ( moduleName, name ) context.deprecatedElements then
+                        [ error Element (rangeForReport ()) ]
+
+                    else
+                        []
 
         Nothing ->
             []
