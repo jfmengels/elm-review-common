@@ -789,15 +789,19 @@ reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
 reportElementAsMaybe context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
-            if
-                Dict.member moduleName context.deprecatedModules
-                    || Set.member ( moduleName, name ) context.deprecatedElements
-            then
-                -- TODO Change Element
-                Just (error Element range)
+            case Dict.get moduleName context.deprecatedModules of
+                Just DeprecatedModule ->
+                    Just (error Module range)
 
-            else
-                Nothing
+                Just DeprecatedDependency ->
+                    Just (error Dependency range)
+
+                Nothing ->
+                    if Set.member ( moduleName, name ) context.deprecatedElements then
+                        Just (error Element range)
+
+                    else
+                        Nothing
 
         Nothing ->
             Nothing
