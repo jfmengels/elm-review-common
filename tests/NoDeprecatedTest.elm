@@ -151,7 +151,7 @@ a = [ Deprecated, NotDeprecated ]
 """
                     |> Review.Test.run
                         (NoDeprecated.defaults
-                            |> NoDeprecated.withExceptionsForElements [ ( [ "A" ], "Deprecated" ), ( [ "A" ], "NotDeprecated" ) ]
+                            |> NoDeprecated.withExceptionsForElements [ "A.Deprecated", "A.NotDeprecated" ]
                             |> rule
                         )
                     |> Review.Test.expectNoErrors
@@ -165,10 +165,22 @@ type Status = Deprecated | NotDeprecated
 """ ]
                     |> Review.Test.runOnModules
                         (NoDeprecated.defaults
-                            |> NoDeprecated.withExceptionsForElements [ ( [ "Status" ], "Deprecated" ), ( [ "Status" ], "NotDeprecated" ) ]
+                            |> NoDeprecated.withExceptionsForElements [ "Status.Deprecated", "Status.NotDeprecated" ]
                             |> rule
                         )
                     |> Review.Test.expectNoErrors
+        , test "should report a configuration error when giving an invalid exception " <|
+            \() ->
+                NoDeprecated.defaults
+                    |> NoDeprecated.withExceptionsForElements [ "malformedStuff" ]
+                    |> rule
+                    |> Review.Test.expectConfigurationError
+                        { message = "Invalid exceptions provided in the configuration"
+                        , details =
+                            [ "The names provided to the withExceptionsForElements function should look like 'Some.Module.value' or 'MyModule.Type', which wasn't the case for the following types:"
+                            , " - malformedStuff"
+                            ]
+                        }
         ]
 
 

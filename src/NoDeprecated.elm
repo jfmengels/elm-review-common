@@ -91,21 +91,34 @@ import Set exposing (Set)
 -}
 rule : Configuration -> Rule
 rule configuration =
-    let
-        stableConfiguration : StableConfiguration
-        stableConfiguration =
-            userConfigurationToStableConfiguration configuration
-    in
-    Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
-        |> Rule.withDependenciesProjectVisitor (dependenciesVisitor stableConfiguration)
-        |> Rule.withModuleVisitor (moduleVisitor stableConfiguration)
-        |> Rule.withModuleContextUsingContextCreator
-            { fromProjectToModule = fromProjectToModule stableConfiguration
-            , fromModuleToProject = fromModuleToProject
-            , foldProjectContexts = foldProjectContexts
-            }
-        |> Rule.withContextFromImportedModules
-        |> Rule.fromProjectRuleSchema
+    case createElementPredicate configuration of
+        Ok elementPredicate ->
+            let
+                stableConfiguration : StableConfiguration
+                stableConfiguration =
+                    userConfigurationToStableConfiguration configuration elementPredicate
+            in
+            Rule.newProjectRuleSchema "NoDeprecated" initialProjectContext
+                |> Rule.withDependenciesProjectVisitor (dependenciesVisitor stableConfiguration)
+                |> Rule.withModuleVisitor (moduleVisitor stableConfiguration)
+                |> Rule.withModuleContextUsingContextCreator
+                    { fromProjectToModule = fromProjectToModule stableConfiguration
+                    , fromModuleToProject = fromModuleToProject
+                    , foldProjectContexts = foldProjectContexts
+                    }
+                |> Rule.withContextFromImportedModules
+                |> Rule.fromProjectRuleSchema
+
+        Err faultyNames ->
+            Rule.configurationError "NoDeprecated"
+                { message = "Invalid exceptions provided in the configuration"
+                , details =
+                    [ "The names provided to the withExceptionsForElements function should look like 'Some.Module.value' or 'MyModule.Type', which wasn't the case for the following types:"
+                    , faultyNames
+                        |> List.map (\str -> " - " ++ str)
+                        |> String.join "\n"
+                    ]
+                }
 
 
 initialProjectContext : ProjectContext
@@ -200,7 +213,7 @@ type Configuration
         { moduleNamePredicate : ModuleName -> Bool
         , documentationPredicate : String -> Bool
         , elementPredicate : ModuleName -> String -> Bool
-        , exceptionsForElements : List ( ModuleName, String )
+        , exceptionsForElements : List String
         , recordFieldPredicate : String -> Bool
         , parameterPredicate : String -> Bool
         , deprecatedDependencies : List String
@@ -218,33 +231,77 @@ type StableConfiguration
         }
 
 
-userConfigurationToStableConfiguration : Configuration -> StableConfiguration
-userConfigurationToStableConfiguration ((Configuration configuration) as rawConfig) =
+userConfigurationToStableConfiguration : Configuration -> (ModuleName -> String -> Bool) -> StableConfiguration
+userConfigurationToStableConfiguration (Configuration configuration) elementPredicate =
     StableConfiguration
         { moduleNamePredicate = configuration.moduleNamePredicate
         , documentationPredicate = configuration.documentationPredicate
-        , elementPredicate = createElementPredicate rawConfig
+        , elementPredicate = elementPredicate
         , recordFieldPredicate = configuration.recordFieldPredicate
         , parameterPredicate = configuration.parameterPredicate
         , deprecatedDependencies = configuration.deprecatedDependencies
         }
 
 
-createElementPredicate : Configuration -> ModuleName -> String -> Bool
+createElementPredicate : Configuration -> Result (List String) (ModuleName -> String -> Bool)
 createElementPredicate (Configuration configuration) =
     if List.isEmpty configuration.exceptionsForElements then
-        \moduleName name ->
-            configuration.elementPredicate moduleName name
+        Ok
+            (\moduleName name ->
+                configuration.elementPredicate moduleName name
+            )
 
     else
-        let
-            exceptionsForElements : Set ( ModuleName, String )
-            exceptionsForElements =
-                Set.fromList configuration.exceptionsForElements
-        in
-        \moduleName name ->
-            configuration.elementPredicate moduleName name
-                && not (Set.member ( moduleName, name ) exceptionsForElements)
+        case parseNames configuration.exceptionsForElements of
+            Ok exceptionsForElements ->
+                Ok
+                    (\moduleName name ->
+                        configuration.elementPredicate moduleName name
+                            && not (Set.member ( moduleName, name ) exceptionsForElements)
+                    )
+
+            Err faultyNames ->
+                Err faultyNames
+
+
+parseNames : List String -> Result (List String) (Set ( ModuleName, String ))
+parseNames strings =
+    let
+        parsedNames : List (Result String ( ModuleName, String ))
+        parsedNames =
+            List.map isValidName strings
+
+        invalidNames : List String
+        invalidNames =
+            List.filterMap
+                (\result ->
+                    case result of
+                        Err typeName ->
+                            Just typeName
+
+                        Ok _ ->
+                            Nothing
+                )
+                parsedNames
+    in
+    if List.isEmpty invalidNames then
+        parsedNames
+            |> List.filterMap Result.toMaybe
+            |> Set.fromList
+            |> Ok
+
+    else
+        Err invalidNames
+
+
+isValidName : String -> Result String ( ModuleName, String )
+isValidName name =
+    case List.reverse <| String.split "." name of
+        functionName :: moduleName :: restOfModuleName ->
+            Ok ( List.reverse (moduleName :: restOfModuleName), functionName )
+
+        _ ->
+            Err name
 
 
 {-| Default configuration.
@@ -311,7 +368,7 @@ contain "deprecated" in their name without actually being deprecated.
         ]
 
 -}
-withExceptionsForElements : List ( ModuleName, String ) -> Configuration -> Configuration
+withExceptionsForElements : List String -> Configuration -> Configuration
 withExceptionsForElements exceptionsForElements (Configuration configuration) =
     Configuration { configuration | exceptionsForElements = exceptionsForElements ++ configuration.exceptionsForElements }
 
