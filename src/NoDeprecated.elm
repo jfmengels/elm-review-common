@@ -221,23 +221,32 @@ type StableConfiguration
 
 
 userConfigurationToStableConfiguration : Configuration -> StableConfiguration
-userConfigurationToStableConfiguration (Configuration configuration) =
-    let
-        exceptionsForElements : Set ( ModuleName, String )
-        exceptionsForElements =
-            Set.fromList configuration.exceptionsForElements
-    in
+userConfigurationToStableConfiguration ((Configuration configuration) as rawConfig) =
     StableConfiguration
         { moduleNamePredicate = configuration.moduleNamePredicate
         , documentationPredicate = configuration.documentationPredicate
-        , elementPredicate =
-            \moduleName name ->
-                configuration.elementPredicate moduleName name
-                    && not (Set.member ( moduleName, name ) exceptionsForElements)
+        , elementPredicate = createElementPredicate rawConfig
         , recordFieldPredicate = configuration.recordFieldPredicate
         , parameterPredicate = configuration.parameterPredicate
         , deprecatedDependencies = configuration.deprecatedDependencies
         }
+
+
+createElementPredicate : Configuration -> ModuleName -> String -> Bool
+createElementPredicate (Configuration configuration) =
+    if List.isEmpty configuration.exceptionsForElements then
+        \moduleName name ->
+            configuration.elementPredicate moduleName name
+
+    else
+        let
+            exceptionsForElements : Set ( ModuleName, String )
+            exceptionsForElements =
+                Set.fromList configuration.exceptionsForElements
+        in
+        \moduleName name ->
+            configuration.elementPredicate moduleName name
+                && not (Set.member ( moduleName, name ) exceptionsForElements)
 
 
 {-| Default configuration.
