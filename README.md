@@ -29,7 +29,7 @@ import Review.Rule exposing (Rule)
 config : List Rule
 config =
     [ NoExposingEverything.rule
-    , NoDeprecated.rule
+    , NoDeprecated.rule NoDeprecated.defaults
     , NoImportingEverything.rule []
     , NoMissingTypeAnnotation.rule
     , NoMissingTypeAnnotationInLetIn.rule
