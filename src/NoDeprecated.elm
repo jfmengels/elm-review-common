@@ -384,8 +384,8 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
     let
         newContext : ProjectContext
         newContext =
-            List.foldl
-                (\( packageName, dependency ) acc ->
+            Dict.foldl
+                (\packageName dependency acc ->
                     let
                         modules : List Elm.Docs.Module
                         modules =
@@ -407,7 +407,7 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
                             modules
                 )
                 projectContext
-                (Dict.toList dict)
+                dict
 
         unknownDependenciesErrors : List (Rule.Error global)
         unknownDependenciesErrors =
