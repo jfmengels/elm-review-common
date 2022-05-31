@@ -818,9 +818,12 @@ rangeForNamedPattern (Node parentRange _) { moduleName, name } =
     let
         lengthForName : Int
         lengthForName =
-            (moduleName ++ [ name ])
-                |> String.join "."
-                |> String.length
+            if List.isEmpty moduleName then
+                String.length name
+
+            else
+                (String.join "." moduleName ++ "." ++ name)
+                    |> String.length
 
         patternStart : Range.Location
         patternStart =
