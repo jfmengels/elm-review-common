@@ -40,7 +40,7 @@ normalFunction = 1
 """ ]
                     |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectNoErrors
-        , test "should report an error when referencing a local function whose name contains 'deprecated'" <|
+        , test "should report an error when referencing a local function whose name contains '@deprecated'" <|
             \() ->
                 """module A exposing (..)
 somethingDeprecated = 1
@@ -59,7 +59,7 @@ a = somethingDeprecated
                             }
                             |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 24 } }
                         ]
-        , test "should report an error when referencing a local function whose documentation contains 'deprecated'" <|
+        , test "should report an error when referencing a local function whose documentation contains '@deprecated'" <|
             \() ->
                 """module A exposing (..)
 a = something
@@ -276,7 +276,7 @@ a (Deprecated value) = 1
                             }
                             |> Review.Test.atExactly { start = { row = 3, column = 4 }, end = { row = 3, column = 14 } }
                         ]
-        , test "should report an error when referencing a custom type whose documentation contains 'deprecated' (top-level declaration)" <|
+        , test "should report an error when referencing a custom type whose documentation contains '@deprecated' (top-level declaration)" <|
             \() ->
                 """module A exposing (..)
 a : Something
@@ -299,7 +299,7 @@ type Something = Foo Int
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
                         ]
-        , test "should report an error when referencing a custom type constructor whose documentation contains 'deprecated' (top-level declaration)" <|
+        , test "should report an error when referencing a custom type constructor whose documentation contains '@deprecated' (top-level declaration)" <|
             \() ->
                 """module A exposing (..)
 a (A value) = 1
@@ -321,7 +321,7 @@ type Something = A Int
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 4 }, end = { row = 2, column = 5 } }
                         ]
-        , test "should report an error when referencing a type alias whose documentation contains 'deprecated' (top-level declaration)" <|
+        , test "should report an error when referencing a type alias whose documentation contains '@deprecated' (top-level declaration)" <|
             \() ->
                 """module A exposing (..)
 a : Something
@@ -344,7 +344,7 @@ type alias Something = Int
                             }
                             |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
                         ]
-        , test "should report an error when referencing a type alias constructor whose documentation contains 'deprecated' (top-level declaration)" <|
+        , test "should report an error when referencing a type alias constructor whose documentation contains '@deprecated' (top-level declaration)" <|
             \() ->
                 """module A exposing (..)
 a = Something 1
