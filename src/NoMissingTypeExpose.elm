@@ -7,7 +7,6 @@ module NoMissingTypeExpose exposing (rule)
 -}
 
 import Dict exposing (Dict)
-import Elm.Docs exposing (Module)
 import Elm.Module
 import Elm.Project exposing (Project)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
