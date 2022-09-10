@@ -56,7 +56,12 @@ expressionVisitor : Node Expression -> List (Rule.Error {})
 expressionVisitor node =
     case Node.value node of
         Expression.Application (fn :: _) ->
-            []
+            case Node.value fn of
+                Expression.PrefixOperator "<" ->
+                    []
+
+                _ ->
+                    []
 
         _ ->
             []
