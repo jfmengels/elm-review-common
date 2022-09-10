@@ -9,6 +9,7 @@ module NoConfusingPrefixOperator exposing (rule)
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
 import Review.Rule as Rule exposing (Rule)
+import Set exposing (Set)
 
 
 {-| Reports... REPLACEME
@@ -57,16 +58,43 @@ expressionVisitor node =
     case Node.value node of
         Expression.Application (fn :: _) ->
             case Node.value fn of
-                Expression.PrefixOperator "<" ->
-                    [ Rule.error
-                        { message = "REPLACEME"
-                        , details = [ "REPLACEME" ]
-                        }
-                        (Node.range fn)
-                    ]
+                Expression.PrefixOperator operator ->
+                    if Set.member operator nonCommutativeOperators then
+                        [ Rule.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            }
+                            (Node.range fn)
+                        ]
+
+                    else
+                        []
 
                 _ ->
                     []
 
         _ ->
             []
+
+
+nonCommutativeOperators : Set String
+nonCommutativeOperators =
+    Set.fromList
+        [ "-"
+        , "/"
+        , "//"
+        , "^"
+        , "<"
+        , ">"
+        , "<="
+        , ">="
+        , "++"
+        , "|>"
+        , "<|"
+        , ">>"
+        , "<<"
+        , "|."
+        , "|="
+        , "</>"
+        , "<?>"
+        ]
