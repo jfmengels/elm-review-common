@@ -58,7 +58,12 @@ expressionVisitor node =
         Expression.Application (fn :: _) ->
             case Node.value fn of
                 Expression.PrefixOperator "<" ->
-                    []
+                    [ Rule.error
+                        { message = "REPLACEME"
+                        , details = [ "REPLACEME" ]
+                        }
+                        (Node.range fn)
+                    ]
 
                 _ ->
                     []
