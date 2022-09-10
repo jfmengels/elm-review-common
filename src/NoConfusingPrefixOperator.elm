@@ -6,6 +6,8 @@ module NoConfusingPrefixOperator exposing (rule)
 
 -}
 
+import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.Node as Node exposing (Node)
 import Review.Rule as Rule exposing (Rule)
 
 
@@ -46,5 +48,15 @@ elm-review --template jfmengels/elm-review-common/example --rules NoConfusingPre
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoConfusingPrefixOperator" ()
-        -- Add your visitors
+        |> Rule.withSimpleExpressionVisitor expressionVisitor
         |> Rule.fromModuleRuleSchema
+
+
+expressionVisitor : Node Expression -> List (Rule.Error {})
+expressionVisitor node =
+    case Node.value node of
+        Expression.Application (fn :: _) ->
+            []
+
+        _ ->
+            []
