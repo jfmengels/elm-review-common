@@ -35,4 +35,17 @@ a = (<) 1
                             , under = "(<)"
                             }
                         ]
+        , test "should report an error when using a confusing operator with 2 arguments" <|
+            \() ->
+                """module A exposing (..)
+a = (<) 1 2
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "REPLACEME"
+                            , details = [ "REPLACEME" ]
+                            , under = "(<)"
+                            }
+                        ]
         ]
