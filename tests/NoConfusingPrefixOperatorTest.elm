@@ -1,5 +1,6 @@
 module NoConfusingPrefixOperatorTest exposing (all)
 
+import Expect exposing (Expectation)
 import NoConfusingPrefixOperator exposing (rule)
 import Review.Test
 import Test exposing (Test, describe, test)
@@ -49,3 +50,15 @@ a = (<) 1 2
                             }
                         ]
         ]
+
+
+expectError : String -> Review.Test.ReviewResult -> Expectation
+expectError operator reviewResult =
+    Review.Test.expectErrors
+        [ Review.Test.error
+            { message = "REPLACEME"
+            , details = [ "REPLACEME" ]
+            , under = operator
+            }
+        ]
+        reviewResult
