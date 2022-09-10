@@ -49,6 +49,18 @@ a = (<) 1 2
                             , under = "(<)"
                             }
                         ]
+        , test "should not report commutative operators (+) (*) (==) (/=) (&&) (||)" <|
+            \() ->
+                """module A exposing (..)
+a = (+) 1
+b = (*) 1
+c = (==) 1
+d = (/=) 1
+e = (&&) True
+f = (||) True
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
         ]
 
 
