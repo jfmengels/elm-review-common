@@ -5,7 +5,7 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoConfusingPrefixOperator`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.2.3/NoConfusingPrefixOperator) - Reports REPLACEME.
+- [`NoConfusingPrefixOperator`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.2.3/NoConfusingPrefixOperator) - Reports the usage of confusing prefix operators.
 - [`NoDeprecated`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.2.3/NoDeprecated/) - Reports usages of deprecated functions and types.
 - [🔧 `NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.2.3/NoExposingEverything/) "Provides automatic fixes" - Forbids exporting everything from a module.
 - [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.2.3/NoImportingEverything/) - Forbids importing everything from a module.
