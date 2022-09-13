@@ -91,13 +91,33 @@ rule =
 expressionVisitor : Node Expression -> List (Rule.Error {})
 expressionVisitor node =
     case Node.value node of
-        Expression.Application (fn :: _) ->
+        Expression.Application (fn :: restOfArgs) ->
             case Node.value fn of
                 Expression.PrefixOperator operator ->
                     if Set.member operator nonCommutativeOperators then
+                        let
+                            inverseLambda : String
+                            inverseLambda =
+                                "`\\a -> b " ++ operator ++ " a`"
+
+                            simpleOp : String
+                            simpleOp =
+                                "`a " ++ operator ++ " b`"
+
+                            suggestion : String
+                            suggestion =
+                                if List.length restOfArgs /= 2 then
+                                    "`\\b -> a " ++ operator ++ " b`"
+
+                                else
+                                    simpleOp
+                        in
                         [ Rule.error
-                            { message = "REPLACEME"
-                            , details = [ "REPLACEME" ]
+                            { message = "Found a confusing usage of prefix operator"
+                            , details =
+                                [ "Prefix operators for operators like this one are very error-prone. While " ++ simpleOp ++ " is easy to understand, it is not as obvious to a reader that `(" ++ operator ++ ") b` is the same as " ++ inverseLambda ++ "."
+                                , "Prefer using the form " ++ suggestion ++ " which will be a lot easier to understand and to get right."
+                                ]
                             }
                             (Node.range fn)
                         ]

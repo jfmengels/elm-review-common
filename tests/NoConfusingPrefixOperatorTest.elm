@@ -26,32 +26,6 @@ a = (<)
 """
                 |> Review.Test.run rule
                 |> Review.Test.expectNoErrors
-    , test "should report an error when using a confusing operator with only a single argument" <|
-        \() ->
-            """module A exposing (..)
-a = (<) 1
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectErrors
-                    [ Review.Test.error
-                        { message = "REPLACEME"
-                        , details = [ "REPLACEME" ]
-                        , under = "(<)"
-                        }
-                    ]
-    , test "should report an error when using a confusing operator with 2 arguments" <|
-        \() ->
-            """module A exposing (..)
-a = (<) 1 2
-"""
-                |> Review.Test.run rule
-                |> Review.Test.expectErrors
-                    [ Review.Test.error
-                        { message = "REPLACEME"
-                        , details = [ "REPLACEME" ]
-                        , under = "(<)"
-                        }
-                    ]
     , test "should not report commutative operators (+) (*) (==) (/=) (&&) (||)" <|
         \() ->
             """module A exposing (..)
@@ -70,7 +44,7 @@ f = (||) True
 nonCommutativeOperatorTests : List Test
 nonCommutativeOperatorTests =
     List.map
-        (\operator ->
+        (\( operator, details ) ->
             test ("should report non-commutative operators " ++ operator) <|
                 \() ->
                     ("""module A exposing (..)
@@ -79,27 +53,95 @@ a = """ ++ operator ++ """ value
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
-                                { message = "REPLACEME"
-                                , details = [ "REPLACEME" ]
+                                { message = "Found a confusing usage of prefix operator"
+                                , details = details
                                 , under = operator
                                 }
                             ]
         )
-        [ "(-)"
-        , "(/)"
-        , "(//)"
-        , "(^)"
-        , "(<)"
-        , "(>)"
-        , "(<=)"
-        , "(>=)"
-        , "(++)"
-        , "(|>)"
-        , "(<|)"
-        , "(>>)"
-        , "(<<)"
-        , "(|.)"
-        , "(|=)"
-        , "(</>)"
-        , "(<?>)"
+        [ ( "(-)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a - b` is easy to understand, it is not as obvious to a reader that `(-) b` is the same as `\\a -> b - a`."
+            , "Prefer using the form `\\b -> a - b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(/)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a / b` is easy to understand, it is not as obvious to a reader that `(/) b` is the same as `\\a -> b / a`."
+            , "Prefer using the form `\\b -> a / b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(//)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a // b` is easy to understand, it is not as obvious to a reader that `(//) b` is the same as `\\a -> b // a`."
+            , "Prefer using the form `\\b -> a // b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(^)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a ^ b` is easy to understand, it is not as obvious to a reader that `(^) b` is the same as `\\a -> b ^ a`."
+            , "Prefer using the form `\\b -> a ^ b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(<)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a < b` is easy to understand, it is not as obvious to a reader that `(<) b` is the same as `\\a -> b < a`."
+            , "Prefer using the form `\\b -> a < b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(>)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a > b` is easy to understand, it is not as obvious to a reader that `(>) b` is the same as `\\a -> b > a`."
+            , "Prefer using the form `\\b -> a > b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(<=)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a <= b` is easy to understand, it is not as obvious to a reader that `(<=) b` is the same as `\\a -> b <= a`."
+            , "Prefer using the form `\\b -> a <= b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(>=)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a >= b` is easy to understand, it is not as obvious to a reader that `(>=) b` is the same as `\\a -> b >= a`."
+            , "Prefer using the form `\\b -> a >= b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(++)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a ++ b` is easy to understand, it is not as obvious to a reader that `(++) b` is the same as `\\a -> b ++ a`."
+            , "Prefer using the form `\\b -> a ++ b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(|>)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a |> b` is easy to understand, it is not as obvious to a reader that `(|>) b` is the same as `\\a -> b |> a`."
+            , "Prefer using the form `\\b -> a |> b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(<|)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a <| b` is easy to understand, it is not as obvious to a reader that `(<|) b` is the same as `\\a -> b <| a`."
+            , "Prefer using the form `\\b -> a <| b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(>>)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a >> b` is easy to understand, it is not as obvious to a reader that `(>>) b` is the same as `\\a -> b >> a`."
+            , "Prefer using the form `\\b -> a >> b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(<<)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a << b` is easy to understand, it is not as obvious to a reader that `(<<) b` is the same as `\\a -> b << a`."
+            , "Prefer using the form `\\b -> a << b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(|.)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a |. b` is easy to understand, it is not as obvious to a reader that `(|.) b` is the same as `\\a -> b |. a`."
+            , "Prefer using the form `\\b -> a |. b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(|=)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a |= b` is easy to understand, it is not as obvious to a reader that `(|=) b` is the same as `\\a -> b |= a`."
+            , "Prefer using the form `\\b -> a |= b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(</>)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a </> b` is easy to understand, it is not as obvious to a reader that `(</>) b` is the same as `\\a -> b </> a`."
+            , "Prefer using the form `\\b -> a </> b` which will be a lot easier to understand and to get right."
+            ]
+          )
+        , ( "(<?>)"
+          , [ "Prefix operators for operators like this one are very error-prone. While `a <?> b` is easy to understand, it is not as obvious to a reader that `(<?>) b` is the same as `\\a -> b <?> a`."
+            , "Prefer using the form `\\b -> a <?> b` which will be a lot easier to understand and to get right."
+            ]
+          )
         ]
