@@ -11,6 +11,7 @@ when inside the directory containing this file.
 
 -}
 
+import NoConfusingPrefixOperator
 import NoDeprecated
 import NoExposingEverything
 import NoImportingEverything
@@ -24,6 +25,7 @@ import Review.Rule exposing (Rule)
 config : List Rule
 config =
     [ NoExposingEverything.rule
+    , NoConfusingPrefixOperator.rule
     , NoDeprecated.rule NoDeprecated.defaults
     , NoPrematureLetComputation.rule
     , NoImportingEverything.rule []
