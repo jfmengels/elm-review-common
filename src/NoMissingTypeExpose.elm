@@ -662,7 +662,7 @@ foldExposedModules newExposedModules oldExposedModules =
             oldExposedModules
 
         ( Package oldList, Package newList ) ->
-            Package (Set.union oldList newList)
+            Package (Set.union newList oldList)
 
 
 foldModuleTypes : Dict ModuleName (Set String) -> Dict ModuleName (Set String) -> Dict ModuleName (Set String)
