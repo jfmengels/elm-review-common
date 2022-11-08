@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.2] - 2022-11-08
+
+Add better support for `jfmengels/elm-review` v2.10.0.
+
 ## [1.3.1] - 2022-09-13
 
 This makes the [`NoMissingTypeExpose`] rule faster.
@@ -13,6 +17,7 @@ This makes the [`NoMissingTypeExpose`] rule faster.
 
 Help would be appreciated to fill the blanks!
 
+[1.3.2]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.2
 [1.3.1]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.1
 [1.3.0]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.0
 

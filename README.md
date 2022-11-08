@@ -5,14 +5,14 @@ Provides common linting rules for [`elm-review`](https://package.elm-lang.org/pa
 
 ## Provided rules
 
-- [`NoConfusingPrefixOperator`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoConfusingPrefixOperator/) - Reports the usage of confusing prefix operators.
-- [`NoDeprecated`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoDeprecated/) - Reports usages of deprecated functions and types.
-- [🔧 `NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoExposingEverything/) "Provides automatic fixes" - Forbids exporting everything from a module.
-- [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoImportingEverything/) - Forbids importing everything from a module.
-- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoMissingTypeAnnotation/) - Reports top-level declarations that do not have a type annotation.
-- [`NoMissingTypeAnnotationInLetIn`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoMissingTypeAnnotationInLetIn/) - Reports `let in` declarations that do not have a type annotation.
-- [🔧 `NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoMissingTypeExpose/) "Provides automatic fixes" - Reports types that should be exposed but are not.
-- [🔧 `NoPrematureLetComputation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoPrematureLetComputation/) - Reports let declarations that are computed earlier than needed.
+- [`NoConfusingPrefixOperator`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoConfusingPrefixOperator/) - Reports the usage of confusing prefix operators.
+- [`NoDeprecated`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoDeprecated/) - Reports usages of deprecated functions and types.
+- [🔧 `NoExposingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoExposingEverything/) "Provides automatic fixes" - Forbids exporting everything from a module.
+- [`NoImportingEverything`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoImportingEverything/) - Forbids importing everything from a module.
+- [`NoMissingTypeAnnotation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoMissingTypeAnnotation/) - Reports top-level declarations that do not have a type annotation.
+- [`NoMissingTypeAnnotationInLetIn`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoMissingTypeAnnotationInLetIn/) - Reports `let in` declarations that do not have a type annotation.
+- [🔧 `NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoMissingTypeExpose/) "Provides automatic fixes" - Reports types that should be exposed but are not.
+- [🔧 `NoPrematureLetComputation`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoPrematureLetComputation/) - Reports let declarations that are computed earlier than needed.
 
 
 ## Configuration
@@ -52,4 +52,4 @@ elm-review --template jfmengels/elm-review-common/example
 
 ## Thanks
 
-Thanks to @sparksp for writing [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.1/NoMissingTypeExpose/).
+Thanks to @sparksp for writing [`NoMissingTypeExpose`](https://package.elm-lang.org/packages/jfmengels/elm-review-common/1.3.2/NoMissingTypeExpose/).
