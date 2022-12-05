@@ -674,16 +674,12 @@ reportLetDeclaration configuration context letDeclaration =
 
                         Nothing ->
                             []
-
-                destructuringErrors : List (Rule.Error {})
-                destructuringErrors =
-                    reportPatterns
-                        configuration
-                        context
-                        (function.declaration |> Node.value |> .arguments)
-                        []
             in
-            destructuringErrors ++ signatureErrors
+            reportPatterns
+                configuration
+                context
+                (function.declaration |> Node.value |> .arguments)
+                signatureErrors
 
         Expression.LetDestructuring pattern _ ->
             reportPatterns
