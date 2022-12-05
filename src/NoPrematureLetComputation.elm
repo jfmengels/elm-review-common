@@ -547,7 +547,6 @@ registerLetExpression node { declarations, expression } context =
         scopes =
             declarations
                 |> List.filterMap getLetFunctionRange
-                |> List.map (\range -> ( range, functionScope ))
                 |> RangeDict.fromList
 
         newScope : Scope
@@ -925,7 +924,7 @@ collectDeclarations node =
                     []
 
 
-getLetFunctionRange : Node Expression.LetDeclaration -> Maybe Range
+getLetFunctionRange : Node Expression.LetDeclaration -> Maybe ( Range, Scope )
 getLetFunctionRange node =
     case Node.value node of
         Expression.LetFunction { declaration } ->
@@ -933,7 +932,7 @@ getLetFunctionRange node =
                 Nothing
 
             else
-                Just (declaration |> Node.value |> .expression |> Node.range)
+                Just ( declaration |> Node.value |> .expression |> Node.range, functionScope )
 
         Expression.LetDestructuring _ _ ->
             Nothing
