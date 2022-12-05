@@ -658,8 +658,22 @@ declarationVisitor configuration node context =
             []
 
 
-reportLetDeclaration : StableConfiguration -> ModuleContext -> Node Expression.LetDeclaration -> List (Rule.Error {})
-reportLetDeclaration configuration context letDeclaration =
+reportLetDeclarations : StableConfiguration -> ModuleContext -> List (Node Expression.LetDeclaration) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportLetDeclarations configuration context letDeclarations acc =
+    case letDeclarations of
+        [] ->
+            acc
+
+        letDeclaration :: rest ->
+            reportLetDeclarations
+                configuration
+                context
+                rest
+                (reportLetDeclaration configuration context letDeclaration acc)
+
+
+reportLetDeclaration : StableConfiguration -> ModuleContext -> Node Expression.LetDeclaration -> List (Rule.Error {}) -> List (Rule.Error {})
+reportLetDeclaration configuration context letDeclaration acc =
     case Node.value letDeclaration of
         Expression.LetFunction function ->
             let
@@ -670,10 +684,10 @@ reportLetDeclaration configuration context letDeclaration =
                             reportTypes
                                 context
                                 [ (Node.value signature).typeAnnotation ]
-                                []
+                                acc
 
                         Nothing ->
-                            []
+                            acc
             in
             reportPatterns
                 configuration
@@ -686,7 +700,7 @@ reportLetDeclaration configuration context letDeclaration =
                 configuration
                 context
                 [ pattern ]
-                []
+                acc
 
 
 reportTypes : ModuleContext -> List (Node TypeAnnotation) -> List (Rule.Error {}) -> List (Rule.Error {})
@@ -830,9 +844,7 @@ expressionVisitor configuration (Node nodeRange node) context =
                 name
 
         Expression.LetExpression letBlock ->
-            List.concatMap
-                (reportLetDeclaration configuration context)
-                letBlock.declarations
+            reportLetDeclarations configuration context letBlock.declarations []
 
         Expression.CaseExpression { cases } ->
             reportPatterns
