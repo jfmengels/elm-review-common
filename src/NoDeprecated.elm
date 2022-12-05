@@ -78,7 +78,7 @@ import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
-import Elm.Syntax.Range as Range exposing (Range)
+import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.Type
 import Elm.Syntax.TypeAlias
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
@@ -794,7 +794,7 @@ reportPatterns configuration context nodes acc =
 
 
 rangeForNamedPattern : Node a -> Pattern.QualifiedNameRef -> Range
-rangeForNamedPattern (Node parentRange _) { moduleName, name } =
+rangeForNamedPattern (Node { start } _) { moduleName, name } =
     let
         lengthForName : Int
         lengthForName =
@@ -804,13 +804,9 @@ rangeForNamedPattern (Node parentRange _) { moduleName, name } =
             else
                 (String.join "." moduleName ++ "." ++ name)
                     |> String.length
-
-        patternStart : Range.Location
-        patternStart =
-            parentRange.start
     in
-    { start = patternStart
-    , end = { row = patternStart.row, column = patternStart.column + lengthForName }
+    { start = start
+    , end = { row = start.row, column = start.column + lengthForName }
     }
 
 
