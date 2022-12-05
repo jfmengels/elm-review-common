@@ -698,20 +698,10 @@ reportTypes context nodes acc =
         node :: restOfNodes ->
             case Node.value node of
                 TypeAnnotation.Typed (Node range ( _, name )) args ->
-                    let
-                        newAcc : List (Rule.Error {})
-                        newAcc =
-                            case reportElementAsMaybe context range name of
-                                Just err ->
-                                    err :: acc
-
-                                Nothing ->
-                                    acc
-                    in
                     reportTypes
                         context
                         (args ++ restOfNodes)
-                        newAcc
+                        (maybeCons (reportElementAsMaybe context range name) acc)
 
                 TypeAnnotation.Tupled nodesToLookAt ->
                     reportTypes context (nodesToLookAt ++ restOfNodes) acc
@@ -770,21 +760,11 @@ reportPatterns configuration context nodes acc =
                     reportPatterns configuration context (subPatterns ++ restOfNodes) acc
 
                 Pattern.VarPattern name ->
-                    let
-                        newAcc : List (Rule.Error {})
-                        newAcc =
-                            case reportParameter configuration (Node.range pattern) name of
-                                Just err ->
-                                    err :: acc
-
-                                Nothing ->
-                                    acc
-                    in
                     reportPatterns
                         configuration
                         context
                         restOfNodes
-                        newAcc
+                        (maybeCons (reportParameter configuration (Node.range pattern) name) acc)
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
                     let
@@ -803,17 +783,11 @@ reportPatterns configuration context nodes acc =
                         (errors ++ acc)
 
                 Pattern.AsPattern subPattern name ->
-                    let
-                        newAcc : List (Rule.Error {})
-                        newAcc =
-                            case reportParameter configuration (Node.range name) (Node.value name) of
-                                Just err ->
-                                    err :: acc
-
-                                Nothing ->
-                                    acc
-                    in
-                    reportPatterns configuration context (subPattern :: restOfNodes) newAcc
+                    reportPatterns
+                        configuration
+                        context
+                        (subPattern :: restOfNodes)
+                        (maybeCons (reportParameter configuration (Node.range name) (Node.value name)) acc)
 
                 _ ->
                     reportPatterns configuration context restOfNodes acc
@@ -994,3 +968,13 @@ error origin range =
         , details = details
         }
         range
+
+
+maybeCons : Maybe a -> List a -> List a
+maybeCons maybe list =
+    case maybe of
+        Just a ->
+            a :: list
+
+        Nothing ->
+            list
