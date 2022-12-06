@@ -636,7 +636,7 @@ numberOfArgumentsForFunction lookupTable fnName fnRange =
             ModuleNameLookupTable.moduleNameAt lookupTable fnRange
                 |> Maybe.andThen (\moduleName -> Dict.get moduleName knownModuleNames)
 
-        _ ->
+        Nothing ->
             Nothing
 
 
