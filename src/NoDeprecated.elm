@@ -810,7 +810,7 @@ reportPatterns configuration context nodes acc =
                     reportPatterns configuration
                         context
                         restOfNodes
-                        (List.filterMap (reportField configuration) fields ++ acc)
+                        (List.filterMap (reportField configuration context.lookupTable) fields ++ acc)
 
                 Pattern.UnConsPattern left right ->
                     reportPatterns configuration context (left :: right :: restOfNodes) acc
@@ -870,8 +870,8 @@ rangeForNamedPattern (Node { start } _) { moduleName, name } =
     }
 
 
-reportField : StableConfiguration -> Node String -> Maybe DeprecatedElementUsage
-reportField (StableConfiguration configuration) field =
+reportField : StableConfiguration -> ModuleNameLookupTable -> Node String -> Maybe DeprecatedElementUsage
+reportField (StableConfiguration configuration) lookupTable field =
     if configuration.recordFieldPredicate (Node.value field) then
         Just (usageOfDeprecatedElement Field (Node.range field))
 
@@ -919,7 +919,7 @@ expressionVisitorHelp configuration (Node nodeRange node) context =
                 []
 
         Expression.RecordAccess _ field ->
-            case reportField configuration field of
+            case reportField configuration context.lookupTable field of
                 Just err ->
                     [ err ]
 
@@ -927,7 +927,7 @@ expressionVisitorHelp configuration (Node nodeRange node) context =
                     []
 
         Expression.RecordAccessFunction fieldName ->
-            case reportField configuration (Node nodeRange fieldName) of
+            case reportField configuration context.lookupTable (Node nodeRange fieldName) of
                 Just err ->
                     [ err ]
 
