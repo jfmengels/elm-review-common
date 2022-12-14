@@ -151,6 +151,7 @@ type alias ModuleContext =
     , deprecatedElements : Set ( ModuleName, String )
     , isModuleDeprecated : Bool
     , localDeprecatedElements : List ( ModuleName, String )
+    , usages : List DeprecatedElementUsage
     }
 
 
@@ -174,6 +175,7 @@ fromProjectToModule (StableConfiguration configuration) =
             , deprecatedElements = Set.fromList projectContext.deprecatedElements
             , isModuleDeprecated = configuration.moduleNamePredicate moduleName
             , localDeprecatedElements = []
+            , usages = []
             }
         )
         |> Rule.withMetadata
@@ -653,7 +655,7 @@ declarationVisitor configuration node context =
         usages =
             declarationVisitorHelp configuration node context
     in
-    ( List.map toError usages, context )
+    ( List.map toError usages, { context | usages = usages ++ context.usages } )
 
 
 declarationVisitorHelp : StableConfiguration -> Node Declaration -> ModuleContext -> List DeprecatedElementUsage
@@ -884,7 +886,7 @@ expressionVisitor configuration node context =
         usages =
             expressionVisitorHelp configuration node context
     in
-    ( List.map toError usages, context )
+    ( List.map toError usages, { context | usages = usages ++ context.usages } )
 
 
 expressionVisitorHelp : StableConfiguration -> Node Expression -> ModuleContext -> List DeprecatedElementUsage
