@@ -406,11 +406,11 @@ withExceptionsForElements exceptionsForElements (Configuration configuration) =
     Configuration { configuration | exceptionsForElements = exceptionsForElements ++ configuration.exceptionsForElements }
 
 
-type alias DeprecatedElementUsage scope =
-    Rule.Error scope
+type alias DeprecatedElementUsage =
+    Rule.Error {}
 
 
-toError : DeprecatedElementUsage { useErrorForModule : () } -> Rule.Error { useErrorForModule : () }
+toError : DeprecatedElementUsage -> Rule.Error {}
 toError deprecatedElementUsage =
     deprecatedElementUsage
 
@@ -637,12 +637,12 @@ registerElement name context =
     }
 
 
-declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> List (DeprecatedElementUsage {})
+declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> List DeprecatedElementUsage
 declarationVisitor configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
             let
-                signatureErrors : List (DeprecatedElementUsage {})
+                signatureErrors : List DeprecatedElementUsage
                 signatureErrors =
                     case declaration.signature of
                         Just signature ->
@@ -682,7 +682,7 @@ declarationVisitor configuration node context =
             []
 
 
-reportLetDeclarations : StableConfiguration -> ModuleContext -> List (Node Expression.LetDeclaration) -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
+reportLetDeclarations : StableConfiguration -> ModuleContext -> List (Node Expression.LetDeclaration) -> List DeprecatedElementUsage -> List DeprecatedElementUsage
 reportLetDeclarations configuration context letDeclarations acc =
     case letDeclarations of
         [] ->
@@ -696,12 +696,12 @@ reportLetDeclarations configuration context letDeclarations acc =
                 (reportLetDeclaration configuration context letDeclaration acc)
 
 
-reportLetDeclaration : StableConfiguration -> ModuleContext -> Node Expression.LetDeclaration -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
+reportLetDeclaration : StableConfiguration -> ModuleContext -> Node Expression.LetDeclaration -> List DeprecatedElementUsage -> List DeprecatedElementUsage
 reportLetDeclaration configuration context letDeclaration acc =
     case Node.value letDeclaration of
         Expression.LetFunction function ->
             let
-                signatureErrors : List (DeprecatedElementUsage {})
+                signatureErrors : List DeprecatedElementUsage
                 signatureErrors =
                     case function.signature of
                         Just signature ->
@@ -727,7 +727,7 @@ reportLetDeclaration configuration context letDeclaration acc =
                 acc
 
 
-reportTypes : ModuleContext -> List (Node TypeAnnotation) -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
+reportTypes : ModuleContext -> List (Node TypeAnnotation) -> List DeprecatedElementUsage -> List DeprecatedElementUsage
 reportTypes context nodes acc =
     case nodes of
         [] ->
@@ -767,7 +767,7 @@ reportTypes context nodes acc =
                     reportTypes context restOfNodes acc
 
 
-reportPatterns : StableConfiguration -> ModuleContext -> List (Node Pattern) -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
+reportPatterns : StableConfiguration -> ModuleContext -> List (Node Pattern) -> List DeprecatedElementUsage -> List DeprecatedElementUsage
 reportPatterns configuration context nodes acc =
     case nodes of
         [] ->
@@ -806,7 +806,7 @@ reportPatterns configuration context nodes acc =
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
                     let
-                        errors : List (DeprecatedElementUsage {})
+                        errors : List DeprecatedElementUsage
                         errors =
                             reportElementAsList
                                 context
@@ -849,7 +849,7 @@ rangeForNamedPattern (Node { start } _) { moduleName, name } =
     }
 
 
-reportField : StableConfiguration -> Node String -> Maybe (DeprecatedElementUsage {})
+reportField : StableConfiguration -> Node String -> Maybe DeprecatedElementUsage
 reportField (StableConfiguration configuration) field =
     if configuration.recordFieldPredicate (Node.value field) then
         Just (error Field (Node.range field))
@@ -858,7 +858,7 @@ reportField (StableConfiguration configuration) field =
         Nothing
 
 
-expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> List (DeprecatedElementUsage {})
+expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> List DeprecatedElementUsage
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
@@ -907,7 +907,7 @@ expressionVisitor configuration (Node nodeRange node) context =
             []
 
 
-reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
+reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List DeprecatedElementUsage -> List DeprecatedElementUsage
 reportElementAsList context rangeForLookupTable rangeForReport name acc =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
@@ -929,7 +929,7 @@ reportElementAsList context rangeForLookupTable rangeForReport name acc =
             acc
 
 
-reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe (DeprecatedElementUsage {})
+reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe DeprecatedElementUsage
 reportElementAsMaybe context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
@@ -951,7 +951,7 @@ reportElementAsMaybe context range name =
             Nothing
 
 
-reportParameter : StableConfiguration -> Range -> String -> Maybe (DeprecatedElementUsage {})
+reportParameter : StableConfiguration -> Range -> String -> Maybe DeprecatedElementUsage
 reportParameter (StableConfiguration configuration) range name =
     if configuration.parameterPredicate name then
         Just (error Parameter range)
@@ -968,7 +968,7 @@ type Origin
     | Parameter
 
 
-error : Origin -> Range -> DeprecatedElementUsage {}
+error : Origin -> Range -> DeprecatedElementUsage
 error origin range =
     let
         details : List String
