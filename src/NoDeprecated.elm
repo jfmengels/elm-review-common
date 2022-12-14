@@ -407,12 +407,21 @@ withExceptionsForElements exceptionsForElements (Configuration configuration) =
 
 
 type alias DeprecatedElementUsage =
-    Rule.Error {}
+    { origin : Origin
+    , range : Range
+    }
+
+
+toUsage : Origin -> Range -> DeprecatedElementUsage
+toUsage origin range =
+    { origin = origin
+    , range = range
+    }
 
 
 toError : DeprecatedElementUsage -> Rule.Error {}
 toError deprecatedElementUsage =
-    deprecatedElementUsage
+    error deprecatedElementUsage.origin deprecatedElementUsage.range
 
 
 dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
@@ -637,14 +646,14 @@ registerElement name context =
     }
 
 
-declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> ( List DeprecatedElementUsage, ModuleContext )
+declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
 declarationVisitor configuration node context =
     let
         usages : List DeprecatedElementUsage
         usages =
             declarationVisitorHelp configuration node context
     in
-    ( usages, context )
+    ( List.map toError usages, context )
 
 
 declarationVisitorHelp : StableConfiguration -> Node Declaration -> ModuleContext -> List DeprecatedElementUsage
@@ -868,14 +877,14 @@ reportField (StableConfiguration configuration) field =
         Nothing
 
 
-expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> ( List DeprecatedElementUsage, ModuleContext )
+expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
 expressionVisitor configuration node context =
     let
         usages : List DeprecatedElementUsage
         usages =
             expressionVisitorHelp configuration node context
     in
-    ( usages, context )
+    ( List.map toError usages, context )
 
 
 expressionVisitorHelp : StableConfiguration -> Node Expression -> ModuleContext -> List DeprecatedElementUsage
@@ -989,40 +998,8 @@ type Origin
 
 
 usageOfDeprecatedElement : Origin -> Range -> DeprecatedElementUsage
-usageOfDeprecatedElement origin range =
-    let
-        details : List String
-        details =
-            case origin of
-                Element ->
-                    [ "This element was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation to know the alternative solutions."
-                    ]
-
-                Module ->
-                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation to know the alternative solutions."
-                    ]
-
-                Dependency ->
-                    [ "The dependency where this element is defined was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation or your review configuration to know the alternative solutions."
-                    ]
-
-                Field ->
-                    [ "This element was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation to know the alternative solutions."
-                    ]
-
-                Parameter ->
-                    [ "This element was marked as deprecated and should not be used anymore."
-                    ]
-    in
-    Rule.error
-        { message = "Found new usage of deprecated element"
-        , details = details
-        }
-        range
+usageOfDeprecatedElement =
+    DeprecatedElementUsage
 
 
 error : Origin -> Range -> Rule.Error {}
