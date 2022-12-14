@@ -1005,8 +1005,8 @@ usageOfDeprecatedElement origin range =
         range
 
 
-errorOriginal : Origin -> Range -> Rule.Error {}
-errorOriginal origin range =
+error : Origin -> Range -> Rule.Error {}
+error origin range =
     let
         details : List String
         details =
