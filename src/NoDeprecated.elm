@@ -1073,7 +1073,14 @@ dataExtractor projectContext =
 
 encodeCountDict : Dict String Int -> Encode.Value
 encodeCountDict dict =
-    Encode.dict identity Encode.int dict
+    let
+        totalCount : Int
+        totalCount =
+            Dict.values dict |> List.sum
+    in
+    dict
+        |> Dict.insert "_total" totalCount
+        |> Encode.dict identity Encode.int
 
 
 maybeCons : Maybe a -> List a -> List a
