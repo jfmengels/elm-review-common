@@ -410,6 +410,11 @@ type alias DeprecatedElementUsage scope =
     Rule.Error scope
 
 
+toError : DeprecatedElementUsage { useErrorForModule : () } -> Rule.Error { useErrorForModule : () }
+toError deprecatedElementUsage =
+    deprecatedElementUsage
+
+
 dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (DeprecatedElementUsage global), ProjectContext )
 dependenciesVisitor (StableConfiguration configuration) dict projectContext =
     let
