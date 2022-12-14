@@ -193,7 +193,22 @@ fromModuleToProject =
                 else
                     []
             , deprecatedElements = moduleContext.localDeprecatedElements
-            , usages = Dict.empty
+            , usages =
+                List.foldl
+                    (\{ moduleName, name } acc ->
+                        let
+                            key : ( ModuleName, String )
+                            key =
+                                ( moduleName, name )
+
+                            count : Int
+                            count =
+                                Dict.get key acc |> Maybe.withDefault 0
+                        in
+                        Dict.insert key (count + 1) acc
+                    )
+                    Dict.empty
+                    moduleContext.usages
             }
         )
         |> Rule.withMetadata
