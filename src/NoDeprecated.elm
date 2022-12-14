@@ -625,16 +625,12 @@ declarationVisitor configuration node context =
 
                         Nothing ->
                             []
-
-                destructuringErrors : List (Rule.Error {})
-                destructuringErrors =
-                    reportPatterns
-                        configuration
-                        context
-                        (declaration.declaration |> Node.value |> .arguments)
-                        []
             in
-            destructuringErrors ++ signatureErrors
+            reportPatterns
+                configuration
+                context
+                (declaration.declaration |> Node.value |> .arguments)
+                signatureErrors
 
         Declaration.CustomTypeDeclaration type_ ->
             reportTypes
