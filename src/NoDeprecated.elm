@@ -998,7 +998,21 @@ error origin range =
 
 dataExtractor : ProjectContext -> Encode.Value
 dataExtractor projectContext =
-    Encode.null
+    projectContext.usages
+        |> Dict.foldl
+            (\( moduleName, name ) count acc ->
+                Dict.update
+                    moduleName
+                    (Maybe.withDefault Dict.empty >> Dict.insert name count >> Just)
+                    acc
+            )
+            Dict.empty
+        |> Encode.dict (String.join ".") encodeCountDict
+
+
+encodeCountDict : Dict String Int -> Encode.Value
+encodeCountDict dict =
+    Encode.dict identity Encode.int dict
 
 
 maybeCons : Maybe a -> List a -> List a
