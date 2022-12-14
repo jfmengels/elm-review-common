@@ -406,7 +406,11 @@ withExceptionsForElements exceptionsForElements (Configuration configuration) =
     Configuration { configuration | exceptionsForElements = exceptionsForElements ++ configuration.exceptionsForElements }
 
 
-dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
+type alias DeprecatedElementUsage scope =
+    Rule.Error scope
+
+
+dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (DeprecatedElementUsage global), ProjectContext )
 dependenciesVisitor (StableConfiguration configuration) dict projectContext =
     let
         newContext : ProjectContext
@@ -436,7 +440,7 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
                 projectContext
                 dict
 
-        unknownDependenciesErrors : List (Rule.Error global)
+        unknownDependenciesErrors : List (DeprecatedElementUsage global)
         unknownDependenciesErrors =
             configuration.deprecatedDependencies
                 |> List.filter (\name -> not (Dict.member name dict))
@@ -628,12 +632,12 @@ registerElement name context =
     }
 
 
-declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> List (Rule.Error {})
+declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> List (DeprecatedElementUsage {})
 declarationVisitor configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
             let
-                signatureErrors : List (Rule.Error {})
+                signatureErrors : List (DeprecatedElementUsage {})
                 signatureErrors =
                     case declaration.signature of
                         Just signature ->
@@ -673,7 +677,7 @@ declarationVisitor configuration node context =
             []
 
 
-reportLetDeclarations : StableConfiguration -> ModuleContext -> List (Node Expression.LetDeclaration) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportLetDeclarations : StableConfiguration -> ModuleContext -> List (Node Expression.LetDeclaration) -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
 reportLetDeclarations configuration context letDeclarations acc =
     case letDeclarations of
         [] ->
@@ -687,12 +691,12 @@ reportLetDeclarations configuration context letDeclarations acc =
                 (reportLetDeclaration configuration context letDeclaration acc)
 
 
-reportLetDeclaration : StableConfiguration -> ModuleContext -> Node Expression.LetDeclaration -> List (Rule.Error {}) -> List (Rule.Error {})
+reportLetDeclaration : StableConfiguration -> ModuleContext -> Node Expression.LetDeclaration -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
 reportLetDeclaration configuration context letDeclaration acc =
     case Node.value letDeclaration of
         Expression.LetFunction function ->
             let
-                signatureErrors : List (Rule.Error {})
+                signatureErrors : List (DeprecatedElementUsage {})
                 signatureErrors =
                     case function.signature of
                         Just signature ->
@@ -718,7 +722,7 @@ reportLetDeclaration configuration context letDeclaration acc =
                 acc
 
 
-reportTypes : ModuleContext -> List (Node TypeAnnotation) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportTypes : ModuleContext -> List (Node TypeAnnotation) -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
 reportTypes context nodes acc =
     case nodes of
         [] ->
@@ -758,7 +762,7 @@ reportTypes context nodes acc =
                     reportTypes context restOfNodes acc
 
 
-reportPatterns : StableConfiguration -> ModuleContext -> List (Node Pattern) -> List (Rule.Error {}) -> List (Rule.Error {})
+reportPatterns : StableConfiguration -> ModuleContext -> List (Node Pattern) -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
 reportPatterns configuration context nodes acc =
     case nodes of
         [] ->
@@ -797,7 +801,7 @@ reportPatterns configuration context nodes acc =
 
                 Pattern.NamedPattern qualifiedNameRef subPatterns ->
                     let
-                        errors : List (Rule.Error {})
+                        errors : List (DeprecatedElementUsage {})
                         errors =
                             reportElementAsList
                                 context
@@ -840,7 +844,7 @@ rangeForNamedPattern (Node { start } _) { moduleName, name } =
     }
 
 
-reportField : StableConfiguration -> Node String -> Maybe (Rule.Error {})
+reportField : StableConfiguration -> Node String -> Maybe (DeprecatedElementUsage {})
 reportField (StableConfiguration configuration) field =
     if configuration.recordFieldPredicate (Node.value field) then
         Just (error Field (Node.range field))
@@ -849,7 +853,7 @@ reportField (StableConfiguration configuration) field =
         Nothing
 
 
-expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> List (Rule.Error {})
+expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> List (DeprecatedElementUsage {})
 expressionVisitor configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
@@ -898,7 +902,7 @@ expressionVisitor configuration (Node nodeRange node) context =
             []
 
 
-reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {}) -> List (Rule.Error {})
+reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List (DeprecatedElementUsage {}) -> List (DeprecatedElementUsage {})
 reportElementAsList context rangeForLookupTable rangeForReport name acc =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
@@ -920,7 +924,7 @@ reportElementAsList context rangeForLookupTable rangeForReport name acc =
             acc
 
 
-reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
+reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe (DeprecatedElementUsage {})
 reportElementAsMaybe context range name =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Just moduleName ->
@@ -942,7 +946,7 @@ reportElementAsMaybe context range name =
             Nothing
 
 
-reportParameter : StableConfiguration -> Range -> String -> Maybe (Rule.Error {})
+reportParameter : StableConfiguration -> Range -> String -> Maybe (DeprecatedElementUsage {})
 reportParameter (StableConfiguration configuration) range name =
     if configuration.parameterPredicate name then
         Just (error Parameter range)
@@ -959,7 +963,7 @@ type Origin
     | Parameter
 
 
-error : Origin -> Range -> Rule.Error {}
+error : Origin -> Range -> DeprecatedElementUsage {}
 error origin range =
     let
         details : List String
