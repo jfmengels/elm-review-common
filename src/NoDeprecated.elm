@@ -1005,6 +1005,43 @@ error origin range =
         range
 
 
+errorOriginal : Origin -> Range -> Rule.Error {}
+errorOriginal origin range =
+    let
+        details : List String
+        details =
+            case origin of
+                Element ->
+                    [ "This element was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation to know the alternative solutions."
+                    ]
+
+                Module ->
+                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation to know the alternative solutions."
+                    ]
+
+                Dependency ->
+                    [ "The dependency where this element is defined was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation or your review configuration to know the alternative solutions."
+                    ]
+
+                Field ->
+                    [ "This element was marked as deprecated and should not be used anymore."
+                    , "Please check its documentation to know the alternative solutions."
+                    ]
+
+                Parameter ->
+                    [ "This element was marked as deprecated and should not be used anymore."
+                    ]
+    in
+    Rule.error
+        { message = "Found new usage of deprecated element"
+        , details = details
+        }
+        range
+
+
 dataExtractor : ProjectContext -> Encode.Value
 dataExtractor projectContext =
     projectContext.usages
