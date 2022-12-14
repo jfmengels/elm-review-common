@@ -852,7 +852,7 @@ rangeForNamedPattern (Node { start } _) { moduleName, name } =
 reportField : StableConfiguration -> Node String -> Maybe DeprecatedElementUsage
 reportField (StableConfiguration configuration) field =
     if configuration.recordFieldPredicate (Node.value field) then
-        Just (error Field (Node.range field))
+        Just (usageOfDeprecatedElement Field (Node.range field))
 
     else
         Nothing
@@ -913,14 +913,14 @@ reportElementAsList context rangeForLookupTable rangeForReport name acc =
         Just moduleName ->
             case Dict.get moduleName context.deprecatedModules of
                 Just DeprecatedModule ->
-                    error Module (rangeForReport ()) :: acc
+                    usageOfDeprecatedElement Module (rangeForReport ()) :: acc
 
                 Just DeprecatedDependency ->
-                    error Dependency (rangeForReport ()) :: acc
+                    usageOfDeprecatedElement Dependency (rangeForReport ()) :: acc
 
                 Nothing ->
                     if Set.member ( moduleName, name ) context.deprecatedElements then
-                        error Element (rangeForReport ()) :: acc
+                        usageOfDeprecatedElement Element (rangeForReport ()) :: acc
 
                     else
                         acc
@@ -935,14 +935,14 @@ reportElementAsMaybe context range name =
         Just moduleName ->
             case Dict.get moduleName context.deprecatedModules of
                 Just DeprecatedModule ->
-                    Just (error Module range)
+                    Just (usageOfDeprecatedElement Module range)
 
                 Just DeprecatedDependency ->
-                    Just (error Dependency range)
+                    Just (usageOfDeprecatedElement Dependency range)
 
                 Nothing ->
                     if Set.member ( moduleName, name ) context.deprecatedElements then
-                        Just (error Element range)
+                        Just (usageOfDeprecatedElement Element range)
 
                     else
                         Nothing
@@ -954,7 +954,7 @@ reportElementAsMaybe context range name =
 reportParameter : StableConfiguration -> Range -> String -> Maybe DeprecatedElementUsage
 reportParameter (StableConfiguration configuration) range name =
     if configuration.parameterPredicate name then
-        Just (error Parameter range)
+        Just (usageOfDeprecatedElement Parameter range)
 
     else
         Nothing
@@ -968,8 +968,8 @@ type Origin
     | Parameter
 
 
-error : Origin -> Range -> DeprecatedElementUsage
-error origin range =
+usageOfDeprecatedElement : Origin -> Range -> DeprecatedElementUsage
+usageOfDeprecatedElement origin range =
     let
         details : List String
         details =
