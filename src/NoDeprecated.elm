@@ -956,7 +956,7 @@ expressionVisitorHelp configuration (Node nodeRange node) context =
 
 reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List DeprecatedElementUsage -> List DeprecatedElementUsage
 reportElementAsList context rangeForLookupTable rangeForReport name acc =
-    case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
+    case ModuleNameLookupTable.fullModuleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
             case Dict.get moduleName context.deprecatedModules of
                 Just DeprecatedModule ->
@@ -978,7 +978,7 @@ reportElementAsList context rangeForLookupTable rangeForReport name acc =
 
 reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe DeprecatedElementUsage
 reportElementAsMaybe context range name =
-    case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
+    case ModuleNameLookupTable.fullModuleNameAt context.lookupTable range of
         Just moduleName ->
             case Dict.get moduleName context.deprecatedModules of
                 Just DeprecatedModule ->
