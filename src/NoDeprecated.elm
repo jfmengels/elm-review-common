@@ -1059,6 +1059,13 @@ error origin range =
 
 dataExtractor : ProjectContext -> Encode.Value
 dataExtractor projectContext =
+    let
+        deprecatedModules : Set String
+        deprecatedModules =
+            projectContext.deprecatedModules
+                |> List.map (Tuple.first >> String.join ".")
+                |> Set.fromList
+    in
     projectContext.usages
         |> Dict.foldl
             (\( moduleName, name ) count acc ->
@@ -1069,14 +1076,14 @@ dataExtractor projectContext =
             )
             Dict.empty
         |> Dict.toList
-        |> List.map (\( moduleName, dict ) -> ( moduleName, encodeCountDict dict ))
+        |> List.map (\( moduleName, dict ) -> ( moduleName, encodeCountDict (Set.member moduleName deprecatedModules) dict ))
         |> List.sortBy (\( _, ( _, count ) ) -> -count)
         |> List.map (\( moduleName, ( dict, _ ) ) -> ( moduleName, dict ))
         |> Encode.object
 
 
-encodeCountDict : Dict String Int -> ( Encode.Value, Int )
-encodeCountDict dict =
+encodeCountDict : Bool -> Dict String Int -> ( Encode.Value, Int )
+encodeCountDict isModuleDeprecated dict =
     let
         ( fields, totalCount ) =
             Dict.foldl
@@ -1090,6 +1097,7 @@ encodeCountDict dict =
     in
     ( Encode.object
         (( "_total", Encode.int totalCount )
+            :: ( "_isModuleDeprecated", Encode.bool isModuleDeprecated )
             :: (fields |> List.sortBy (Tuple.second >> negate) |> List.map (Tuple.mapSecond Encode.int))
         )
     , totalCount
