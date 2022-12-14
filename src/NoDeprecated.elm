@@ -127,16 +127,18 @@ rule configuration =
                 }
 
 
+type alias ProjectContext =
+    { deprecatedModules : List ( ModuleName, DeprecationReason )
+    , deprecatedElements : List ( ModuleName, String )
+    , usages : Dict ( ModuleName, String ) Int
+    }
+
+
 initialProjectContext : ProjectContext
 initialProjectContext =
     { deprecatedModules = []
     , deprecatedElements = []
-    }
-
-
-type alias ProjectContext =
-    { deprecatedModules : List ( ModuleName, DeprecationReason )
-    , deprecatedElements : List ( ModuleName, String )
+    , usages = Dict.empty
     }
 
 
@@ -187,6 +189,7 @@ fromModuleToProject =
                 else
                     []
             , deprecatedElements = moduleContext.localDeprecatedElements
+            , usages = Dict.empty
             }
         )
         |> Rule.withMetadata
@@ -196,6 +199,18 @@ foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
     { deprecatedModules = newContext.deprecatedModules ++ previousContext.deprecatedModules
     , deprecatedElements = newContext.deprecatedElements ++ previousContext.deprecatedElements
+    , usages =
+        Dict.foldl
+            (\key countForNew acc ->
+                let
+                    count : Int
+                    count =
+                        Dict.get key previousContext.usages |> Maybe.withDefault 0
+                in
+                Dict.insert key (countForNew + count) acc
+            )
+            previousContext.usages
+            newContext.usages
     }
 
 
@@ -447,6 +462,7 @@ registerDeprecatedThings (StableConfiguration configuration) module_ acc =
     if configuration.documentationPredicate module_.comment then
         { deprecatedModules = ( moduleName, DeprecatedModule ) :: acc.deprecatedModules
         , deprecatedElements = acc.deprecatedElements
+        , usages = acc.usages
         }
 
     else
@@ -482,6 +498,7 @@ registerDeprecatedThings (StableConfiguration configuration) module_ acc =
         in
         { deprecatedModules = acc.deprecatedModules
         , deprecatedElements = newValues ++ acc.deprecatedElements
+        , usages = acc.usages
         }
 
 
