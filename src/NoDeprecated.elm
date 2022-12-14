@@ -415,7 +415,7 @@ toError deprecatedElementUsage =
     deprecatedElementUsage
 
 
-dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (DeprecatedElementUsage global), ProjectContext )
+dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
 dependenciesVisitor (StableConfiguration configuration) dict projectContext =
     let
         newContext : ProjectContext
@@ -445,7 +445,7 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
                 projectContext
                 dict
 
-        unknownDependenciesErrors : List (DeprecatedElementUsage global)
+        unknownDependenciesErrors : List (Rule.Error global)
         unknownDependenciesErrors =
             configuration.deprecatedDependencies
                 |> List.filter (\name -> not (Dict.member name dict))
