@@ -221,7 +221,7 @@ moduleVisitor configuration schema =
     schema
         |> Rule.withModuleDocumentationVisitor (\moduleDocumentation context -> ( [], moduleDocumentationVisitor configuration moduleDocumentation context ))
         |> Rule.withDeclarationListVisitor (\nodes context -> ( [], declarationListVisitor configuration nodes context ))
-        |> Rule.withDeclarationEnterVisitor (\node context -> ( declarationVisitor configuration node context, context ))
+        |> Rule.withDeclarationEnterVisitor (declarationVisitor configuration)
         |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
 
 
@@ -637,8 +637,18 @@ registerElement name context =
     }
 
 
-declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> List DeprecatedElementUsage
+declarationVisitor : StableConfiguration -> Node Declaration -> ModuleContext -> ( List DeprecatedElementUsage, ModuleContext )
 declarationVisitor configuration node context =
+    let
+        usages : List DeprecatedElementUsage
+        usages =
+            declarationVisitorHelp configuration node context
+    in
+    ( usages, context )
+
+
+declarationVisitorHelp : StableConfiguration -> Node Declaration -> ModuleContext -> List DeprecatedElementUsage
+declarationVisitorHelp configuration node context =
     case Node.value node of
         Declaration.FunctionDeclaration declaration ->
             let
