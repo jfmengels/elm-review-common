@@ -222,7 +222,7 @@ moduleVisitor configuration schema =
         |> Rule.withModuleDocumentationVisitor (\moduleDocumentation context -> ( [], moduleDocumentationVisitor configuration moduleDocumentation context ))
         |> Rule.withDeclarationListVisitor (\nodes context -> ( [], declarationListVisitor configuration nodes context ))
         |> Rule.withDeclarationEnterVisitor (declarationVisitor configuration)
-        |> Rule.withExpressionEnterVisitor (\node context -> ( expressionVisitor configuration node context, context ))
+        |> Rule.withExpressionEnterVisitor (expressionVisitor configuration)
 
 
 {-| Configuration for the rule.
@@ -868,8 +868,18 @@ reportField (StableConfiguration configuration) field =
         Nothing
 
 
-expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> List DeprecatedElementUsage
-expressionVisitor configuration (Node nodeRange node) context =
+expressionVisitor : StableConfiguration -> Node Expression -> ModuleContext -> ( List DeprecatedElementUsage, ModuleContext )
+expressionVisitor configuration node context =
+    let
+        usages : List DeprecatedElementUsage
+        usages =
+            expressionVisitorHelp configuration node context
+    in
+    ( usages, context )
+
+
+expressionVisitorHelp : StableConfiguration -> Node Expression -> ModuleContext -> List DeprecatedElementUsage
+expressionVisitorHelp configuration (Node nodeRange node) context =
     case node of
         Expression.FunctionOrValue _ name ->
             reportElementAsList
