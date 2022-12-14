@@ -82,6 +82,7 @@ import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.Type
 import Elm.Syntax.TypeAlias
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
+import Json.Encode as Encode
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Project.Dependency
 import Review.Rule as Rule exposing (Rule)
@@ -113,6 +114,7 @@ rule configuration =
                     , foldProjectContexts = foldProjectContexts
                     }
                 |> Rule.withContextFromImportedModules
+                |> Rule.withDataExtractor dataExtractor
                 |> Rule.fromProjectRuleSchema
 
         Err faultyNames ->
@@ -992,6 +994,11 @@ error origin range =
         , details = details
         }
         range
+
+
+dataExtractor : ProjectContext -> Encode.Value
+dataExtractor projectContext =
+    Encode.null
 
 
 maybeCons : Maybe a -> List a -> List a
