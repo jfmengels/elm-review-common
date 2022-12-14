@@ -1063,24 +1063,37 @@ dataExtractor projectContext =
         |> Dict.foldl
             (\( moduleName, name ) count acc ->
                 Dict.update
-                    moduleName
+                    (String.join "." moduleName)
                     (Maybe.withDefault Dict.empty >> Dict.insert name count >> Just)
                     acc
             )
             Dict.empty
-        |> Encode.dict (String.join ".") encodeCountDict
+        |> Dict.toList
+        |> List.map (\( moduleName, dict ) -> ( moduleName, encodeCountDict dict ))
+        |> List.sortBy (\( _, ( _, count ) ) -> -count)
+        |> List.map (\( moduleName, ( dict, _ ) ) -> ( moduleName, dict ))
+        |> Encode.object
 
 
-encodeCountDict : Dict String Int -> Encode.Value
+encodeCountDict : Dict String Int -> ( Encode.Value, Int )
 encodeCountDict dict =
     let
-        totalCount : Int
-        totalCount =
-            Dict.values dict |> List.sum
+        ( fields, totalCount ) =
+            Dict.foldl
+                (\name count ( accList, accCount ) ->
+                    ( ( name, count ) :: accList
+                    , accCount + count
+                    )
+                )
+                ( [], 0 )
+                dict
     in
-    dict
-        |> Dict.insert "_total" totalCount
-        |> Encode.dict identity Encode.int
+    ( Encode.object
+        (( "_total", Encode.int totalCount )
+            :: (fields |> List.sortBy (Tuple.second >> negate) |> List.map (Tuple.mapSecond Encode.int))
+        )
+    , totalCount
+    )
 
 
 maybeCons : Maybe a -> List a -> List a
