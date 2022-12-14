@@ -785,12 +785,13 @@ reportPatterns configuration context nodes acc =
                                 (Node.range pattern)
                                 (\() -> rangeForNamedPattern pattern qualifiedNameRef)
                                 qualifiedNameRef.name
+                                acc
                     in
                     reportPatterns
                         configuration
                         context
                         (subPatterns ++ restOfNodes)
-                        (errors ++ acc)
+                        errors
 
                 Pattern.AsPattern subPattern name ->
                     reportPatterns
@@ -838,6 +839,7 @@ expressionVisitor configuration (Node nodeRange node) context =
                 nodeRange
                 (always nodeRange)
                 name
+                []
 
         Expression.LetExpression letBlock ->
             reportLetDeclarations configuration context letBlock.declarations []
@@ -855,6 +857,7 @@ expressionVisitor configuration (Node nodeRange node) context =
                 range
                 (always range)
                 name
+                []
 
         Expression.RecordAccess _ field ->
             case reportField configuration field of
@@ -876,26 +879,26 @@ expressionVisitor configuration (Node nodeRange node) context =
             []
 
 
-reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {})
-reportElementAsList context rangeForLookupTable rangeForReport name =
+reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List (Rule.Error {}) -> List (Rule.Error {})
+reportElementAsList context rangeForLookupTable rangeForReport name acc =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
             case Dict.get moduleName context.deprecatedModules of
                 Just DeprecatedModule ->
-                    [ error Module (rangeForReport ()) ]
+                    error Module (rangeForReport ()) :: acc
 
                 Just DeprecatedDependency ->
-                    [ error Dependency (rangeForReport ()) ]
+                    error Dependency (rangeForReport ()) :: acc
 
                 Nothing ->
                     if Set.member ( moduleName, name ) context.deprecatedElements then
-                        [ error Element (rangeForReport ()) ]
+                        error Element (rangeForReport ()) :: acc
 
                     else
-                        []
+                        acc
 
         Nothing ->
-            []
+            acc
 
 
 reportElementAsMaybe : ModuleContext -> Range -> String -> Maybe (Rule.Error {})
