@@ -820,7 +820,7 @@ reportPatterns configuration context nodes acc =
                     reportPatterns configuration
                         context
                         restOfNodes
-                        (List.filterMap (reportField configuration context.lookupTable) fields ++ acc)
+                        (List.filterMap (reportField configuration context.lookupTable context.currentModuleName) fields ++ acc)
 
                 Pattern.UnConsPattern left right ->
                     reportPatterns configuration context (left :: right :: restOfNodes) acc
@@ -880,14 +880,14 @@ rangeForNamedPattern (Node { start } _) { moduleName, name } =
     }
 
 
-reportField : StableConfiguration -> ModuleNameLookupTable -> Node String -> Maybe DeprecatedElementUsage
-reportField (StableConfiguration configuration) lookupTable field =
+reportField : StableConfiguration -> ModuleNameLookupTable -> ModuleName -> Node String -> Maybe DeprecatedElementUsage
+reportField (StableConfiguration configuration) lookupTable currentModuleName field =
     if configuration.recordFieldPredicate (Node.value field) then
         let
             moduleName : ModuleName
             moduleName =
                 ModuleNameLookupTable.fullModuleNameFor lookupTable field
-                    |> Maybe.withDefault []
+                    |> Maybe.withDefault currentModuleName
         in
         Just (usageOfDeprecatedElement moduleName (Node.value field) Field (Node.range field))
 
@@ -935,7 +935,7 @@ expressionVisitorHelp configuration (Node nodeRange node) context =
                 []
 
         Expression.RecordAccess _ field ->
-            case reportField configuration context.lookupTable field of
+            case reportField configuration context.lookupTable context.currentModuleName field of
                 Just err ->
                     [ err ]
 
@@ -943,7 +943,7 @@ expressionVisitorHelp configuration (Node nodeRange node) context =
                     []
 
         Expression.RecordAccessFunction fieldName ->
-            case reportField configuration context.lookupTable (Node nodeRange fieldName) of
+            case reportField configuration context.lookupTable context.currentModuleName (Node nodeRange fieldName) of
                 Just err ->
                     [ err ]
 
