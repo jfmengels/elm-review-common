@@ -1096,10 +1096,13 @@ encodeCountDict isModuleDeprecated dict =
                 dict
     in
     ( Encode.object
-        (( "_total", Encode.int totalCount )
-            :: ( "_isModuleDeprecated", Encode.bool isModuleDeprecated )
-            :: (fields |> List.sortBy (Tuple.second >> negate) |> List.map (Tuple.mapSecond Encode.int))
-        )
+        [ ( "total", Encode.int totalCount )
+        , ( "isModuleDeprecated", Encode.bool isModuleDeprecated )
+        , ( "usages"
+          , Encode.object
+                (fields |> List.sortBy (Tuple.second >> negate) |> List.map (Tuple.mapSecond Encode.int))
+          )
+        ]
     , totalCount
     )
 
