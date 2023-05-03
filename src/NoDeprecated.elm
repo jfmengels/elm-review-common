@@ -13,12 +13,19 @@ This rule is recommended to be used with `elm-review`'s suppression system (see 
 That way, current uses of deprecated elements won't be reported, but the rule will report new usages, in practice
 allowing you to stop the bleed.
 
-An additional benefit is that the suppressed errors will make it easy to have an overview of the number of times
-deprecated elements are used and where they are located. Looking at the error reports (using `elm-review --unsuppress`
-for instance) will give you the more precise problems and locations.
+
+## Fail
+
+    import DeprecatedModule
+
+    a =
+        DeprecatedModule.view "..."
+
+    b =
+        Button.view_DEPRECATED "Click me!" OnClick
 
 
-## Recommendations
+## Tagging recommendations
 
 I recommend making it extra explicit when deprecating elements in your application code, for instance by renaming
 them to include "deprecated" in their name, or in their module name for modules.
@@ -36,18 +43,54 @@ For both application and packages, when you deprecate something, I highly recomm
 location) **why it is deprecated** but especially **what alternatives should be used** or explored. It can be frustrating to
 learn that something is deprecated without an explanation or any guidance on what to use instead.
 
+It is absolutely fine to suppress **more** things. While it's normal to want to suppress as few problems as possible,
+identifying technical debt is important, and that is exactly what this rule can help with. Your efforts on reducing the
+number of deprecated usages should not be a hard goal, and it should be done in parallel of identifying technical debt.
+
+
+## Tackling reported issues
+
+As mentioned before, this rule is recommended to be used with `elm-review`'s suppression system. One of its benefits,
+is that the number of usages will be tallied per file in the `<review>/suppressed/NoDeprecated.json` file. You can look
+at it, and decide to tackle one file over another based on how many problems are in the file and how you prefer tackling
+these issues.
+
+While tackling issues file by file might work for some cases, sometimes it is nicer to organize work based on how often
+a deprecated function/type is used. For instance, you might want to look at the functions that are used only once or twice,
+or look at the functions that are the most widespread in your codebase.
+
+To get this point of view, you can run this rule as an insight rule:
+
+```bash
+elm-review --report=json --extract --rules NoDeprecated | jq -r '.extracts.NoDeprecated'
+```
+
+which will yield a result like the following:
+
+```json
+{
+  "Some.Deprecated.Module": {
+    "total": 28,
+    "isModuleDeprecated": true,
+    "usages": {
+      "someFunction": 20,
+      "someType": 8
+    }
+  },
+  "Some.Module": {
+    "total": 1,
+    "isModuleDeprecated": false,
+    "usages": {
+      "someDeprecatedFunction": 1
+    }
+  }
+}
+```
+
+
+## Configure
+
 @docs Configuration, defaults, dependencies, withExceptionsForElements
-
-
-## Fail
-
-    import DeprecatedModule
-
-    a =
-        DeprecatedModule.view "..."
-
-    b =
-        Button.view_DEPRECATED "Click me!" OnClick
 
 
 ## When (not) to enable this rule
