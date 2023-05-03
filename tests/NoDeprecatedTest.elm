@@ -1132,13 +1132,16 @@ a = OkModule.something
                             |> NoDeprecated.dependencies [ "author/package" ]
                             |> rule
                         )
-                    |> Review.Test.expectGlobalErrors
-                        [ { message = "Could not find package `author/package`"
-                          , details =
-                                [ "You marked this package as deprecated, but I can't find it in your dependencies."
-                                , "It could be a typo, or maybe you've successfully removed it from your project?"
-                                ]
-                          }
+                    |> Review.Test.expect
+                        [ Review.Test.globalErrors
+                            [ { message = "Could not find package `author/package`"
+                              , details =
+                                    [ "You marked this package as deprecated, but I can't find it in your dependencies."
+                                    , "It could be a typo, or maybe you've successfully removed it from your project?"
+                                    ]
+                              }
+                            ]
+                        , Review.Test.dataExtract "{}"
                         ]
         ]
 
