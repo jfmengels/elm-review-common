@@ -19,6 +19,7 @@ import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoPrematureLetComputation
+import RemoveTypeAnnotations
 import Review.Rule exposing (Rule)
 
 
@@ -32,4 +33,5 @@ config =
     , NoMissingTypeAnnotation.rule
     , NoMissingTypeAnnotationInLetIn.rule
     , NoMissingTypeExpose.rule
+    , RemoveTypeAnnotations.rule
     ]
