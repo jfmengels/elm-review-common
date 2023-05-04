@@ -696,7 +696,7 @@ checkDocumentation documentationPredicate documentationNode =
 registerElement : String -> ModuleContext -> ModuleContext
 registerElement name context =
     { context
-        | deprecatedElements = Set.insert ( [], name ) context.deprecatedElements
+        | deprecatedElements = Set.insert ( context.currentModuleName, name ) context.deprecatedElements
         , localDeprecatedElements = ( context.currentModuleName, name ) :: context.localDeprecatedElements
     }
 
