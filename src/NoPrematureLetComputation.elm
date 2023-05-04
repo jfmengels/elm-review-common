@@ -439,50 +439,8 @@ expressionEnterVisitorHelp node context =
         Expression.CaseExpression { cases } ->
             registerCaseExpression node cases context
 
-        Expression.LambdaExpression { args, expression } ->
-            let
-                branch : Scope
-                branch =
-                    if List.any patternIntroducesVariable args then
-                        markLetDeclarationsAsIntroducingVariables (Node.range node) context
-
-                    else
-                        context.scope
-
-                newScope : Scope
-                newScope =
-                    Scope
-                        (if RangeDict.member (Node.range node) context.functionsThatWillOnlyBeComputedOnce then
-                            FunctionOkayToMoveInto
-
-                         else
-                            Function
-                        )
-                        { letDeclarations = []
-                        , used = Set.empty
-                        , insertionLocation = figureOutInsertionLocation expression
-                        , scopes = RangeDict.empty
-                        }
-
-                branchWithAddedScope : Scope
-                branchWithAddedScope =
-                    updateCurrentBranch
-                        (\b ->
-                            { b
-                                | scopes =
-                                    RangeDict.insert
-                                        (Node.range node)
-                                        newScope
-                                        b.scopes
-                            }
-                        )
-                        context.branching.full
-                        branch
-            in
-            { context
-                | scope = branchWithAddedScope
-                , branching = addBranching (Node.range node) context.branching
-            }
+        Expression.LambdaExpression lambda ->
+            registerLambdaExpression node lambda context
 
         Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: argumentWithParens :: restOfArguments) ->
             registerApplicationCall
@@ -510,6 +468,53 @@ expressionEnterVisitorHelp node context =
 
         _ ->
             context
+
+
+registerLambdaExpression : Node a -> Expression.Lambda -> Context -> Context
+registerLambdaExpression node { args, expression } context =
+    let
+        branch : Scope
+        branch =
+            if List.any patternIntroducesVariable args then
+                markLetDeclarationsAsIntroducingVariables (Node.range node) context
+
+            else
+                context.scope
+
+        newScope : Scope
+        newScope =
+            Scope
+                (if RangeDict.member (Node.range node) context.functionsThatWillOnlyBeComputedOnce then
+                    FunctionOkayToMoveInto
+
+                 else
+                    Function
+                )
+                { letDeclarations = []
+                , used = Set.empty
+                , insertionLocation = figureOutInsertionLocation expression
+                , scopes = RangeDict.empty
+                }
+
+        branchWithAddedScope : Scope
+        branchWithAddedScope =
+            updateCurrentBranch
+                (\b ->
+                    { b
+                        | scopes =
+                            RangeDict.insert
+                                (Node.range node)
+                                newScope
+                                b.scopes
+                    }
+                )
+                context.branching.full
+                branch
+    in
+    { context
+        | scope = branchWithAddedScope
+        , branching = addBranching (Node.range node) context.branching
+    }
 
 
 registerLetExpression : Node Expression -> Expression.LetBlock -> Context -> Context
