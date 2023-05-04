@@ -173,7 +173,7 @@ rule configuration =
 
 
 type alias ProjectContext =
-    { deprecatedModules : List ( ModuleName, DeprecationReason )
+    { deprecatedModules : Dict ModuleName DeprecationReason
     , deprecatedElements : List ( ModuleName, String )
     , usages : Dict ( ModuleName, String ) Int
     }
@@ -181,7 +181,7 @@ type alias ProjectContext =
 
 initialProjectContext : ProjectContext
 initialProjectContext =
-    { deprecatedModules = []
+    { deprecatedModules = Dict.empty
     , deprecatedElements = []
     , usages = Dict.empty
     }
@@ -214,7 +214,7 @@ fromProjectToModule (StableConfiguration configuration) =
             in
             { lookupTable = lookupTable
             , currentModuleName = moduleName
-            , deprecatedModules = Dict.fromList projectContext.deprecatedModules
+            , deprecatedModules = projectContext.deprecatedModules
             , deprecatedElements = Set.fromList projectContext.deprecatedElements
             , isModuleDeprecated = configuration.moduleNamePredicate moduleName
             , localDeprecatedElements = []
@@ -231,10 +231,10 @@ fromModuleToProject =
         (\metadata moduleContext ->
             { deprecatedModules =
                 if moduleContext.isModuleDeprecated then
-                    [ ( Rule.moduleNameFromMetadata metadata, DeprecatedModule ) ]
+                    Dict.singleton (Rule.moduleNameFromMetadata metadata) DeprecatedModule
 
                 else
-                    []
+                    Dict.empty
             , deprecatedElements = moduleContext.localDeprecatedElements
             , usages =
                 List.foldl
@@ -259,7 +259,7 @@ fromModuleToProject =
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
-    { deprecatedModules = newContext.deprecatedModules ++ previousContext.deprecatedModules
+    { deprecatedModules = Dict.union newContext.deprecatedModules previousContext.deprecatedModules
     , deprecatedElements = newContext.deprecatedElements ++ previousContext.deprecatedElements
     , usages =
         Dict.foldl
@@ -494,10 +494,10 @@ dependenciesVisitor (StableConfiguration configuration) dict projectContext =
                     if List.member packageName configuration.deprecatedDependencies then
                         { acc
                             | deprecatedModules =
-                                List.map
-                                    (\{ name } -> ( String.split "." name, DeprecatedDependency ))
+                                List.foldl
+                                    (\{ name } subAcc -> Dict.insert (String.split "." name) DeprecatedDependency subAcc)
+                                    acc.deprecatedModules
                                     modules
-                                    ++ acc.deprecatedModules
                         }
 
                     else
@@ -535,7 +535,7 @@ registerDeprecatedThings (StableConfiguration configuration) module_ acc =
             String.split "." module_.name
     in
     if configuration.documentationPredicate module_.comment then
-        { deprecatedModules = ( moduleName, DeprecatedModule ) :: acc.deprecatedModules
+        { deprecatedModules = Dict.insert moduleName DeprecatedModule acc.deprecatedModules
         , deprecatedElements = acc.deprecatedElements
         , usages = acc.usages
         }
@@ -1106,7 +1106,8 @@ dataExtractor projectContext =
         deprecatedModules : Set String
         deprecatedModules =
             projectContext.deprecatedModules
-                |> List.map (Tuple.first >> String.join ".")
+                |> Dict.keys
+                |> List.map (String.join ".")
                 |> Set.fromList
     in
     projectContext.usages
