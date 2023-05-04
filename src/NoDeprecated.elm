@@ -1105,10 +1105,12 @@ dataExtractor projectContext =
     let
         deprecatedModules : Set String
         deprecatedModules =
-            projectContext.deprecatedModules
-                |> Dict.keys
-                |> List.map (String.join ".")
-                |> Set.fromList
+            Dict.foldl
+                (\key _ acc ->
+                    Set.insert (String.join "." key) acc
+                )
+                Set.empty
+                projectContext.deprecatedModules
     in
     projectContext.usages
         |> Dict.foldl
