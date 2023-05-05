@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.3] - 2023-05-05
+
+Turn [`NoDeprecated`] into an insight rule to help tackle deprecated usages ([#20](https://github.com/jfmengels/elm-review/pull/20)).
+
 ## [1.3.2] - 2022-11-08
 
 Add better support for `jfmengels/elm-review` v2.10.0.
@@ -23,3 +27,4 @@ Help would be appreciated to fill the blanks!
 
 [`NoConfusingPrefixOperator`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoConfusingPrefixOperator)
 [`NoMissingTypeExpose`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoMissingTypeExpose)
+[`NoDeprecated`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoDeprecated)
