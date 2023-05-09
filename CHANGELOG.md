@@ -2,7 +2,7 @@
 
 ## [1.3.3] - 2023-05-05
 
-Turn [`NoDeprecated`] into an insight rule to help tackle deprecated usages ([#20](https://github.com/jfmengels/elm-review/pull/20)).
+Turn [`NoDeprecated`] into an insight rule to help tackle deprecated usages ([#20](https://github.com/jfmengels/elm-review-common/pull/20)).
 
 ## [1.3.2] - 2022-11-08
 
