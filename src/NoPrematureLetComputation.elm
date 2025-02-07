@@ -1060,11 +1060,15 @@ wrapInLet initialPosition column source =
         padding =
             String.repeat (column - 1) " "
 
+        innerPadding : String
+        innerPadding =
+            String.repeat (column - initialPosition) " "
+
         replacement : String
         replacement =
             source
                 |> String.lines
-                |> List.map (\line -> String.repeat (column - initialPosition) " " ++ "    " ++ line)
+                |> List.map (\line -> innerPadding ++ "    " ++ line)
                 |> String.join "\n"
     in
     "let\n" ++ replacement ++ "\n" ++ padding ++ "in\n" ++ padding
@@ -1077,7 +1081,12 @@ insertInLet initialPosition column source =
             ""
 
         firstLine :: restOfLines ->
-            ((firstLine :: List.map (\line -> String.repeat (column - initialPosition) " " ++ line) restOfLines)
+            let
+                innerPadding : String
+                innerPadding =
+                    String.repeat (column - initialPosition) " "
+            in
+            ((firstLine :: List.map (\line -> innerPadding ++ line ++ "") restOfLines)
                 |> String.join "\n"
             )
                 ++ "\n"
