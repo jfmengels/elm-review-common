@@ -14,7 +14,7 @@ when inside the directory containing this file.
 import NoConfusingPrefixOperator
 import NoDeprecated
 import NoExposingEverything
-import NoImportingEverything
+import NoImportingEverythingWithFix as NoImportingEverything
 import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
