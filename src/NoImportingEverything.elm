@@ -274,11 +274,11 @@ visitTypeAnnotation typeAnnotations context =
 
         typeAnnotation :: rest ->
             case Node.value typeAnnotation of
-                TypeAnnotation.Typed (Node _ ( [], name )) subTypes ->
+                TypeAnnotation.Typed (Node range ( [], name )) subTypes ->
                     let
                         newContext : ModuleContext
                         newContext =
-                            case ModuleNameLookupTable.moduleNameFor context.lookupTable typeAnnotation of
+                            case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
                                 Just moduleName ->
                                     useImportedType moduleName name context
 
