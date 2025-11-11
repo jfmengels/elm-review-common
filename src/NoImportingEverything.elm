@@ -262,6 +262,9 @@ declarationVisitor node context =
             in
             ( [], newContext )
 
+        Declaration.AliasDeclaration { typeAnnotation } ->
+            ( [], visitTypeAnnotation [ typeAnnotation ] context )
+
         _ ->
             ( [], context )
 
