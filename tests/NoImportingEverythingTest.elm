@@ -154,6 +154,32 @@ view : Html msg
 view = text ""
 """
                     ]
+    , test "should import the type found in a let..in type annotation" <|
+        \() ->
+            """module A exposing (view)
+import Html exposing (..)
+view =
+    let
+        x : Html msg
+        x = text ""
+    in x
+"""
+                |> Review.Test.runWithProjectData project (rule [])
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Prefer listing what you wish to import and/or using qualified imports"
+                        , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                        , under = "(..)"
+                        }
+                        |> Review.Test.whenFixed """module A exposing (view)
+import Html exposing (Html, text)
+view =
+    let
+        x : Html msg
+        x = text ""
+    in x
+"""
+                    ]
     , test "should not report imports that are in the exceptions list" <|
         \() ->
             """module A exposing (thing)

@@ -321,6 +321,25 @@ expressionVisitor node context =
                 Nothing ->
                     ( [], context )
 
+        Expression.LetExpression { declarations } ->
+            List.foldl
+                (\(Node _ declaration) ctx ->
+                    case declaration of
+                        Expression.LetFunction { signature } ->
+                            case signature of
+                                Just (Node _ { typeAnnotation }) ->
+                                    visitTypeAnnotation [ typeAnnotation ] ctx
+
+                                Nothing ->
+                                    ctx
+
+                        Expression.LetDestructuring _ _ ->
+                            ctx
+                )
+                context
+                declarations
+                |> Tuple.pair []
+
         _ ->
             ( [], context )
 
