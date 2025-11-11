@@ -70,6 +70,10 @@ rule exceptions =
         |> Rule.fromModuleRuleSchema
 
 
+type alias ProjectContext =
+    ()
+
+
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , importsExposingAll : Dict ModuleName ImportExposingAll
@@ -83,10 +87,10 @@ type alias ImportExposingAll =
     }
 
 
-initialModuleContext : Rule.ContextCreator () ModuleContext
+initialModuleContext : Rule.ContextCreator ProjectContext ModuleContext
 initialModuleContext =
     Rule.initContextCreator
-        (\lookupTable () ->
+        (\lookupTable projectContext ->
             { lookupTable = lookupTable
             , importsExposingAll = Dict.empty
             }
