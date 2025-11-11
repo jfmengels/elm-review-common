@@ -99,9 +99,10 @@ initialContext lookupTable =
 
 exceptionsToSet : List String -> Set (List String)
 exceptionsToSet exceptions =
-    exceptions
-        |> List.map (String.split ".")
-        |> Set.fromList
+    List.foldl
+        (\moduleName acc -> Set.insert (String.split "." moduleName) acc)
+        Set.empty
+        exceptions
 
 
 importVisitor : Set (List String) -> Node Import -> Context -> ( List (Error nothing), Context )
