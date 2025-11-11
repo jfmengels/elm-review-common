@@ -83,6 +83,7 @@ type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , importsExposingAll : Dict ModuleName ImportExposingAll
     , constructorToType : Dict ModuleName (Dict String String)
+    , localConstructorToType : Dict String String
     }
 
 
@@ -106,6 +107,7 @@ fromProjectToModule =
             { lookupTable = lookupTable
             , importsExposingAll = Dict.empty
             , constructorToType = projectContext.constructorToType
+            , localConstructorToType = Dict.empty
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -114,10 +116,16 @@ fromProjectToModule =
 fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
-        (\moduleContext ->
-            { constructorToType = Dict.empty
+        (\moduleName moduleContext ->
+            { constructorToType =
+                if Dict.isEmpty moduleContext.localConstructorToType then
+                    Dict.empty
+
+                else
+                    Dict.singleton moduleName moduleContext.localConstructorToType
             }
         )
+        |> Rule.withModuleName
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
