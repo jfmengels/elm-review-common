@@ -7,6 +7,7 @@ module NoImportingEverything exposing (rule)
 -}
 
 import Dict exposing (Dict)
+import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Import exposing (Import)
@@ -150,6 +151,7 @@ moduleVisitor exceptions schema =
     schema
         |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
         |> Rule.withImportVisitor (importVisitor <| exceptionsToSet exceptions)
+        |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.withFinalModuleEvaluation finalEvaluation
 
@@ -218,6 +220,45 @@ importVisitor exceptions node context =
 
             _ ->
                 ( [], context )
+
+
+declarationVisitor : Node Declaration -> ModuleContext -> ( List empty, ModuleContext )
+declarationVisitor node context =
+    case Node.value node of
+        Declaration.CustomTypeDeclaration type_ ->
+            let
+                typeName : String
+                typeName =
+                    Node.value type_.name
+            in
+            if isConstructorsExposed typeName context then
+                let
+                    localConstructorToType : Dict String String
+                    localConstructorToType =
+                        List.foldl
+                            (\(Node _ constructor) acc ->
+                                Dict.insert (Node.value constructor.name) typeName acc
+                            )
+                            context.localConstructorToType
+                            type_.constructors
+                in
+                ( [], { context | localConstructorToType = localConstructorToType } )
+
+            else
+                ( [], context )
+
+        _ ->
+            ( [], context )
+
+
+isConstructorsExposed : String -> { context | exposedTypes : ExposedTypes } -> Bool
+isConstructorsExposed name context =
+    case context.exposedTypes of
+        ExposesAll ->
+            True
+
+        ExposesConstructorsOf set ->
+            Set.member name set
 
 
 expressionVisitor : Node Expression -> ModuleContext -> ( List (Rule.Error nothing), ModuleContext )
