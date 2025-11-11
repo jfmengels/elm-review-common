@@ -268,7 +268,7 @@ expressionVisitor node context =
             case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
                 Just moduleName ->
                     ( []
-                    , useImportedFunction context moduleName name
+                    , useImportedValue context moduleName name
                     )
 
                 Nothing ->
@@ -297,8 +297,8 @@ importError ({ exposingRange } as importExposingAll) =
         [ exposingFix importExposingAll ]
 
 
-useImportedFunction : ModuleContext -> ModuleName -> String -> ModuleContext
-useImportedFunction context moduleName name =
+useImportedValue : ModuleContext -> ModuleName -> String -> ModuleContext
+useImportedValue context moduleName name =
     case Dict.get moduleName context.importsExposingAll of
         Nothing ->
             context
