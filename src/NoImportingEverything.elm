@@ -287,6 +287,9 @@ visitTypeAnnotation typeAnnotations context =
                     in
                     visitTypeAnnotation (subTypes ++ rest) newContext
 
+                TypeAnnotation.Typed _ subTypes ->
+                    visitTypeAnnotation (subTypes ++ rest) context
+
                 TypeAnnotation.Tupled subTypes ->
                     visitTypeAnnotation (subTypes ++ rest) context
 
