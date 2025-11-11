@@ -86,15 +86,12 @@ type alias ImportExposingAll =
 createContext : Rule.ContextCreator () Context
 createContext =
     Rule.initContextCreator
-        (\lookupTable () -> initialContext lookupTable)
+        (\lookupTable () ->
+            { lookupTable = lookupTable
+            , importsExposingAll = Dict.empty
+            }
+        )
         |> Rule.withModuleNameLookupTable
-
-
-initialContext : ModuleNameLookupTable -> Context
-initialContext lookupTable =
-    { lookupTable = lookupTable
-    , importsExposingAll = Dict.empty
-    }
 
 
 exceptionsToSet : List String -> Set (List String)
