@@ -443,8 +443,8 @@ removeExposingFix node =
         startRange : Range
         startRange =
             case node |> Node.value |> .moduleAlias of
-                Just aliasNode ->
-                    aliasNode |> Node.range
+                Just (Node aliasRange _) ->
+                    aliasRange
 
                 Nothing ->
                     node |> Node.value |> .moduleName |> Node.range
