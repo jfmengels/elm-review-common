@@ -66,6 +66,7 @@ rule exceptions =
         |> Rule.withImportVisitor (importVisitor <| exceptionsToSet exceptions)
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.withFinalModuleEvaluation finalEvaluation
+        |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
 
