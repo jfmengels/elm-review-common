@@ -145,7 +145,7 @@ moduleVisitor exceptions schema =
         |> Rule.withFinalModuleEvaluation finalEvaluation
 
 
-exceptionsToSet : List String -> Set (List String)
+exceptionsToSet : List String -> Set ModuleName
 exceptionsToSet exceptions =
     List.foldl
         (\moduleName acc -> Set.insert (String.split "." moduleName) acc)
@@ -153,7 +153,7 @@ exceptionsToSet exceptions =
         exceptions
 
 
-importVisitor : Set (List String) -> Node Import -> ModuleContext -> ( List (Error nothing), ModuleContext )
+importVisitor : Set ModuleName -> Node Import -> ModuleContext -> ( List (Error nothing), ModuleContext )
 importVisitor exceptions node context =
     let
         moduleName : ModuleName
@@ -239,7 +239,7 @@ insertValueUsed name importExposingAll =
     { importExposingAll | values = Set.insert name importExposingAll.values }
 
 
-importModuleName : Node Import -> List String
+importModuleName : Node Import -> ModuleName
 importModuleName node =
     node
         |> Node.value
