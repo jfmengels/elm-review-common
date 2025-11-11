@@ -14,7 +14,7 @@ import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
-import Elm.Syntax.Range as Range exposing (Range)
+import Elm.Syntax.Range exposing (Range)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
@@ -333,30 +333,17 @@ exposingFix { node, exposingRange, values } =
 
 removeExposingFix : Node Import -> Fix
 removeExposingFix node =
-    case node |> Node.value |> .moduleAlias of
-        Just aliasNode ->
-            let
-                endOfAliasName : Range.Location
-                endOfAliasName =
-                    aliasNode |> Node.range |> .end
+    let
+        startRange : Range
+        startRange =
+            case node |> Node.value |> .moduleAlias of
+                Just aliasNode ->
+                    aliasNode |> Node.range
 
-                endOfImport : Range.Location
-                endOfImport =
-                    Node.range node |> .end
-            in
-            Fix.replaceRangeBy { start = endOfAliasName, end = endOfImport } ""
-
-        Nothing ->
-            let
-                endOfModuleName : Range.Location
-                endOfModuleName =
-                    node |> Node.value |> .moduleName |> Node.range |> .end
-
-                endOfImport : Range.Location
-                endOfImport =
-                    Node.range node |> .end
-            in
-            Fix.replaceRangeBy { start = endOfModuleName, end = endOfImport } ""
+                Nothing ->
+                    node |> Node.value |> .moduleName |> Node.range
+    in
+    Fix.replaceRangeBy { start = startRange.end, end = (Node.range node).end } ""
 
 
 replaceExposingFix : List String -> Range -> Fix
