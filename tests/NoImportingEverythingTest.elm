@@ -109,6 +109,31 @@ import Html exposing (strong, text)
 view = Html.p [] [ strong [] [ text "Thing" ] ]
 """
                     ]
+    , test "should import the constructors of the type when used value is a custom type constructor" <|
+        \() ->
+            [ """module A exposing (value)
+import B exposing (..)
+value = C1
+"""
+            , """module B exposing (SomeType(..))
+type SomeType
+  = C1
+"""
+            ]
+                |> Review.Test.runOnModulesWithProjectData project (rule [])
+                |> Review.Test.expect
+                    [ Review.Test.moduleErrors "A"
+                        [ Review.Test.error
+                            { message = "Prefer listing what you wish to import and/or using qualified imports"
+                            , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                            , under = "(..)"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (value)
+import B exposing (SomeType(..))
+value = C1
+"""
+                        ]
+                    ]
     , test "should not report imports that are in the exceptions list" <|
         \() ->
             """module A exposing (thing)

@@ -304,13 +304,24 @@ useImportedValue context moduleName name =
             context
 
         Just importExposingAll ->
-            { context
-                | importsExposingAll =
+            let
+                insertionName : String
+                insertionName =
+                    case Dict.get moduleName context.constructorToType |> Maybe.andThen (Dict.get name) of
+                        Just typeName ->
+                            typeName ++ "(..)"
+
+                        Nothing ->
+                            name
+
+                importsExposingAll : Dict ModuleName ImportExposingAll
+                importsExposingAll =
                     Dict.insert
                         moduleName
-                        { importExposingAll | values = Set.insert name importExposingAll.values }
+                        { importExposingAll | values = Set.insert insertionName importExposingAll.values }
                         context.importsExposingAll
-            }
+            in
+            { context | importsExposingAll = importsExposingAll }
 
 
 importModuleName : Node Import -> ModuleName
