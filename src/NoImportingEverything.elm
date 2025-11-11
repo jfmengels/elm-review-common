@@ -240,22 +240,27 @@ declarationVisitor node context =
                 typeName : String
                 typeName =
                     Node.value type_.name
-            in
-            if isConstructorsExposed typeName context then
-                let
-                    localConstructorToType : Dict String String
-                    localConstructorToType =
-                        List.foldl
-                            (\(Node _ constructor) acc ->
-                                Dict.insert (Node.value constructor.name) typeName acc
-                            )
-                            context.localConstructorToType
-                            type_.constructors
-                in
-                ( [], { context | localConstructorToType = localConstructorToType } )
 
-            else
-                ( [], context )
+                isConstructorsExposed_ : Bool
+                isConstructorsExposed_ =
+                    isConstructorsExposed typeName context
+
+                newContext : ModuleContext
+                newContext =
+                    List.foldl
+                        (\(Node _ constructor) ctx ->
+                            visitTypeAnnotation constructor.arguments
+                                (if isConstructorsExposed_ then
+                                    { ctx | localConstructorToType = Dict.insert (Node.value constructor.name) typeName ctx.localConstructorToType }
+
+                                 else
+                                    ctx
+                                )
+                        )
+                        context
+                        type_.constructors
+            in
+            ( [], newContext )
 
         _ ->
             ( [], context )
