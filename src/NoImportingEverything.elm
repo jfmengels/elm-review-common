@@ -10,8 +10,9 @@ import Dict exposing (Dict)
 import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Import exposing (Import)
+import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
-import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Range as Range exposing (Range)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
@@ -82,9 +83,15 @@ type alias ProjectContext =
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , importsExposingAll : Dict ModuleName ImportExposingAll
+    , exposedTypes : ExposedTypes
     , constructorToType : Dict ModuleName (Dict String String)
     , localConstructorToType : Dict String String
     }
+
+
+type ExposedTypes
+    = ExposesAll
+    | ExposesConstructorsOf (Set String)
 
 
 type alias ImportExposingAll =
@@ -106,6 +113,7 @@ fromProjectToModule =
         (\lookupTable projectContext ->
             { lookupTable = lookupTable
             , importsExposingAll = Dict.empty
+            , exposedTypes = ExposesAll
             , constructorToType = projectContext.constructorToType
             , localConstructorToType = Dict.empty
             }
@@ -140,9 +148,35 @@ moduleVisitor :
     -> Rule.ModuleRuleSchema { schemaState | hasAtLeastOneVisitor : () } ModuleContext
 moduleVisitor exceptions schema =
     schema
+        |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
         |> Rule.withImportVisitor (importVisitor <| exceptionsToSet exceptions)
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.withFinalModuleEvaluation finalEvaluation
+
+
+moduleDefinitionVisitor : Node Module -> ModuleContext -> ( List empty, ModuleContext )
+moduleDefinitionVisitor node context =
+    case Module.exposingList (Node.value node) of
+        Exposing.All _ ->
+            ( [], { context | exposedTypes = ExposesAll } )
+
+        Exposing.Explicit list ->
+            let
+                constructors : Set String
+                constructors =
+                    List.foldl
+                        (\(Node _ item) acc ->
+                            case item of
+                                Exposing.TypeExpose { name } ->
+                                    Set.insert name acc
+
+                                _ ->
+                                    acc
+                        )
+                        Set.empty
+                        list
+            in
+            ( [], { context | exposedTypes = ExposesConstructorsOf constructors } )
 
 
 exceptionsToSet : List String -> Set ModuleName
