@@ -75,12 +75,14 @@ rule exceptions =
 
 
 type alias ProjectContext =
-    ()
+    { constructorToType : Dict ModuleName (Dict String String)
+    }
 
 
 type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , importsExposingAll : Dict ModuleName ImportExposingAll
+    , constructorToType : Dict ModuleName (Dict String String)
     }
 
 
@@ -93,7 +95,8 @@ type alias ImportExposingAll =
 
 initialContext : ProjectContext
 initialContext =
-    ()
+    { constructorToType = Dict.empty
+    }
 
 
 fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
@@ -102,6 +105,7 @@ fromProjectToModule =
         (\lookupTable projectContext ->
             { lookupTable = lookupTable
             , importsExposingAll = Dict.empty
+            , constructorToType = projectContext.constructorToType
             }
         )
         |> Rule.withModuleNameLookupTable
@@ -111,13 +115,15 @@ fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
         (\moduleContext ->
-            ()
+            { constructorToType = Dict.empty
+            }
         )
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
-    ()
+    { constructorToType = Dict.union newContext.constructorToType previousContext.constructorToType
+    }
 
 
 moduleVisitor :
