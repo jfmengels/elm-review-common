@@ -62,10 +62,16 @@ elm-review --template jfmengels/elm-review-common/example --rules NoImportingEve
 -}
 rule : List String -> Rule
 rule exceptions =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoImportingEverything" initialModuleContext
-        |> moduleVisitor exceptions
-        |> Rule.providesFixesForModuleRule
-        |> Rule.fromModuleRuleSchema
+    Rule.newProjectRuleSchema "NoImportingEverything" initialContext
+        |> Rule.withModuleVisitor (moduleVisitor exceptions)
+        |> Rule.withModuleContextUsingContextCreator
+            { fromProjectToModule = fromProjectToModule
+            , fromModuleToProject = fromModuleToProject
+            , foldProjectContexts = foldProjectContexts
+            }
+        |> Rule.withContextFromImportedModules
+        |> Rule.providesFixesForProjectRule
+        |> Rule.fromProjectRuleSchema
 
 
 type alias ProjectContext =
@@ -85,8 +91,13 @@ type alias ImportExposingAll =
     }
 
 
-initialModuleContext : Rule.ContextCreator ProjectContext ModuleContext
-initialModuleContext =
+initialContext : ProjectContext
+initialContext =
+    ()
+
+
+fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
+fromProjectToModule =
     Rule.initContextCreator
         (\lookupTable projectContext ->
             { lookupTable = lookupTable
@@ -94,6 +105,19 @@ initialModuleContext =
             }
         )
         |> Rule.withModuleNameLookupTable
+
+
+fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
+fromModuleToProject =
+    Rule.initContextCreator
+        (\moduleContext ->
+            ()
+        )
+
+
+foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
+foldProjectContexts newContext previousContext =
+    ()
 
 
 moduleVisitor :
