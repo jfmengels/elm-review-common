@@ -299,19 +299,18 @@ importError ({ exposingRange } as importExposingAll) =
 
 useImportedFunction : ModuleContext -> ModuleName -> String -> ModuleContext
 useImportedFunction context moduleName name =
-    { context
-        | importsExposingAll = Dict.update moduleName (updateImportsUsed name) context.importsExposingAll
-    }
+    case Dict.get moduleName context.importsExposingAll of
+        Nothing ->
+            context
 
-
-updateImportsUsed : String -> Maybe ImportExposingAll -> Maybe ImportExposingAll
-updateImportsUsed name maybeImport =
-    Maybe.map (insertValueUsed name) maybeImport
-
-
-insertValueUsed : String -> ImportExposingAll -> ImportExposingAll
-insertValueUsed name importExposingAll =
-    { importExposingAll | values = Set.insert name importExposingAll.values }
+        Just importExposingAll ->
+            { context
+                | importsExposingAll =
+                    Dict.insert
+                        moduleName
+                        { importExposingAll | values = Set.insert name importExposingAll.values }
+                        context.importsExposingAll
+            }
 
 
 importModuleName : Node Import -> ModuleName
