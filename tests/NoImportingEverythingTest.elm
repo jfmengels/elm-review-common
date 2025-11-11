@@ -21,7 +21,7 @@ all =
 testsForProject : Project -> List Test
 testsForProject project =
     [ test "should not report imports without exposing clause" <|
-        \_ ->
+        \() ->
             """module A exposing (thing)
 import Html
 import Html as B
@@ -29,21 +29,21 @@ import Html as B
                 |> Review.Test.runWithProjectData project (rule [])
                 |> Review.Test.expectNoErrors
     , test "should not report imports that expose some elements" <|
-        \_ ->
+        \() ->
             """module A exposing (thing)
 import Html exposing (B, c)
 """
                 |> Review.Test.runWithProjectData project (rule [])
                 |> Review.Test.expectNoErrors
     , test "should not report imports that expose all constructors of a type" <|
-        \_ ->
+        \() ->
             """module A exposing (thing)
 import Html exposing (B(..))
 """
                 |> Review.Test.runWithProjectData project (rule [])
                 |> Review.Test.expectNoErrors
     , test "should report imports that expose everything" <|
-        \_ ->
+        \() ->
             """module A exposing (thing)
 import Html exposing (..)
 """
@@ -59,7 +59,7 @@ import Html
 """
                     ]
     , test "should report aliased imports that expose everything" <|
-        \_ ->
+        \() ->
             """module A exposing (thing)
 import Json.Decode as JD exposing (..)
 """
@@ -75,7 +75,7 @@ import Json.Decode as JD
 """
                     ]
     , test "should only include used values in the fixed exposing list" <|
-        \_ ->
+        \() ->
             """module A exposing (view)
 import Html exposing (..)
 view = p [] [ strong [] [ text "Thing" ] ]
@@ -93,7 +93,7 @@ view = p [] [ strong [] [ text "Thing" ] ]
 """
                     ]
     , test "should not report imports that are in the exceptions list" <|
-        \_ ->
+        \() ->
             """module A exposing (thing)
 import Html exposing (..)
 import Thing.Foo as Foo exposing (..)
