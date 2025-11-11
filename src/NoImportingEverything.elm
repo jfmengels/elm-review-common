@@ -62,7 +62,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoImportingEve
 -}
 rule : List String -> Rule
 rule exceptions =
-    Rule.newModuleRuleSchemaUsingContextCreator "NoImportingEverything" createContext
+    Rule.newModuleRuleSchemaUsingContextCreator "NoImportingEverything" initialModuleContext
         |> Rule.withImportVisitor (importVisitor <| exceptionsToSet exceptions)
         |> Rule.withExpressionEnterVisitor expressionVisitor
         |> Rule.withFinalModuleEvaluation finalEvaluation
@@ -83,8 +83,8 @@ type alias ImportExposingAll =
     }
 
 
-createContext : Rule.ContextCreator () Context
-createContext =
+initialModuleContext : Rule.ContextCreator () Context
+initialModuleContext =
     Rule.initContextCreator
         (\lookupTable () ->
             { lookupTable = lookupTable
