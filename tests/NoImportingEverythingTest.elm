@@ -1,12 +1,11 @@
 module NoImportingEverythingTest exposing (all)
 
-import Dependencies.ElmCore
-import Dependencies.ElmHtml
 import Elm.Project
 import Json.Decode as Decode
 import NoImportingEverything exposing (rule)
 import Review.Project as Project exposing (Project)
 import Review.Test
+import Review.Test.Dependencies
 import Test exposing (Test, describe, test)
 
 
@@ -107,16 +106,16 @@ applicationProject : Project
 applicationProject =
     Project.new
         |> Project.addElmJson (createElmJson applicationElmJson)
-        |> Project.addDependency Dependencies.ElmCore.dependency
-        |> Project.addDependency Dependencies.ElmHtml.dependency
+        |> Project.addDependency Review.Test.Dependencies.elmCore
+        |> Project.addDependency Review.Test.Dependencies.elmHtml
 
 
 packageProject : Project
 packageProject =
     Project.new
         |> Project.addElmJson (createElmJson packageElmJson)
-        |> Project.addDependency Dependencies.ElmCore.dependency
-        |> Project.addDependency Dependencies.ElmHtml.dependency
+        |> Project.addDependency Review.Test.Dependencies.elmCore
+        |> Project.addDependency Review.Test.Dependencies.elmHtml
 
 
 applicationElmJson : String
