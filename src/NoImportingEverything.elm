@@ -15,6 +15,7 @@ import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Range exposing (Range)
+import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Rule as Rule exposing (Error, Rule)
@@ -225,6 +226,15 @@ importVisitor exceptions node context =
 declarationVisitor : Node Declaration -> ModuleContext -> ( List empty, ModuleContext )
 declarationVisitor node context =
     case Node.value node of
+        Declaration.FunctionDeclaration { signature } ->
+            -- TODO Get constructors from patterns
+            case signature of
+                Just (Node _ { typeAnnotation }) ->
+                    ( [], visitTypeAnnotation [ typeAnnotation ] context )
+
+                Nothing ->
+                    ( [], context )
+
         Declaration.CustomTypeDeclaration type_ ->
             let
                 typeName : String
@@ -249,6 +259,43 @@ declarationVisitor node context =
 
         _ ->
             ( [], context )
+
+
+visitTypeAnnotation : List (Node TypeAnnotation) -> ModuleContext -> ModuleContext
+visitTypeAnnotation typeAnnotations context =
+    case typeAnnotations of
+        [] ->
+            context
+
+        typeAnnotation :: rest ->
+            case Node.value typeAnnotation of
+                TypeAnnotation.Typed (Node _ ( [], name )) subTypes ->
+                    let
+                        newContext : ModuleContext
+                        newContext =
+                            case ModuleNameLookupTable.moduleNameFor context.lookupTable typeAnnotation of
+                                Just moduleName ->
+                                    useImportedType moduleName name context
+
+                                Nothing ->
+                                    context
+                    in
+                    visitTypeAnnotation (subTypes ++ rest) newContext
+
+                TypeAnnotation.Tupled subTypes ->
+                    visitTypeAnnotation (subTypes ++ rest) context
+
+                TypeAnnotation.Record fields ->
+                    visitTypeAnnotation (List.map (Node.value >> Tuple.second) fields ++ rest) context
+
+                TypeAnnotation.GenericRecord _ (Node _ fields) ->
+                    visitTypeAnnotation (List.map (Node.value >> Tuple.second) fields ++ rest) context
+
+                TypeAnnotation.FunctionTypeAnnotation fn arg ->
+                    visitTypeAnnotation (fn :: arg :: rest) context
+
+                _ ->
+                    visitTypeAnnotation rest context
 
 
 isConstructorsExposed : String -> { context | exposedTypes : ExposedTypes } -> Bool
@@ -319,6 +366,24 @@ useImportedValue moduleName name context =
                     Dict.insert
                         moduleName
                         { importExposingAll | values = Set.insert insertionName importExposingAll.values }
+                        context.importsExposingAll
+            in
+            { context | importsExposingAll = importsExposingAll }
+
+
+useImportedType : ModuleName -> String -> ModuleContext -> ModuleContext
+useImportedType moduleName typeName context =
+    case Dict.get moduleName context.importsExposingAll of
+        Nothing ->
+            context
+
+        Just importExposingAll ->
+            let
+                importsExposingAll : Dict ModuleName ImportExposingAll
+                importsExposingAll =
+                    Dict.insert
+                        moduleName
+                        { importExposingAll | values = Set.insert typeName importExposingAll.values }
                         context.importsExposingAll
             in
             { context | importsExposingAll = importsExposingAll }
