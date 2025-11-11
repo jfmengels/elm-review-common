@@ -70,7 +70,7 @@ rule exceptions =
         |> Rule.fromModuleRuleSchema
 
 
-type alias Context =
+type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , importsExposingAll : Dict ModuleName ImportExposingAll
     }
@@ -83,7 +83,7 @@ type alias ImportExposingAll =
     }
 
 
-initialModuleContext : Rule.ContextCreator () Context
+initialModuleContext : Rule.ContextCreator () ModuleContext
 initialModuleContext =
     Rule.initContextCreator
         (\lookupTable () ->
@@ -102,7 +102,7 @@ exceptionsToSet exceptions =
         exceptions
 
 
-importVisitor : Set (List String) -> Node Import -> Context -> ( List (Error nothing), Context )
+importVisitor : Set (List String) -> Node Import -> ModuleContext -> ( List (Error nothing), ModuleContext )
 importVisitor exceptions node context =
     let
         moduleName : ModuleName
@@ -135,7 +135,7 @@ importVisitor exceptions node context =
                 ( [], context )
 
 
-expressionVisitor : Node Expression -> Context -> ( List (Rule.Error nothing), Context )
+expressionVisitor : Node Expression -> ModuleContext -> ( List (Rule.Error nothing), ModuleContext )
 expressionVisitor node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
@@ -152,7 +152,7 @@ expressionVisitor node context =
             ( [], context )
 
 
-finalEvaluation : Context -> List (Error {})
+finalEvaluation : ModuleContext -> List (Error {})
 finalEvaluation context =
     context.importsExposingAll
         |> Dict.values
@@ -171,7 +171,7 @@ importError ({ exposingRange } as importExposingAll) =
         [ exposingFix importExposingAll ]
 
 
-useImportedFunction : Context -> ModuleName -> String -> Context
+useImportedFunction : ModuleContext -> ModuleName -> String -> ModuleContext
 useImportedFunction context moduleName name =
     { context
         | importsExposingAll = Dict.update moduleName (updateImportsUsed name) context.importsExposingAll
