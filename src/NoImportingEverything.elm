@@ -401,6 +401,29 @@ useImportedValue moduleName name context =
             { context | importsExposingAll = importsExposingAll }
 
 
+useImportedTypeConstructor : ModuleName -> String -> ModuleContext -> ModuleContext
+useImportedTypeConstructor moduleName constructorName context =
+    case Dict.get moduleName context.importsExposingAll of
+        Nothing ->
+            context
+
+        Just importExposingAll ->
+            case Dict.get moduleName context.constructorToType |> Maybe.andThen (Dict.get constructorName) of
+                Just typeName ->
+                    let
+                        importsExposingAll : Dict ModuleName ImportExposingAll
+                        importsExposingAll =
+                            Dict.insert
+                                moduleName
+                                { importExposingAll | values = Set.insert (typeName ++ "(..)") importExposingAll.values }
+                                context.importsExposingAll
+                    in
+                    { context | importsExposingAll = importsExposingAll }
+
+                Nothing ->
+                    context
+
+
 useImportedType : ModuleName -> String -> ModuleContext -> ModuleContext
 useImportedType moduleName typeName context =
     case Dict.get moduleName context.importsExposingAll of
