@@ -227,14 +227,18 @@ importVisitor exceptions node context =
 declarationVisitor : Node Declaration -> ModuleContext -> ( List empty, ModuleContext )
 declarationVisitor node context =
     case Node.value node of
-        Declaration.FunctionDeclaration { signature } ->
-            -- TODO Get constructors from patterns
-            case signature of
+        Declaration.FunctionDeclaration { signature, declaration } ->
+            ( []
+            , (case signature of
                 Just (Node _ { typeAnnotation }) ->
-                    ( [], visitTypeAnnotation [ typeAnnotation ] context )
+                    context
+                        |> visitTypeAnnotation [ typeAnnotation ]
 
                 Nothing ->
-                    ( [], context )
+                    context
+              )
+                |> visitFunctionArgumentPatterns (Node.value declaration).arguments
+            )
 
         Declaration.CustomTypeDeclaration type_ ->
             let
