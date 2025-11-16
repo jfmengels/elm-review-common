@@ -323,17 +323,21 @@ constructorsInPattern lookupTable nodes acc =
         node :: restOfNodes ->
             case Node.value node of
                 Pattern.NamedPattern qualifiedNameRef patterns ->
-                    let
-                        newAcc : Set ( ModuleName, String )
-                        newAcc =
-                            case ModuleNameLookupTable.fullModuleNameFor lookupTable node of
-                                Just realModuleName ->
-                                    Set.insert ( realModuleName, qualifiedNameRef.name ) acc
+                    if List.isEmpty qualifiedNameRef.moduleName then
+                        let
+                            newAcc : Set ( ModuleName, String )
+                            newAcc =
+                                case ModuleNameLookupTable.fullModuleNameFor lookupTable node of
+                                    Just realModuleName ->
+                                        Set.insert ( realModuleName, qualifiedNameRef.name ) acc
 
-                                Nothing ->
-                                    acc
-                    in
-                    constructorsInPattern lookupTable (patterns ++ restOfNodes) newAcc
+                                    Nothing ->
+                                        acc
+                        in
+                        constructorsInPattern lookupTable (patterns ++ restOfNodes) newAcc
+
+                    else
+                        constructorsInPattern lookupTable restOfNodes acc
 
                 Pattern.TuplePattern patterns ->
                     constructorsInPattern lookupTable (patterns ++ restOfNodes) acc

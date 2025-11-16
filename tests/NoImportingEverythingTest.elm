@@ -240,6 +240,33 @@ value = let (Constructor x) = Debug.todo "x"
 """
                         ]
                     ]
+    , test "should not list qualified import in what gets imported" <|
+        \() ->
+            [ """module A exposing (value)
+import B exposing (..)
+value = let (B.Constructor x) = Debug.todo "x"
+        in x
+"""
+            , """module B exposing (SomeType(..))
+type SomeType
+  = Constructor String
+"""
+            ]
+                |> Review.Test.runOnModulesWithProjectData project (rule [])
+                |> Review.Test.expect
+                    [ Review.Test.moduleErrors "A"
+                        [ Review.Test.error
+                            { message = "Prefer listing what you wish to import and/or using qualified imports"
+                            , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                            , under = "(..)"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (value)
+import B
+value = let (B.Constructor x) = Debug.todo "x"
+        in x
+"""
+                        ]
+                    ]
     , test "should import the type found in a type annotation" <|
         \() ->
             """module A exposing (view)
