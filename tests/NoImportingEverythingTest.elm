@@ -349,7 +349,7 @@ import Html exposing (Html)
 type alias X msg = Html msg
 """
                     ]
-    , test "should import an operator" <|
+    , test "should import an operator from an operator application" <|
         \() ->
             """module A exposing (x)
 import Parser exposing (..)
@@ -365,6 +365,24 @@ x a b = a |= b
                         |> Review.Test.whenFixed """module A exposing (x)
 import Parser exposing ((|=))
 x a b = a |= b
+"""
+                    ]
+    , test "should import an operator from a prefix operator" <|
+        \() ->
+            """module A exposing (x)
+import Parser exposing (..)
+x = (|=)
+"""
+                |> Review.Test.runWithProjectData project (rule [])
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Prefer listing what you wish to import and/or using qualified imports"
+                        , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                        , under = "(..)"
+                        }
+                        |> Review.Test.whenFixed """module A exposing (x)
+import Parser exposing ((|=))
+x = (|=)
 """
                     ]
     , test "should not report imports that are in the exceptions list" <|

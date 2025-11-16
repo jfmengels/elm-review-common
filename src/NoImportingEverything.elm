@@ -431,6 +431,16 @@ expressionVisitor node context =
                 Nothing ->
                     ( [], context )
 
+        Expression.PrefixOperator op ->
+            case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
+                Just moduleName ->
+                    ( []
+                    , useImportedValue moduleName ("(" ++ op ++ ")") context
+                    )
+
+                Nothing ->
+                    ( [], context )
+
         _ ->
             ( [], context )
 
