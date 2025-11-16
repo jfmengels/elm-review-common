@@ -392,8 +392,8 @@ expressionVisitor node context =
                             )
                                 |> visitFunctionArgumentPatterns (Node.value declaration).arguments
 
-                        Expression.LetDestructuring _ _ ->
-                            ctx
+                        Expression.LetDestructuring pattern _ ->
+                            visitFunctionArgumentPatterns [ pattern ] ctx
                 )
                 context
                 declarations
