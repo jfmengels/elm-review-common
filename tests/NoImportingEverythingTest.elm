@@ -349,6 +349,24 @@ import Html exposing (Html)
 type alias X msg = Html msg
 """
                     ]
+    , test "should import an operator" <|
+        \() ->
+            """module A exposing (x)
+import Parser exposing (..)
+x a b = a |= b
+"""
+                |> Review.Test.runWithProjectData project (rule [])
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Prefer listing what you wish to import and/or using qualified imports"
+                        , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                        , under = "(..)"
+                        }
+                        |> Review.Test.whenFixed """module A exposing (x)
+import Parser exposing ((|=))
+x a b = a |= b
+"""
+                    ]
     , test "should not report imports that are in the exceptions list" <|
         \() ->
             """module A exposing (thing)
@@ -366,6 +384,7 @@ applicationProject =
         |> Project.addElmJson (createElmJson applicationElmJson)
         |> Project.addDependency Review.Test.Dependencies.elmCore
         |> Project.addDependency Review.Test.Dependencies.elmHtml
+        |> Project.addDependency Review.Test.Dependencies.elmParser
 
 
 packageProject : Project
@@ -374,6 +393,7 @@ packageProject =
         |> Project.addElmJson (createElmJson packageElmJson)
         |> Project.addDependency Review.Test.Dependencies.elmCore
         |> Project.addDependency Review.Test.Dependencies.elmHtml
+        |> Project.addDependency Review.Test.Dependencies.elmParser
 
 
 applicationElmJson : String
@@ -388,7 +408,8 @@ applicationElmJson =
     "dependencies": {
         "direct": {
             "elm/core": "1.0.0",
-            "elm/html": "1.0.0"
+            "elm/html": "1.0.0",
+            "elm/parser": "1.1.0"
         },
         "indirect": {}
     },
@@ -414,7 +435,8 @@ packageElmJson =
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
         "elm/core": "1.0.0 <= v < 2.0.0",
-        "elm/html": "1.0.0 <= v < 2.0.0"
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/parser": "1.1.0 <= v < 2.0.0"
     },
     "test-dependencies": {}
 }"""

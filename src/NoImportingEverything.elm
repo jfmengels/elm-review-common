@@ -421,6 +421,16 @@ expressionVisitor node context =
             in
             ( [], { context | importsExposingAll = newImportsExposingAll } )
 
+        Expression.OperatorApplication op _ _ _ ->
+            case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
+                Just moduleName ->
+                    ( []
+                    , useImportedValue moduleName ("(" ++ op ++ ")") context
+                    )
+
+                Nothing ->
+                    ( [], context )
+
         _ ->
             ( [], context )
 
