@@ -161,6 +161,33 @@ value x = case x of
 """
                         ]
                     ]
+    , test "should import the constructors of the type found in a let function patterns" <|
+        \() ->
+            [ """module A exposing (value)
+import B exposing (..)
+value = let fn (Constructor x) = x
+        in fn (Debug.todo "x")
+"""
+            , """module B exposing (SomeType(..))
+type SomeType
+  = Constructor String
+"""
+            ]
+                |> Review.Test.runOnModulesWithProjectData project (rule [])
+                |> Review.Test.expect
+                    [ Review.Test.moduleErrors "A"
+                        [ Review.Test.error
+                            { message = "Prefer listing what you wish to import and/or using qualified imports"
+                            , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                            , under = "(..)"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (value)
+import B exposing (SomeType(..))
+value = let fn (Constructor x) = x
+        in fn (Debug.todo "x")
+"""
+                        ]
+                    ]
     , test "should import the type found in a type annotation" <|
         \() ->
             """module A exposing (view)

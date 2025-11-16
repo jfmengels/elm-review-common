@@ -375,15 +375,18 @@ expressionVisitor node context =
 
         Expression.LetExpression { declarations } ->
             List.foldl
-                (\(Node _ declaration) ctx ->
-                    case declaration of
-                        Expression.LetFunction { signature } ->
-                            case signature of
+                (\(Node _ letDeclaration) ctx ->
+                    case letDeclaration of
+                        Expression.LetFunction { signature, declaration } ->
+                            (case signature of
                                 Just (Node _ { typeAnnotation }) ->
-                                    visitTypeAnnotation [ typeAnnotation ] ctx
+                                    ctx
+                                        |> visitTypeAnnotation [ typeAnnotation ]
 
                                 Nothing ->
                                     ctx
+                            )
+                                |> visitFunctionArgumentPatterns (Node.value declaration).arguments
 
                         Expression.LetDestructuring _ _ ->
                             ctx
@@ -412,6 +415,22 @@ expressionVisitor node context =
 
         _ ->
             ( [], context )
+
+
+visitFunctionArgumentPatterns : List (Node Pattern) -> ModuleContext -> ModuleContext
+visitFunctionArgumentPatterns patterns context =
+    List.foldl
+        (\pattern importsExposingAll ->
+            Set.foldl
+                (\( moduleName, constructorName ) subImportsExposingAll ->
+                    useImportedTypeConstructor moduleName constructorName context.constructorToType subImportsExposingAll
+                )
+                importsExposingAll
+                (constructorsInPattern context.lookupTable [ pattern ] Set.empty)
+        )
+        context.importsExposingAll
+        patterns
+        |> (\importsExposingAll -> { context | importsExposingAll = importsExposingAll })
 
 
 finalEvaluation : ModuleContext -> List (Error {})
