@@ -14,6 +14,7 @@ import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
+import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
@@ -309,6 +310,46 @@ visitTypeAnnotation typeAnnotations context =
                     visitTypeAnnotation rest context
 
 
+constructorsInPattern : ModuleNameLookupTable -> List (Node Pattern) -> Set ( ModuleName, String ) -> Set ( ModuleName, String )
+constructorsInPattern lookupTable nodes acc =
+    case nodes of
+        [] ->
+            acc
+
+        node :: restOfNodes ->
+            case Node.value node of
+                Pattern.NamedPattern qualifiedNameRef patterns ->
+                    let
+                        newAcc : Set ( ModuleName, String )
+                        newAcc =
+                            case ModuleNameLookupTable.fullModuleNameFor lookupTable node of
+                                Just realModuleName ->
+                                    Set.insert ( realModuleName, qualifiedNameRef.name ) acc
+
+                                Nothing ->
+                                    acc
+                    in
+                    constructorsInPattern lookupTable (patterns ++ restOfNodes) newAcc
+
+                Pattern.TuplePattern patterns ->
+                    constructorsInPattern lookupTable (patterns ++ restOfNodes) acc
+
+                Pattern.UnConsPattern left right ->
+                    constructorsInPattern lookupTable (left :: right :: restOfNodes) acc
+
+                Pattern.ListPattern patterns ->
+                    constructorsInPattern lookupTable (patterns ++ restOfNodes) acc
+
+                Pattern.AsPattern pattern _ ->
+                    constructorsInPattern lookupTable (pattern :: restOfNodes) acc
+
+                Pattern.ParenthesizedPattern pattern ->
+                    constructorsInPattern lookupTable (pattern :: restOfNodes) acc
+
+                _ ->
+                    constructorsInPattern lookupTable restOfNodes acc
+
+
 isConstructorsExposed : String -> { context | exposedTypes : ExposedTypes } -> Bool
 isConstructorsExposed name context =
     case context.exposedTypes of
@@ -350,6 +391,24 @@ expressionVisitor node context =
                 context
                 declarations
                 |> Tuple.pair []
+
+        Expression.CaseExpression case_ ->
+            let
+                newImportsExposingAll : Dict ModuleName ImportExposingAll
+                newImportsExposingAll =
+                    List.foldl
+                        (\( casePattern, _ ) importsExposingAll ->
+                            Set.foldl
+                                (\( moduleName, constructorName ) subImportsExposingAll ->
+                                    useImportedTypeConstructor moduleName constructorName context.constructorToType subImportsExposingAll
+                                )
+                                importsExposingAll
+                                (constructorsInPattern context.lookupTable [ casePattern ] Set.empty)
+                        )
+                        context.importsExposingAll
+                        case_.cases
+            in
+            ( [], { context | importsExposingAll = newImportsExposingAll } )
 
         _ ->
             ( [], context )
@@ -401,27 +460,22 @@ useImportedValue moduleName name context =
             { context | importsExposingAll = importsExposingAll }
 
 
-useImportedTypeConstructor : ModuleName -> String -> ModuleContext -> ModuleContext
-useImportedTypeConstructor moduleName constructorName context =
-    case Dict.get moduleName context.importsExposingAll of
+useImportedTypeConstructor : ModuleName -> String -> Dict ModuleName (Dict String String) -> Dict ModuleName ImportExposingAll -> Dict ModuleName ImportExposingAll
+useImportedTypeConstructor moduleName constructorName constructorToType importsExposingAll =
+    case Dict.get moduleName importsExposingAll of
         Nothing ->
-            context
+            importsExposingAll
 
         Just importExposingAll ->
-            case Dict.get moduleName context.constructorToType |> Maybe.andThen (Dict.get constructorName) of
+            case Dict.get moduleName constructorToType |> Maybe.andThen (Dict.get constructorName) of
                 Just typeName ->
-                    let
-                        importsExposingAll : Dict ModuleName ImportExposingAll
-                        importsExposingAll =
-                            Dict.insert
-                                moduleName
-                                { importExposingAll | values = Set.insert (typeName ++ "(..)") importExposingAll.values }
-                                context.importsExposingAll
-                    in
-                    { context | importsExposingAll = importsExposingAll }
+                    Dict.insert
+                        moduleName
+                        { importExposingAll | values = Set.insert (typeName ++ "(..)") importExposingAll.values }
+                        importsExposingAll
 
                 Nothing ->
-                    context
+                    importsExposingAll
 
 
 useImportedType : ModuleName -> String -> ModuleContext -> ModuleContext
