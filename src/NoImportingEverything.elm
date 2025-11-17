@@ -391,6 +391,9 @@ expressionVisitor node context =
                 Nothing ->
                     ( [], context )
 
+        Expression.LambdaExpression { args } ->
+            ( [], visitFunctionArgumentPatterns args context )
+
         Expression.LetExpression { declarations } ->
             List.foldl
                 (\(Node _ letDeclaration) ctx ->
