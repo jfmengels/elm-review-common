@@ -415,20 +415,10 @@ expressionVisitor : Node Expression -> ModuleContext -> ModuleContext
 expressionVisitor node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
-            case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
-                Just moduleName ->
-                    useImportedValue moduleName name context
-
-                Nothing ->
-                    context
+            useImportedValue name (Node.range node) context
 
         Expression.RecordUpdateExpression (Node nameRange name) _ ->
-            case ModuleNameLookupTable.moduleNameAt context.lookupTable nameRange of
-                Just moduleName ->
-                    useImportedValue moduleName name context
-
-                Nothing ->
-                    context
+            useImportedValue name nameRange context
 
         Expression.LambdaExpression { args } ->
             visitFunctionArgumentPatterns args context
@@ -473,20 +463,10 @@ expressionVisitor node context =
             { context | importsExposingAll = newImportsExposingAll }
 
         Expression.OperatorApplication op _ _ _ ->
-            case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
-                Just moduleName ->
-                    useImportedValue moduleName ("(" ++ op ++ ")") context
-
-                Nothing ->
-                    context
+            useImportedValue ("(" ++ op ++ ")") (Node.range node) context
 
         Expression.PrefixOperator op ->
-            case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
-                Just moduleName ->
-                    useImportedValue moduleName ("(" ++ op ++ ")") context
-
-                Nothing ->
-                    context
+            useImportedValue ("(" ++ op ++ ")") (Node.range node) context
 
         _ ->
             context
@@ -527,31 +507,36 @@ importError ({ exposingRange } as importExposingAll) =
         [ exposingFix importExposingAll ]
 
 
-useImportedValue : ModuleName -> String -> ModuleContext -> ModuleContext
-useImportedValue moduleName name context =
-    case Dict.get moduleName context.importsExposingAll of
+useImportedValue : String -> Range -> ModuleContext -> ModuleContext
+useImportedValue name range context =
+    case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
         Nothing ->
             context
 
-        Just importExposingAll ->
-            let
-                insertionName : String
-                insertionName =
-                    case Dict.get moduleName context.constructorToType |> Maybe.andThen (Dict.get name) of
-                        Just typeName ->
-                            typeName ++ "(..)"
+        Just moduleName ->
+            case Dict.get moduleName context.importsExposingAll of
+                Nothing ->
+                    context
 
-                        Nothing ->
-                            name
+                Just importExposingAll ->
+                    let
+                        insertionName : String
+                        insertionName =
+                            case Dict.get moduleName context.constructorToType |> Maybe.andThen (Dict.get name) of
+                                Just typeName ->
+                                    typeName ++ "(..)"
 
-                importsExposingAll : Dict ModuleName ImportExposingAll
-                importsExposingAll =
-                    Dict.insert
-                        moduleName
-                        { importExposingAll | values = Set.insert insertionName importExposingAll.values }
-                        context.importsExposingAll
-            in
-            { context | importsExposingAll = importsExposingAll }
+                                Nothing ->
+                                    name
+
+                        importsExposingAll : Dict ModuleName ImportExposingAll
+                        importsExposingAll =
+                            Dict.insert
+                                moduleName
+                                { importExposingAll | values = Set.insert insertionName importExposingAll.values }
+                                context.importsExposingAll
+                    in
+                    { context | importsExposingAll = importsExposingAll }
 
 
 useImportedTypeConstructor : ModuleName -> String -> Dict ModuleName (Dict String String) -> Dict ModuleName ImportExposingAll -> Dict ModuleName ImportExposingAll
