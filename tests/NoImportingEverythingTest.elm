@@ -240,6 +240,33 @@ value = let (Constructor x) = Debug.todo "x"
 """
                         ]
                     ]
+    , test "should import a type only once, even if both constructors and types are referenced" <|
+        \() ->
+            [ """module A exposing (value)
+import B exposing (..)
+value : SomeType
+value = C1
+"""
+            , """module B exposing (SomeType(..))
+type SomeType
+  = C1
+"""
+            ]
+                |> Review.Test.runOnModulesWithProjectData project (rule [])
+                |> Review.Test.expect
+                    [ Review.Test.moduleErrors "A"
+                        [ Review.Test.error
+                            { message = "Prefer listing what you wish to import and/or using qualified imports"
+                            , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                            , under = "(..)"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (value)
+import B exposing (SomeType(..))
+value : SomeType
+value = C1
+"""
+                        ]
+                    ]
     , test "should not list qualified import in what gets imported" <|
         \() ->
             [ """module A exposing (value)
