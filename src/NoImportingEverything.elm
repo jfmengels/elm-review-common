@@ -194,7 +194,7 @@ moduleVisitor exceptions schema =
         |> Rule.withModuleDefinitionVisitor moduleDefinitionVisitor
         |> Rule.withImportVisitor (importVisitor <| exceptionsToSet exceptions)
         |> Rule.withDeclarationEnterVisitor declarationVisitor
-        |> Rule.withExpressionEnterVisitor expressionVisitor
+        |> Rule.withExpressionEnterVisitor (\node context -> ( [], expressionVisitor node context ))
         |> Rule.withFinalModuleEvaluation finalEvaluation
 
 
@@ -411,31 +411,27 @@ isConstructorsExposed name context =
             Set.member name set
 
 
-expressionVisitor : Node Expression -> ModuleContext -> ( List (Rule.Error nothing), ModuleContext )
+expressionVisitor : Node Expression -> ModuleContext -> ModuleContext
 expressionVisitor node context =
     case Node.value node of
         Expression.FunctionOrValue [] name ->
             case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
                 Just moduleName ->
-                    ( []
-                    , useImportedValue moduleName name context
-                    )
+                    useImportedValue moduleName name context
 
                 Nothing ->
-                    ( [], context )
+                    context
 
         Expression.RecordUpdateExpression (Node nameRange name) _ ->
             case ModuleNameLookupTable.moduleNameAt context.lookupTable nameRange of
                 Just moduleName ->
-                    ( []
-                    , useImportedValue moduleName name context
-                    )
+                    useImportedValue moduleName name context
 
                 Nothing ->
-                    ( [], context )
+                    context
 
         Expression.LambdaExpression { args } ->
-            ( [], visitFunctionArgumentPatterns args context )
+            visitFunctionArgumentPatterns args context
 
         Expression.LetExpression { declarations } ->
             List.foldl
@@ -457,7 +453,6 @@ expressionVisitor node context =
                 )
                 context
                 declarations
-                |> Tuple.pair []
 
         Expression.CaseExpression case_ ->
             let
@@ -475,30 +470,26 @@ expressionVisitor node context =
                         context.importsExposingAll
                         case_.cases
             in
-            ( [], { context | importsExposingAll = newImportsExposingAll } )
+            { context | importsExposingAll = newImportsExposingAll }
 
         Expression.OperatorApplication op _ _ _ ->
             case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
                 Just moduleName ->
-                    ( []
-                    , useImportedValue moduleName ("(" ++ op ++ ")") context
-                    )
+                    useImportedValue moduleName ("(" ++ op ++ ")") context
 
                 Nothing ->
-                    ( [], context )
+                    context
 
         Expression.PrefixOperator op ->
             case ModuleNameLookupTable.moduleNameFor context.lookupTable node of
                 Just moduleName ->
-                    ( []
-                    , useImportedValue moduleName ("(" ++ op ++ ")") context
-                    )
+                    useImportedValue moduleName ("(" ++ op ++ ")") context
 
                 Nothing ->
-                    ( [], context )
+                    context
 
         _ ->
-            ( [], context )
+            context
 
 
 visitFunctionArgumentPatterns : List (Node Pattern) -> ModuleContext -> ModuleContext
