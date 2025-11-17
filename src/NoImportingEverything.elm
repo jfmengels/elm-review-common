@@ -15,7 +15,7 @@ import Elm.Syntax.Import exposing (Import)
 import Elm.Syntax.Module as Module exposing (Module)
 import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
-import Elm.Syntax.Pattern as Pattern exposing (Pattern)
+import Elm.Syntax.Pattern as Pattern exposing (Pattern, QualifiedNameRef)
 import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
@@ -363,21 +363,10 @@ constructorsInPattern lookupTable nodes acc =
         node :: restOfNodes ->
             case Node.value node of
                 Pattern.NamedPattern qualifiedNameRef patterns ->
-                    if List.isEmpty qualifiedNameRef.moduleName then
-                        let
-                            newAcc : Set ( ModuleName, String )
-                            newAcc =
-                                case ModuleNameLookupTable.fullModuleNameFor lookupTable node of
-                                    Just realModuleName ->
-                                        Set.insert ( realModuleName, qualifiedNameRef.name ) acc
-
-                                    Nothing ->
-                                        acc
-                        in
-                        constructorsInPattern lookupTable (patterns ++ restOfNodes) newAcc
-
-                    else
-                        constructorsInPattern lookupTable restOfNodes acc
+                    constructorsInPattern
+                        lookupTable
+                        (patterns ++ restOfNodes)
+                        (addNamedPattern lookupTable node qualifiedNameRef acc)
 
                 Pattern.TuplePattern patterns ->
                     constructorsInPattern lookupTable (patterns ++ restOfNodes) acc
@@ -396,6 +385,20 @@ constructorsInPattern lookupTable nodes acc =
 
                 _ ->
                     constructorsInPattern lookupTable restOfNodes acc
+
+
+addNamedPattern : ModuleNameLookupTable -> Node a -> QualifiedNameRef -> Set ( ModuleName, String ) -> Set ( ModuleName, String )
+addNamedPattern lookupTable node qualifiedNameRef acc =
+    if List.isEmpty qualifiedNameRef.moduleName then
+        case ModuleNameLookupTable.fullModuleNameFor lookupTable node of
+            Just realModuleName ->
+                Set.insert ( realModuleName, qualifiedNameRef.name ) acc
+
+            Nothing ->
+                acc
+
+    else
+        acc
 
 
 isConstructorsExposed : String -> { context | exposedTypes : ExposedTypes } -> Bool
