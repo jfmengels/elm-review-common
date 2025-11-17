@@ -563,29 +563,39 @@ importModuleName node =
 
 exposingFix : ImportExposingAll -> Fix
 exposingFix { node, exposingRange, values } =
-    case Set.toList values of
-        [] ->
-            removeExposingFix node
+    if Set.isEmpty values then
+        removeExposingFix node
 
-        list ->
-            replaceExposingFix list exposingRange
+    else
+        replaceExposingFix values exposingRange
 
 
 removeExposingFix : Node Import -> Fix
-removeExposingFix node =
+removeExposingFix (Node { end } import_) =
     let
         startRange : Range
         startRange =
-            case node |> Node.value |> .moduleAlias of
+            case import_.moduleAlias of
                 Just (Node aliasRange _) ->
                     aliasRange
 
                 Nothing ->
-                    node |> Node.value |> .moduleName |> Node.range
+                    Node.range import_.moduleName
     in
-    Fix.replaceRangeBy { start = startRange.end, end = (Node.range node).end } ""
+    Fix.replaceRangeBy { start = startRange.end, end = end } ""
 
 
-replaceExposingFix : List String -> Range -> Fix
+replaceExposingFix : Set String -> Range -> Fix
 replaceExposingFix values range =
-    Fix.replaceRangeBy range (String.join ", " values)
+    values
+        |> Set.foldr
+            (\value acc ->
+                if Set.member (value ++ "(..)") values then
+                    acc
+
+                else
+                    value :: acc
+            )
+            []
+        |> String.join ", "
+        |> Fix.replaceRangeBy range
