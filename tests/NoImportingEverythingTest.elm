@@ -349,6 +349,30 @@ import Html exposing (Html)
 type alias X msg = Html msg
 """
                     ]
+    , test "should import a value from a record expression" <|
+        \() ->
+            [ """module A exposing (value)
+import B exposing (..)
+value = { x | a = 1 }
+"""
+            , """module B exposing (x)
+x = { a = 1, b = 1 }
+"""
+            ]
+                |> Review.Test.runOnModulesWithProjectData project (rule [])
+                |> Review.Test.expect
+                    [ Review.Test.moduleErrors "A"
+                        [ Review.Test.error
+                            { message = "Prefer listing what you wish to import and/or using qualified imports"
+                            , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                            , under = "(..)"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (value)
+import B exposing (x)
+value = { x | a = 1 }
+"""
+                        ]
+                    ]
     , test "should import an operator from an operator application" <|
         \() ->
             """module A exposing (x)

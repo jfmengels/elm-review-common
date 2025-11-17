@@ -381,6 +381,16 @@ expressionVisitor node context =
                 Nothing ->
                     ( [], context )
 
+        Expression.RecordUpdateExpression (Node nameRange name) _ ->
+            case ModuleNameLookupTable.moduleNameAt context.lookupTable nameRange of
+                Just moduleName ->
+                    ( []
+                    , useImportedValue moduleName name context
+                    )
+
+                Nothing ->
+                    ( [], context )
+
         Expression.LetExpression { declarations } ->
             List.foldl
                 (\(Node _ letDeclaration) ctx ->
