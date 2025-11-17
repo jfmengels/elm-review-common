@@ -7,6 +7,7 @@ module NoImportingEverything exposing (rule)
 -}
 
 import Dict exposing (Dict)
+import Elm.Docs
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Exposing as Exposing
 import Elm.Syntax.Expression as Expression exposing (Expression)
@@ -19,6 +20,7 @@ import Elm.Syntax.Range exposing (Range)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Review.Fix as Fix exposing (Fix)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
+import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Rule as Rule exposing (Error, Rule)
 import Set exposing (Set)
 
@@ -67,6 +69,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoImportingEve
 rule : List String -> Rule
 rule exceptions =
     Rule.newProjectRuleSchema "NoImportingEverything" initialContext
+        |> Rule.withDirectDependenciesProjectVisitor (\dependencies context -> ( [], dependenciesVisitor dependencies context ))
         |> Rule.withModuleVisitor (moduleVisitor exceptions)
         |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModule
@@ -143,6 +146,43 @@ foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
     { constructorToType = Dict.union newContext.constructorToType previousContext.constructorToType
     }
+
+
+dependenciesVisitor : Dict String Dependency -> ProjectContext -> ProjectContext
+dependenciesVisitor dependencies _ =
+    let
+        constructorToType : Dict ModuleName (Dict String String)
+        constructorToType =
+            Dict.foldl
+                (\_ dep acc -> List.foldl findConstructorsInModule acc (Dependency.modules dep))
+                Dict.empty
+                dependencies
+    in
+    { constructorToType = constructorToType }
+
+
+findConstructorsInModule : Elm.Docs.Module -> Dict ModuleName (Dict String String) -> Dict ModuleName (Dict String String)
+findConstructorsInModule mod dict =
+    let
+        newConstructors : Dict String String
+        newConstructors =
+            List.foldl
+                (\union acc ->
+                    List.foldl
+                        (\( constructorName, _ ) subAcc ->
+                            Dict.insert constructorName union.name subAcc
+                        )
+                        acc
+                        union.tags
+                )
+                Dict.empty
+                mod.unions
+    in
+    if Dict.isEmpty newConstructors then
+        dict
+
+    else
+        Dict.insert (String.split "." mod.name) newConstructors dict
 
 
 moduleVisitor :

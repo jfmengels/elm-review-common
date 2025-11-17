@@ -211,6 +211,24 @@ value = \\(Constructor x) -> 1
 """
                         ]
                     ]
+    , test "should import the constructors of a type from a dependency" <|
+        \() ->
+            """module A exposing (x)
+import Parser.Advanced exposing (..)
+x = Mandatory
+"""
+                |> Review.Test.runWithProjectData project (rule [])
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Prefer listing what you wish to import and/or using qualified imports"
+                        , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+                        , under = "(..)"
+                        }
+                        |> Review.Test.whenFixed """module A exposing (x)
+import Parser.Advanced exposing (Trailing(..))
+x = Mandatory
+"""
+                    ]
     , test "should import the constructors of the type found in a let function patterns" <|
         \() ->
             [ """module A exposing (value)
