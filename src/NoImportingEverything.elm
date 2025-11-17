@@ -424,25 +424,7 @@ expressionVisitor node context =
             visitFunctionArgumentPatterns args context
 
         Expression.LetExpression { declarations } ->
-            List.foldl
-                (\(Node _ letDeclaration) ctx ->
-                    case letDeclaration of
-                        Expression.LetFunction { signature, declaration } ->
-                            (case signature of
-                                Just (Node _ { typeAnnotation }) ->
-                                    ctx
-                                        |> visitTypeAnnotation [ typeAnnotation ]
-
-                                Nothing ->
-                                    ctx
-                            )
-                                |> visitFunctionArgumentPatterns (Node.value declaration).arguments
-
-                        Expression.LetDestructuring pattern _ ->
-                            visitFunctionArgumentPatterns [ pattern ] ctx
-                )
-                context
-                declarations
+            visitLetExpression declarations context
 
         Expression.CaseExpression case_ ->
             let
@@ -470,6 +452,29 @@ expressionVisitor node context =
 
         _ ->
             context
+
+
+visitLetExpression : List (Node Expression.LetDeclaration) -> ModuleContext -> ModuleContext
+visitLetExpression declarations context =
+    List.foldl
+        (\(Node _ letDeclaration) ctx ->
+            case letDeclaration of
+                Expression.LetFunction { signature, declaration } ->
+                    (case signature of
+                        Just (Node _ { typeAnnotation }) ->
+                            ctx
+                                |> visitTypeAnnotation [ typeAnnotation ]
+
+                        Nothing ->
+                            ctx
+                    )
+                        |> visitFunctionArgumentPatterns (Node.value declaration).arguments
+
+                Expression.LetDestructuring pattern _ ->
+                    visitFunctionArgumentPatterns [ pattern ] ctx
+        )
+        context
+        declarations
 
 
 visitFunctionArgumentPatterns : List (Node Pattern) -> ModuleContext -> ModuleContext
