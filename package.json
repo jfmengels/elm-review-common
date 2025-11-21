@@ -14,12 +14,12 @@
     "postinstall": "elm-tooling install"
   },
   "dependencies": {
-    "elm-doc-preview": "^5.0.5",
-    "elm-review": "^2.10.1",
+    "elm-doc-preview": "^6.0.1",
+    "elm-review": "^2.13.4",
     "elm-test": "^0.19.1-revision10",
-    "elm-tooling": "^1.8.0",
+    "elm-tooling": "^1.16.0",
     "fs-extra": "9.0.0",
-    "glob": "7.1.6",
+    "glob": "^13.0.0",
     "npm-run-all": "^4.1.5"
   },
   "license": "BSD-3-Clause"
