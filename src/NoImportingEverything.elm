@@ -27,6 +27,8 @@ import Set exposing (Set)
 
 {-| Forbids importing everything from a module.
 
+🔧 Running with `--fix` will automatically fix all the reported errors.
+
 When you import everything from a module, it becomes harder to know where a function
 or a type comes from. The official guide even
 [recommends against importing everything](https://guide.elm-lang.org/webapps/modules.html#using-modules).
