@@ -6,7 +6,6 @@ import Test exposing (Test, describe, test)
 
 
 
--- TODO Handle destructuring lets with multiple variables
 -- TODO Incorporate https://github.com/jfmengels/elm-review/discussions/93 ? As an option?
 --      Not needed because this rule currently only targets is only for functions
 
@@ -724,6 +723,49 @@ a =
                 1
         in
         z
+
+    else
+        []
+"""
+                        ]
+        , test "should report a let destructuring with multiple values" <|
+            \() ->
+                """module A exposing (..)
+a =
+    let
+        (Foo y z) =
+            point
+    in
+    if condition then
+        let
+            b =
+                1
+        in
+        y + z
+
+    else
+        []
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = "Let values were declared prematurely"
+                            , details =
+                                [ "These values are only used in some code paths, and can therefore be computed unnecessarily."
+                                , "Try moving them closer to where it is needed, I recommend to move them to line 9."
+                                ]
+                            , under = "Foo y z"
+                            }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+    if condition then
+        let
+            (Foo y z) =
+                point
+            b =
+                1
+        in
+        y + z
 
     else
         []

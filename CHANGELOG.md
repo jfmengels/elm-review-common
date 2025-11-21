@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+[`NoPrematureLetComputation`] can now move let declarations that introduces multiple values.
+In the example below, only (1) could get moved, but with this update (2) can get moved as well.
+```elm
+-- (1)
+let
+  { x } = value
+in
+some code
+
+-- (2)
+let
+  { x, y } = value
+in
+some code
+```
+
 ## [1.3.4] - 2025-11-21
 
 Added an automatic fix for [`NoImportingEverything`]. Thanks to [@sparksp](https://github.com/sparksp) and [@jackhp95](https://github.com/jackhp95) for their help!
@@ -38,3 +54,4 @@ Help would be appreciated to fill the blanks!
 [`NoDeprecated`]: (https://package.lang.org/packages/jfmengels/elm-review-common/latest/NoDeprecated)
 [`NoImportingEverything`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoImportingEverything)
 [`NoMissingTypeExpose`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoMissingTypeExpose)
+[`NoPrematureLetComputation`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoPrematureLetComputation)
