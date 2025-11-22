@@ -485,26 +485,6 @@ visitFunctionArgumentPatterns patterns context =
         |> (\importsExposingAll -> { context | importsExposingAll = importsExposingAll })
 
 
-finalEvaluation : ModuleContext -> List (Error {})
-finalEvaluation context =
-    Dict.foldr
-        (\_ value valueList -> importError value :: valueList)
-        []
-        context.importsExposingAll
-
-
-importError : ImportExposingAll -> Error {}
-importError ({ exposingRange } as importExposingAll) =
-    Rule.errorWithFix
-        { message = "Prefer listing what you wish to import and/or using qualified imports"
-        , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
-        }
-        { start = { row = exposingRange.start.row, column = exposingRange.start.column - 1 }
-        , end = { row = exposingRange.end.row, column = exposingRange.end.column + 1 }
-        }
-        [ exposingFix importExposingAll ]
-
-
 useImportedValue : String -> Range -> ModuleContext -> ModuleContext
 useImportedValue name range context =
     case ModuleNameLookupTable.moduleNameAt context.lookupTable range of
@@ -579,6 +559,26 @@ importModuleName node =
         |> Node.value
         |> .moduleName
         |> Node.value
+
+
+finalEvaluation : ModuleContext -> List (Error {})
+finalEvaluation context =
+    Dict.foldr
+        (\_ value valueList -> importError value :: valueList)
+        []
+        context.importsExposingAll
+
+
+importError : ImportExposingAll -> Error {}
+importError ({ exposingRange } as importExposingAll) =
+    Rule.errorWithFix
+        { message = "Prefer listing what you wish to import and/or using qualified imports"
+        , details = [ "When you import everything from a module it becomes harder to know where a function or a type comes from." ]
+        }
+        { start = { row = exposingRange.start.row, column = exposingRange.start.column - 1 }
+        , end = { row = exposingRange.end.row, column = exposingRange.end.column + 1 }
+        }
+        [ exposingFix importExposingAll ]
 
 
 exposingFix : ImportExposingAll -> Fix
