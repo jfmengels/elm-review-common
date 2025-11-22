@@ -228,18 +228,17 @@ importVisitor exceptions node context =
     let
         moduleName : ModuleName
         moduleName =
-            importModuleName node
+            node
+                |> Node.value
+                |> .moduleName
+                |> Node.value
     in
     if Set.member moduleName exceptions then
         ( [], context )
 
     else
-        case
-            Node.value node
-                |> .exposingList
-                |> Maybe.map Node.value
-        of
-            Just (Exposing.All allRange) ->
+        case (Node.value node).exposingList of
+            Just (Node _ (Exposing.All allRange)) ->
                 ( []
                 , { context
                     | importsExposingAll =
@@ -551,14 +550,6 @@ useImportedType moduleName typeName context =
                         context.importsExposingAll
             in
             { context | importsExposingAll = importsExposingAll }
-
-
-importModuleName : Node Import -> ModuleName
-importModuleName node =
-    node
-        |> Node.value
-        |> .moduleName
-        |> Node.value
 
 
 finalEvaluation : ModuleContext -> List (Error {})
