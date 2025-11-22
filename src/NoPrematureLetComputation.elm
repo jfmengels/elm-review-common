@@ -371,7 +371,7 @@ removeLastBranchIfOnIt range branching =
             (removeLastBranchIfOnItRetry
                 range
                 { full = full
-                , last = getLastListItem full
+                , last = last full
                 }
             )
 
@@ -388,7 +388,7 @@ removeLastBranchIfOnItRetry range branching =
                 List.take (List.length branching.full - 1) branching.full
         in
         { full = full
-        , last = getLastListItem full
+        , last = last full
         }
 
     else
@@ -1093,6 +1093,14 @@ insertInLet initialPosition column source =
                 ++ String.repeat (column - 1) " "
 
 
-getLastListItem : List a -> Maybe a
-getLastListItem =
-    List.reverse >> List.head
+last : List a -> Maybe a
+last items =
+    case items of
+        [] ->
+            Nothing
+
+        [ x ] ->
+            Just x
+
+        _ :: rest ->
+            last rest
