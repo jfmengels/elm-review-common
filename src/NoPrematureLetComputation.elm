@@ -203,7 +203,6 @@ type alias Declared =
     , introducesVariablesInImplementation : Bool
     , reportRange : Range
     , declarationRange : Range
-    , removeRange : Range
     , letBlock : LetBlockWithRange
     }
 
@@ -521,14 +520,10 @@ registerLambdaExpression node { args, expression } context =
 registerLetExpression : Node Expression -> Expression.LetBlock -> Context -> Context
 registerLetExpression letNode letBlock context =
     let
-        isDeclarationAlone : Bool
-        isDeclarationAlone =
-            List.length letBlock.declarations == 1
-
         letDeclarations : List Declared
         letDeclarations =
             List.filterMap
-                (collectDeclared letNode letBlock isDeclarationAlone)
+                (collectDeclared letNode letBlock)
                 letBlock.declarations
 
         scopes : RangeDict Scope
@@ -883,10 +878,9 @@ expressionExitVisitorHelp node context =
 collectDeclared :
     Node Expression
     -> Expression.LetBlock
-    -> Bool
     -> Node Expression.LetDeclaration
     -> Maybe Declared
-collectDeclared letNode letBlock isDeclarationAlone node =
+collectDeclared letNode letBlock node =
     case Node.value node of
         Expression.LetFunction letFunction ->
             let
@@ -901,23 +895,11 @@ collectDeclared letNode letBlock isDeclarationAlone node =
                         { start = (Node.range node).start
                         , end = (Node.range declaration.expression).end
                         }
-
-                    fullLinesRange : Range
-                    fullLinesRange =
-                        fullLines range
                 in
                 { names = [ Node.value declaration.name ]
                 , introducesVariablesInImplementation = False
                 , reportRange = Node.range declaration.name
                 , declarationRange = range
-                , removeRange =
-                    if isDeclarationAlone then
-                        { start = (Node.range letNode).start
-                        , end = (Node.range letBlock.expression).start
-                        }
-
-                    else
-                        fullLinesRange
                 , letBlock = { range = Node.range letNode, block = letBlock }
                 }
                     |> Just
@@ -934,23 +916,11 @@ collectDeclared letNode letBlock isDeclarationAlone node =
                             { start = (Node.range node).start
                             , end = (Node.range expression).end
                             }
-
-                        fullLinesRange : Range
-                        fullLinesRange =
-                            fullLines range
                     in
                     { names = [ Node.value name ]
                     , introducesVariablesInImplementation = False
                     , reportRange = Node.range name
                     , declarationRange = range
-                    , removeRange =
-                        if isDeclarationAlone then
-                            { start = (Node.range letNode).start
-                            , end = (Node.range letBlock.expression).start
-                            }
-
-                        else
-                            fullLinesRange
                     , letBlock = { range = Node.range letNode, block = letBlock }
                     }
                         |> Just
@@ -1067,16 +1037,27 @@ fix context declared letInsertPosition =
         []
 
     else
+        let
+            removeRange : Range
+            removeRange =
+                if List.length declared.letBlock.block.declarations == 1 then
+                    { start = declared.letBlock.range.start
+                    , end = (Node.range declared.letBlock.block.expression).start
+                    }
+
+                else
+                    fullLines declared.declarationRange
+        in
         case letInsertPosition of
             InsertNewLet insertLocation ->
-                [ Fix.removeRange declared.removeRange
+                [ Fix.removeRange removeRange
                 , context.extractSourceCode (fullLines declared.declarationRange)
                     |> wrapInLet declared.reportRange.start.column insertLocation.column
                     |> Fix.insertAt insertLocation
                 ]
 
             InsertExistingLet insertLocation ->
-                [ Fix.removeRange declared.removeRange
+                [ Fix.removeRange removeRange
                 , context.extractSourceCode (fullLines declared.declarationRange)
                     |> insertInLet declared.declarationRange.start.column insertLocation.column
                     |> Fix.insertAt insertLocation
