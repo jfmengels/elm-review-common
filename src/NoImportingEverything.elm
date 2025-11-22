@@ -84,8 +84,7 @@ rule exceptions =
 
 
 type alias ProjectContext =
-    { constructorToType : Dict ModuleName (Dict String String)
-    }
+    Dict ModuleName (Dict String String)
 
 
 type alias ModuleContext =
@@ -111,18 +110,17 @@ type alias ImportExposingAll =
 
 initialContext : ProjectContext
 initialContext =
-    { constructorToType = Dict.empty
-    }
+    Dict.empty
 
 
 fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
 fromProjectToModule =
     Rule.initContextCreator
-        (\lookupTable projectContext ->
+        (\lookupTable constructorToType ->
             { lookupTable = lookupTable
             , importsExposingAll = Dict.empty
             , exposedTypes = ExposesAll
-            , constructorToType = projectContext.constructorToType
+            , constructorToType = constructorToType
             , localConstructorToType = Dict.empty
             }
         )
@@ -133,34 +131,26 @@ fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
         (\moduleName moduleContext ->
-            { constructorToType =
-                if Dict.isEmpty moduleContext.localConstructorToType then
-                    Dict.empty
+            if Dict.isEmpty moduleContext.localConstructorToType then
+                Dict.empty
 
-                else
-                    Dict.singleton moduleName moduleContext.localConstructorToType
-            }
+            else
+                Dict.singleton moduleName moduleContext.localConstructorToType
         )
         |> Rule.withModuleName
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
-foldProjectContexts newContext previousContext =
-    { constructorToType = Dict.union newContext.constructorToType previousContext.constructorToType
-    }
+foldProjectContexts =
+    Dict.union
 
 
 dependenciesVisitor : Dict String Dependency -> ProjectContext -> ProjectContext
 dependenciesVisitor dependencies _ =
-    let
-        constructorToType : Dict ModuleName (Dict String String)
-        constructorToType =
-            Dict.foldl
-                (\_ dep acc -> List.foldl findConstructorsInModule acc (Dependency.modules dep))
-                Dict.empty
-                dependencies
-    in
-    { constructorToType = constructorToType }
+    Dict.foldl
+        (\_ dep acc -> List.foldl findConstructorsInModule acc (Dependency.modules dep))
+        Dict.empty
+        dependencies
 
 
 findConstructorsInModule : Elm.Docs.Module -> Dict ModuleName (Dict String String) -> Dict ModuleName (Dict String String)
