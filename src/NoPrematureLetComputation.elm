@@ -523,7 +523,7 @@ registerLetExpression letNode letBlock context =
         letDeclarations : List Declared
         letDeclarations =
             List.filterMap
-                (collectDeclared letNode letBlock)
+                (collectDeclared { range = Node.range letNode, block = letBlock })
                 letBlock.declarations
 
         scopes : RangeDict Scope
@@ -876,11 +876,10 @@ expressionExitVisitorHelp node context =
 
 
 collectDeclared :
-    Node Expression
-    -> Expression.LetBlock
+    LetBlockWithRange
     -> Node Expression.LetDeclaration
     -> Maybe Declared
-collectDeclared letNode letBlock node =
+collectDeclared letBlock node =
     case Node.value node of
         Expression.LetFunction letFunction ->
             let
@@ -900,7 +899,7 @@ collectDeclared letNode letBlock node =
                 , introducesVariablesInImplementation = False
                 , reportRange = Node.range declaration.name
                 , declarationRange = range
-                , letBlock = { range = Node.range letNode, block = letBlock }
+                , letBlock = letBlock
                 }
                     |> Just
 
@@ -921,7 +920,7 @@ collectDeclared letNode letBlock node =
                     , introducesVariablesInImplementation = False
                     , reportRange = Node.range name
                     , declarationRange = range
-                    , letBlock = { range = Node.range letNode, block = letBlock }
+                    , letBlock = letBlock
                     }
                         |> Just
 
