@@ -938,9 +938,10 @@ toDeclared letNode letBlockExpression isDeclarationAlone { nameNode, expressionR
             }
 
         else
-            { start = { row = declarationStart.row, column = 1 }
-            , end = expressionRange.end
-            }
+            fullLines
+                { start = declarationStart
+                , end = expressionRange.end
+                }
     }
 
 
