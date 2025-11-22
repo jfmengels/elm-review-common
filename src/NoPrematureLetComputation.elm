@@ -523,25 +523,7 @@ registerLetExpression letNode { declarations, expression } context =
         letDeclarations =
             declarations
                 |> List.filterMap collectDeclarations
-                |> List.map
-                    (\{ nameNode, expressionRange, declarationStart } ->
-                        { name = Node.value nameNode
-                        , introducesVariablesInImplementation = False
-                        , reportRange = Node.range nameNode
-                        , declarationColumn = declarationStart.column
-                        , declarationRange = fullLines { start = declarationStart, end = expressionRange.end }
-                        , removeRange =
-                            if isDeclarationAlone then
-                                { start = (Node.range letNode).start
-                                , end = (Node.range expression).start
-                                }
-
-                            else
-                                { start = { row = declarationStart.row, column = 1 }
-                                , end = expressionRange.end
-                                }
-                        }
-                    )
+                |> List.map (toDeclared letNode (Node.range expression) isDeclarationAlone)
 
         scopes : RangeDict Scope
         scopes =
@@ -922,6 +904,31 @@ collectDeclarations node =
 
                 _ ->
                     Nothing
+
+
+toDeclared :
+    Node Expression
+    -> Range
+    -> Bool
+    -> { nameNode : Node String, expressionRange : Range, declarationStart : Location }
+    -> Declared
+toDeclared letNode letBlockExpression isDeclarationAlone { nameNode, expressionRange, declarationStart } =
+    { name = Node.value nameNode
+    , introducesVariablesInImplementation = False
+    , reportRange = Node.range nameNode
+    , declarationColumn = declarationStart.column
+    , declarationRange = fullLines { start = declarationStart, end = expressionRange.end }
+    , removeRange =
+        if isDeclarationAlone then
+            { start = (Node.range letNode).start
+            , end = letBlockExpression.start
+            }
+
+        else
+            { start = { row = declarationStart.row, column = 1 }
+            , end = expressionRange.end
+            }
+    }
 
 
 getLetFunctionRange : Node Expression.LetDeclaration -> Maybe ( Range, Scope )
