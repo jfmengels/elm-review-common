@@ -333,16 +333,21 @@ visitTypeAnnotation typeAnnotations context =
                     visitTypeAnnotation (subTypes ++ rest) context
 
                 TypeAnnotation.Record fields ->
-                    visitTypeAnnotation (List.map (Node.value >> Tuple.second) fields ++ rest) context
+                    visitTypeAnnotation (mapAndAppend (Node.value >> Tuple.second) fields rest) context
 
                 TypeAnnotation.GenericRecord _ (Node _ fields) ->
-                    visitTypeAnnotation (List.map (Node.value >> Tuple.second) fields ++ rest) context
+                    visitTypeAnnotation (mapAndAppend (Node.value >> Tuple.second) fields rest) context
 
                 TypeAnnotation.FunctionTypeAnnotation fn arg ->
                     visitTypeAnnotation (fn :: arg :: rest) context
 
                 _ ->
                     visitTypeAnnotation rest context
+
+
+mapAndAppend : (a -> b) -> List a -> List b -> List b
+mapAndAppend fn list initial =
+    List.foldl (\x acc -> fn x :: acc) initial list
 
 
 constructorsInPattern : ModuleNameLookupTable -> List (Node Pattern) -> Set ( ModuleName, String ) -> Set ( ModuleName, String )
