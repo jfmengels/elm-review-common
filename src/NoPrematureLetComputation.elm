@@ -524,12 +524,12 @@ registerLetExpression node { declarations, expression } context =
             declarations
                 |> List.filterMap collectDeclarations
                 |> List.map
-                    (\{ nameNode, expressionRange, declaration } ->
+                    (\{ nameNode, expressionRange, declarationStart } ->
                         { name = Node.value nameNode
                         , introducesVariablesInImplementation = False
                         , reportRange = Node.range nameNode
-                        , declarationColumn = (Node.range declaration).start.column
-                        , declarationRange = fullLines { start = (Node.range declaration).start, end = expressionRange.end }
+                        , declarationColumn = declarationStart.column
+                        , declarationRange = fullLines { start = declarationStart, end = expressionRange.end }
                         , removeRange =
                             if isDeclarationAlone then
                                 { start = (Node.range node).start
@@ -537,7 +537,7 @@ registerLetExpression node { declarations, expression } context =
                                 }
 
                             else
-                                { start = { row = (Node.range declaration).start.row, column = 1 }
+                                { start = { row = declarationStart.row, column = 1 }
                                 , end = expressionRange.end
                                 }
                         }
@@ -892,7 +892,7 @@ expressionExitVisitorHelp node context =
             []
 
 
-collectDeclarations : Node Expression.LetDeclaration -> Maybe { nameNode : Node String, expressionRange : Range, declaration : Node Expression.LetDeclaration }
+collectDeclarations : Node Expression.LetDeclaration -> Maybe { nameNode : Node String, expressionRange : Range, declarationStart : Location }
 collectDeclarations node =
     case Node.value node of
         Expression.LetFunction letFunction ->
@@ -905,7 +905,7 @@ collectDeclarations node =
                 Just
                     { nameNode = declaration.name
                     , expressionRange = Node.range declaration.expression
-                    , declaration = node
+                    , declarationStart = (Node.range node).start
                     }
 
             else
@@ -917,7 +917,7 @@ collectDeclarations node =
                     Just
                         { nameNode = name
                         , expressionRange = Node.range expression
-                        , declaration = node
+                        , declarationStart = (Node.range node).start
                         }
 
                 _ ->
