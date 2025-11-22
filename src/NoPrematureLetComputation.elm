@@ -513,7 +513,7 @@ registerLambdaExpression node { args, expression } context =
 
 
 registerLetExpression : Node Expression -> Expression.LetBlock -> Context -> Context
-registerLetExpression node { declarations, expression } context =
+registerLetExpression letNode { declarations, expression } context =
     let
         isDeclarationAlone : Bool
         isDeclarationAlone =
@@ -532,7 +532,7 @@ registerLetExpression node { declarations, expression } context =
                         , declarationRange = fullLines { start = declarationStart, end = expressionRange.end }
                         , removeRange =
                             if isDeclarationAlone then
-                                { start = (Node.range node).start
+                                { start = (Node.range letNode).start
                                 , end = (Node.range expression).start
                                 }
 
@@ -555,13 +555,13 @@ registerLetExpression node { declarations, expression } context =
                 LetScope
                 { letDeclarations = letDeclarations
                 , used = Set.empty
-                , insertionLocation = figureOutInsertionLocation node
+                , insertionLocation = figureOutInsertionLocation letNode
                 , scopes = scopes
                 }
 
         contextWithDeclarationsMarked : Context
         contextWithDeclarationsMarked =
-            { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
+            { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range letNode) context }
 
         branch : Scope
         branch =
@@ -570,7 +570,7 @@ registerLetExpression node { declarations, expression } context =
                     { b
                         | scopes =
                             RangeDict.insert
-                                (Node.range node)
+                                (Node.range letNode)
                                 newScope
                                 b.scopes
                     }
@@ -580,7 +580,7 @@ registerLetExpression node { declarations, expression } context =
     in
     { contextWithDeclarationsMarked
         | scope = branch
-        , branching = addBranching (Node.range node) contextWithDeclarationsMarked.branching
+        , branching = addBranching (Node.range letNode) contextWithDeclarationsMarked.branching
     }
 
 
