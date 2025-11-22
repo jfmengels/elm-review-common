@@ -894,8 +894,10 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
                     letBlockExpression
                     isDeclarationAlone
                     { nameNode = declaration.name
-                    , expressionRange = Node.range declaration.expression
-                    , declarationStart = (Node.range node).start
+                    , range =
+                        { start = (Node.range node).start
+                        , end = (Node.range declaration.expression).end
+                        }
                     }
                     |> Just
 
@@ -910,8 +912,10 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
                         letBlockExpression
                         isDeclarationAlone
                         { nameNode = name
-                        , expressionRange = Node.range expression
-                        , declarationStart = (Node.range node).start
+                        , range =
+                            { start = (Node.range node).start
+                            , end = (Node.range expression).end
+                            }
                         }
                         |> Just
 
@@ -923,14 +927,19 @@ toDeclared :
     Node Expression
     -> Range
     -> Bool
-    -> { nameNode : Node String, expressionRange : Range, declarationStart : Location }
+    -> { nameNode : Node String, range : Range }
     -> Declared
-toDeclared letNode letBlockExpression isDeclarationAlone { nameNode, expressionRange, declarationStart } =
+toDeclared letNode letBlockExpression isDeclarationAlone { nameNode, range } =
+    let
+        fullLinesRange : Range
+        fullLinesRange =
+            fullLines range
+    in
     { name = Node.value nameNode
     , introducesVariablesInImplementation = False
     , reportRange = Node.range nameNode
-    , declarationColumn = declarationStart.column
-    , declarationRange = fullLines { start = declarationStart, end = expressionRange.end }
+    , declarationColumn = range.start.column
+    , declarationRange = fullLinesRange
     , removeRange =
         if isDeclarationAlone then
             { start = (Node.range letNode).start
@@ -938,10 +947,7 @@ toDeclared letNode letBlockExpression isDeclarationAlone { nameNode, expressionR
             }
 
         else
-            fullLines
-                { start = declarationStart
-                , end = expressionRange.end
-                }
+            fullLinesRange
     }
 
 
