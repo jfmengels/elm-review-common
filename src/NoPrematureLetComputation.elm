@@ -969,7 +969,7 @@ canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
 canBeMovedToCloserLocationForBranchData : Bool -> String -> ScopeData -> List LetInsertPosition
 canBeMovedToCloserLocationForBranchData isRoot name branchData =
     if Set.member name branchData.used then
-        emptyIfTrue isRoot [ branchData.insertionLocation ]
+        emptyIfTrue isRoot branchData.insertionLocation
 
     else
         let
@@ -978,7 +978,7 @@ canBeMovedToCloserLocationForBranchData isRoot name branchData =
                 findRelevantUsages name (RangeDict.values branchData.scopes) []
         in
         if List.length relevantUsages > 1 then
-            emptyIfTrue isRoot [ branchData.insertionLocation ]
+            emptyIfTrue isRoot branchData.insertionLocation
 
         else
             relevantUsages
@@ -999,13 +999,13 @@ findRelevantUsages name branches result =
                 findRelevantUsages name rest (canBeMovedToCloserLocation False name first ++ result)
 
 
-emptyIfTrue : Bool -> List a -> List a
-emptyIfTrue bool list =
+emptyIfTrue : Bool -> a -> List a
+emptyIfTrue bool item =
     if bool then
         []
 
     else
-        list
+        [ item ]
 
 
 createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
