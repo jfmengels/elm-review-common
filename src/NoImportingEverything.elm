@@ -191,8 +191,8 @@ moduleVisitor exceptions schema =
 
 
 moduleDefinitionVisitor : Node Module -> ModuleContext -> ( List empty, ModuleContext )
-moduleDefinitionVisitor node context =
-    case Module.exposingList (Node.value node) of
+moduleDefinitionVisitor (Node _ module_) context =
+    case Module.exposingList module_ of
         Exposing.All _ ->
             ( [], { context | exposedTypes = ExposesAll } )
 
@@ -487,9 +487,10 @@ visitFunctionArgumentPatterns patterns context =
 
 finalEvaluation : ModuleContext -> List (Error {})
 finalEvaluation context =
-    context.importsExposingAll
-        |> Dict.values
-        |> List.map importError
+    Dict.foldr
+        (\_ value valueList -> importError value :: valueList)
+        []
+        context.importsExposingAll
 
 
 importError : ImportExposingAll -> Error {}
