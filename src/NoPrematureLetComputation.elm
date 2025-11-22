@@ -922,48 +922,35 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
         Expression.LetDestructuring pattern expression ->
             case variablesInPattern pattern of
                 [ name ] ->
-                    toDeclared
-                        letNode
-                        letBlockExpression
-                        isDeclarationAlone
-                        { nameNode = name
-                        , range =
+                    let
+                        range : Range
+                        range =
                             { start = (Node.range node).start
                             , end = (Node.range expression).end
                             }
-                        }
+
+                        fullLinesRange : Range
+                        fullLinesRange =
+                            fullLines range
+                    in
+                    { names = [ Node.value name ]
+                    , introducesVariablesInImplementation = False
+                    , reportRange = Node.range name
+                    , declarationColumn = range.start.column
+                    , declarationRange = fullLinesRange
+                    , removeRange =
+                        if isDeclarationAlone then
+                            { start = (Node.range letNode).start
+                            , end = letBlockExpression.start
+                            }
+
+                        else
+                            fullLinesRange
+                    }
                         |> Just
 
                 _ ->
                     Nothing
-
-
-toDeclared :
-    Node Expression
-    -> Range
-    -> Bool
-    -> { nameNode : Node String, range : Range }
-    -> Declared
-toDeclared letNode letBlockExpression isDeclarationAlone { nameNode, range } =
-    let
-        fullLinesRange : Range
-        fullLinesRange =
-            fullLines range
-    in
-    { names = [ Node.value nameNode ]
-    , introducesVariablesInImplementation = False
-    , reportRange = Node.range nameNode
-    , declarationColumn = range.start.column
-    , declarationRange = fullLinesRange
-    , removeRange =
-        if isDeclarationAlone then
-            { start = (Node.range letNode).start
-            , end = letBlockExpression.start
-            }
-
-        else
-            fullLinesRange
-    }
 
 
 getLetFunctionRange : Node Expression.LetDeclaration -> Maybe ( Range, Scope )
