@@ -474,11 +474,6 @@ type alias DeprecatedElementUsage =
     }
 
 
-toError : DeprecatedElementUsage -> Rule.Error {}
-toError deprecatedElementUsage =
-    error deprecatedElementUsage.origin deprecatedElementUsage.range
-
-
 dependenciesVisitor : StableConfiguration -> Dict String Review.Project.Dependency.Dependency -> ProjectContext -> ( List (Rule.Error global), ProjectContext )
 dependenciesVisitor (StableConfiguration configuration) dict projectContext =
     let
@@ -708,7 +703,7 @@ declarationVisitor configuration node context =
         usages =
             declarationVisitorHelp configuration node context
     in
-    ( List.map toError usages, { context | usages = usages ++ context.usages } )
+    ( List.map error usages, { context | usages = usages ++ context.usages } )
 
 
 declarationVisitorHelp : StableConfiguration -> Node Declaration -> ModuleContext -> List DeprecatedElementUsage
@@ -945,7 +940,7 @@ expressionVisitor configuration node context =
         usages =
             expressionVisitorHelp configuration node context
     in
-    ( List.map toError usages, { context | usages = usages ++ context.usages } )
+    ( List.map error usages, { context | usages = usages ++ context.usages } )
 
 
 expressionVisitorHelp : StableConfiguration -> Node Expression -> ModuleContext -> List DeprecatedElementUsage
@@ -1063,8 +1058,8 @@ usageOfDeprecatedElement =
     DeprecatedElementUsage
 
 
-error : Origin -> Range -> Rule.Error {}
-error origin range =
+error : DeprecatedElementUsage -> Rule.Error {}
+error { origin, range } =
     let
         details : List String
         details =
