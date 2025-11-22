@@ -204,6 +204,13 @@ type alias Declared =
     , reportRange : Range
     , declarationRange : Range
     , removeRange : Range
+    , letBlock : LetBlockWithRange
+    }
+
+
+type alias LetBlockWithRange =
+    { range : Range
+    , block : Expression.LetBlock
     }
 
 
@@ -512,21 +519,21 @@ registerLambdaExpression node { args, expression } context =
 
 
 registerLetExpression : Node Expression -> Expression.LetBlock -> Context -> Context
-registerLetExpression letNode { declarations, expression } context =
+registerLetExpression letNode letBlock context =
     let
         isDeclarationAlone : Bool
         isDeclarationAlone =
-            List.length declarations == 1
+            List.length letBlock.declarations == 1
 
         letDeclarations : List Declared
         letDeclarations =
             List.filterMap
-                (collectDeclared letNode (Node.range expression) isDeclarationAlone)
-                declarations
+                (collectDeclared letNode letBlock isDeclarationAlone)
+                letBlock.declarations
 
         scopes : RangeDict Scope
         scopes =
-            declarations
+            letBlock.declarations
                 |> List.filterMap getLetFunctionRange
                 |> RangeDict.fromList
 
@@ -875,11 +882,11 @@ expressionExitVisitorHelp node context =
 
 collectDeclared :
     Node Expression
-    -> Range
+    -> Expression.LetBlock
     -> Bool
     -> Node Expression.LetDeclaration
     -> Maybe Declared
-collectDeclared letNode letBlockExpression isDeclarationAlone node =
+collectDeclared letNode letBlock isDeclarationAlone node =
     case Node.value node of
         Expression.LetFunction letFunction ->
             let
@@ -906,11 +913,12 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
                 , removeRange =
                     if isDeclarationAlone then
                         { start = (Node.range letNode).start
-                        , end = letBlockExpression.start
+                        , end = (Node.range letBlock.expression).start
                         }
 
                     else
                         fullLinesRange
+                , letBlock = { range = Node.range letNode, block = letBlock }
                 }
                     |> Just
 
@@ -938,11 +946,12 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
                     , removeRange =
                         if isDeclarationAlone then
                             { start = (Node.range letNode).start
-                            , end = letBlockExpression.start
+                            , end = (Node.range letBlock.expression).start
                             }
 
                         else
                             fullLinesRange
+                    , letBlock = { range = Node.range letNode, block = letBlock }
                     }
                         |> Just
 
