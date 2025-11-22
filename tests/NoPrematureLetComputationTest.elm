@@ -29,7 +29,7 @@ all =
         [ baseTests
         , ignoreFixTests
         , letDestructuringTests
-        , novingIntoFunctionTests
+        , movingIntoFunctionTests
         ]
 
 
@@ -732,8 +732,8 @@ a =
         ]
 
 
-novingIntoFunctionTests : Test
-novingIntoFunctionTests =
+movingIntoFunctionTests : Test
+movingIntoFunctionTests =
     describe "Moving into functions"
         [ test "should not report let declaration that would be moved to inside a lambda" <|
             \() ->
