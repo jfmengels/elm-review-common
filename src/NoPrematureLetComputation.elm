@@ -199,7 +199,7 @@ type LetInsertPosition
 
 
 type alias Declared =
-    { name : String
+    { names : List String
     , introducesVariablesInImplementation : Bool
     , reportRange : Range
     , declarationColumn : Int
@@ -861,7 +861,7 @@ expressionExitVisitorHelp node context =
                 Just ((Scope LetScope scopeData) as scope) ->
                     List.filterMap
                         (\declaration ->
-                            canBeMovedToCloserLocation True declaration.name scope
+                            canBeMovedToCloserLocation True declaration.names scope
                                 |> List.head
                                 |> Maybe.map (createError context declaration)
                         )
@@ -935,7 +935,7 @@ toDeclared letNode letBlockExpression isDeclarationAlone { nameNode, range } =
         fullLinesRange =
             fullLines range
     in
-    { name = Node.value nameNode
+    { names = [ Node.value nameNode ]
     , introducesVariablesInImplementation = False
     , reportRange = Node.range nameNode
     , declarationColumn = range.start.column
@@ -965,12 +965,12 @@ getLetFunctionRange node =
             Nothing
 
 
-canBeMovedToCloserLocation : Bool -> String -> Scope -> List LetInsertPosition
-canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
+canBeMovedToCloserLocation : Bool -> List String -> Scope -> List LetInsertPosition
+canBeMovedToCloserLocation isRoot names (Scope type_ scope) =
     let
         closestLocation : List LetInsertPosition
         closestLocation =
-            canBeMovedToCloserLocationForBranchData isRoot name scope
+            canBeMovedToCloserLocationForBranchData isRoot names scope
     in
     case type_ of
         Branch ->
@@ -988,16 +988,16 @@ canBeMovedToCloserLocation isRoot name (Scope type_ scope) =
             closestLocation ++ closestLocation
 
 
-canBeMovedToCloserLocationForBranchData : Bool -> String -> ScopeData -> List LetInsertPosition
-canBeMovedToCloserLocationForBranchData isRoot name branchData =
-    if Set.member name branchData.used then
+canBeMovedToCloserLocationForBranchData : Bool -> List String -> ScopeData -> List LetInsertPosition
+canBeMovedToCloserLocationForBranchData isRoot names branchData =
+    if List.any (\name -> Set.member name branchData.used) names then
         emptyIfTrue isRoot branchData.insertionLocation
 
     else
         let
             relevantUsages : List LetInsertPosition
             relevantUsages =
-                findRelevantUsages name (RangeDict.values branchData.scopes) []
+                findRelevantUsages names (RangeDict.values branchData.scopes) []
         in
         if List.length relevantUsages > 1 then
             emptyIfTrue isRoot branchData.insertionLocation
@@ -1006,8 +1006,8 @@ canBeMovedToCloserLocationForBranchData isRoot name branchData =
             relevantUsages
 
 
-findRelevantUsages : String -> List Scope -> List LetInsertPosition -> List LetInsertPosition
-findRelevantUsages name branches result =
+findRelevantUsages : List String -> List Scope -> List LetInsertPosition -> List LetInsertPosition
+findRelevantUsages names branches result =
     if List.length result > 1 then
         -- If we have already found 2 branches with relevant usages, then we don't need to continue
         result
@@ -1018,7 +1018,7 @@ findRelevantUsages name branches result =
                 result
 
             first :: rest ->
-                findRelevantUsages name rest (canBeMovedToCloserLocation False name first ++ result)
+                findRelevantUsages names rest (canBeMovedToCloserLocation False names first ++ result)
 
 
 emptyIfTrue : Bool -> a -> List a
