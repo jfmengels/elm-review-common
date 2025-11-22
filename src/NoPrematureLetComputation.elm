@@ -524,7 +524,7 @@ registerLetExpression node { declarations, expression } context =
             declarations
                 |> List.concatMap collectDeclarations
                 |> List.map
-                    (\( nameNode, expressionRange, declaration ) ->
+                    (\{ nameNode, expressionRange, declaration } ->
                         { name = Node.value nameNode
                         , introducesVariablesInImplementation = False
                         , reportRange = Node.range nameNode
@@ -892,7 +892,7 @@ expressionExitVisitorHelp node context =
             []
 
 
-collectDeclarations : Node Expression.LetDeclaration -> List ( Node String, Range, Node Expression.LetDeclaration )
+collectDeclarations : Node Expression.LetDeclaration -> List { nameNode : Node String, expressionRange : Range, declaration : Node Expression.LetDeclaration }
 collectDeclarations node =
     case Node.value node of
         Expression.LetFunction letFunction ->
@@ -902,10 +902,10 @@ collectDeclarations node =
                     Node.value letFunction.declaration
             in
             if List.isEmpty declaration.arguments then
-                [ ( declaration.name
-                  , Node.range declaration.expression
-                  , node
-                  )
+                [ { nameNode = declaration.name
+                  , expressionRange = Node.range declaration.expression
+                  , declaration = node
+                  }
                 ]
 
             else
@@ -914,10 +914,10 @@ collectDeclarations node =
         Expression.LetDestructuring pattern expression ->
             case variablesInPattern pattern of
                 [ name ] ->
-                    [ ( name
-                      , Node.range expression
-                      , node
-                      )
+                    [ { nameNode = name
+                      , expressionRange = Node.range expression
+                      , declaration = node
+                      }
                     ]
 
                 _ ->
