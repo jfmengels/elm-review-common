@@ -291,13 +291,8 @@ getCurrentBranch currentBranching branch =
 
 
 getScopes : Scope -> RangeDict Scope
-getScopes =
-    getScopeData >> .scopes
-
-
-getScopeData : Scope -> ScopeData
-getScopeData (Scope _ scope) =
-    scope
+getScopes (Scope _ { scopes }) =
+    scopes
 
 
 declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
