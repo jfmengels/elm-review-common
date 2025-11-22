@@ -889,16 +889,31 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
                     Node.value letFunction.declaration
             in
             if List.isEmpty declaration.arguments then
-                toDeclared
-                    letNode
-                    letBlockExpression
-                    isDeclarationAlone
-                    { nameNode = declaration.name
-                    , range =
+                let
+                    range : Range
+                    range =
                         { start = (Node.range node).start
                         , end = (Node.range declaration.expression).end
                         }
-                    }
+
+                    fullLinesRange : Range
+                    fullLinesRange =
+                        fullLines range
+                in
+                { names = [ Node.value declaration.name ]
+                , introducesVariablesInImplementation = False
+                , reportRange = Node.range declaration.name
+                , declarationColumn = range.start.column
+                , declarationRange = fullLinesRange
+                , removeRange =
+                    if isDeclarationAlone then
+                        { start = (Node.range letNode).start
+                        , end = letBlockExpression.start
+                        }
+
+                    else
+                        fullLinesRange
+                }
                     |> Just
 
             else
