@@ -522,7 +522,7 @@ registerLetExpression node { declarations, expression } context =
         letDeclarations : List Declared
         letDeclarations =
             declarations
-                |> List.concatMap collectDeclarations
+                |> List.filterMap collectDeclarations
                 |> List.map
                     (\{ nameNode, expressionRange, declaration } ->
                         { name = Node.value nameNode
@@ -892,7 +892,7 @@ expressionExitVisitorHelp node context =
             []
 
 
-collectDeclarations : Node Expression.LetDeclaration -> List { nameNode : Node String, expressionRange : Range, declaration : Node Expression.LetDeclaration }
+collectDeclarations : Node Expression.LetDeclaration -> Maybe { nameNode : Node String, expressionRange : Range, declaration : Node Expression.LetDeclaration }
 collectDeclarations node =
     case Node.value node of
         Expression.LetFunction letFunction ->
@@ -902,26 +902,26 @@ collectDeclarations node =
                     Node.value letFunction.declaration
             in
             if List.isEmpty declaration.arguments then
-                [ { nameNode = declaration.name
-                  , expressionRange = Node.range declaration.expression
-                  , declaration = node
-                  }
-                ]
+                Just
+                    { nameNode = declaration.name
+                    , expressionRange = Node.range declaration.expression
+                    , declaration = node
+                    }
 
             else
-                []
+                Nothing
 
         Expression.LetDestructuring pattern expression ->
             case variablesInPattern pattern of
                 [ name ] ->
-                    [ { nameNode = name
-                      , expressionRange = Node.range expression
-                      , declaration = node
-                      }
-                    ]
+                    Just
+                        { nameNode = name
+                        , expressionRange = Node.range expression
+                        , declaration = node
+                        }
 
                 _ ->
-                    []
+                    Nothing
 
 
 getLetFunctionRange : Node Expression.LetDeclaration -> Maybe ( Range, Scope )
