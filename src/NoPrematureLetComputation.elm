@@ -521,9 +521,9 @@ registerLetExpression letNode { declarations, expression } context =
 
         letDeclarations : List Declared
         letDeclarations =
-            declarations
-                |> List.filterMap collectDeclarations
-                |> List.map (toDeclared letNode (Node.range expression) isDeclarationAlone)
+            List.filterMap
+                (collectDeclared letNode (Node.range expression) isDeclarationAlone)
+                declarations
 
         scopes : RangeDict Scope
         scopes =
@@ -874,8 +874,13 @@ expressionExitVisitorHelp node context =
             []
 
 
-collectDeclarations : Node Expression.LetDeclaration -> Maybe { nameNode : Node String, expressionRange : Range, declarationStart : Location }
-collectDeclarations node =
+collectDeclared :
+    Node Expression
+    -> Range
+    -> Bool
+    -> Node Expression.LetDeclaration
+    -> Maybe Declared
+collectDeclared letNode letBlockExpression isDeclarationAlone node =
     case Node.value node of
         Expression.LetFunction letFunction ->
             let
@@ -884,11 +889,15 @@ collectDeclarations node =
                     Node.value letFunction.declaration
             in
             if List.isEmpty declaration.arguments then
-                Just
+                toDeclared
+                    letNode
+                    letBlockExpression
+                    isDeclarationAlone
                     { nameNode = declaration.name
                     , expressionRange = Node.range declaration.expression
                     , declarationStart = (Node.range node).start
                     }
+                    |> Just
 
             else
                 Nothing
@@ -896,11 +905,15 @@ collectDeclarations node =
         Expression.LetDestructuring pattern expression ->
             case variablesInPattern pattern of
                 [ name ] ->
-                    Just
+                    toDeclared
+                        letNode
+                        letBlockExpression
+                        isDeclarationAlone
                         { nameNode = name
                         , expressionRange = Node.range expression
                         , declarationStart = (Node.range node).start
                         }
+                        |> Just
 
                 _ ->
                     Nothing
