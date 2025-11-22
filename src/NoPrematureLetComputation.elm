@@ -202,7 +202,6 @@ type alias Declared =
     { names : List String
     , introducesVariablesInImplementation : Bool
     , reportRange : Range
-    , declarationColumn : Int
     , declarationRange : Range
     , removeRange : Range
     }
@@ -903,8 +902,7 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
                 { names = [ Node.value declaration.name ]
                 , introducesVariablesInImplementation = False
                 , reportRange = Node.range declaration.name
-                , declarationColumn = range.start.column
-                , declarationRange = fullLinesRange
+                , declarationRange = range
                 , removeRange =
                     if isDeclarationAlone then
                         { start = (Node.range letNode).start
@@ -936,8 +934,7 @@ collectDeclared letNode letBlockExpression isDeclarationAlone node =
                     { names = [ Node.value name ]
                     , introducesVariablesInImplementation = False
                     , reportRange = Node.range name
-                    , declarationColumn = range.start.column
-                    , declarationRange = fullLinesRange
+                    , declarationRange = range
                     , removeRange =
                         if isDeclarationAlone then
                             { start = (Node.range letNode).start
@@ -1064,15 +1061,15 @@ fix context declared letInsertPosition =
         case letInsertPosition of
             InsertNewLet insertLocation ->
                 [ Fix.removeRange declared.removeRange
-                , context.extractSourceCode declared.declarationRange
+                , context.extractSourceCode (fullLines declared.declarationRange)
                     |> wrapInLet declared.reportRange.start.column insertLocation.column
                     |> Fix.insertAt insertLocation
                 ]
 
             InsertExistingLet insertLocation ->
                 [ Fix.removeRange declared.removeRange
-                , context.extractSourceCode declared.declarationRange
-                    |> insertInLet declared.declarationColumn insertLocation.column
+                , context.extractSourceCode (fullLines declared.declarationRange)
+                    |> insertInLet declared.declarationRange.start.column insertLocation.column
                     |> Fix.insertAt insertLocation
                 ]
 
