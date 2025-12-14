@@ -1009,17 +1009,18 @@ canBeMovedToCloserLocationForBranchData isRoot names branchData =
 
 findRelevantUsages : List String -> List Scope -> List LetInsertPosition -> List LetInsertPosition
 findRelevantUsages names branches result =
-    if List.length result > 1 then
-        -- If we have already found 2 branches with relevant usages, then we don't need to continue
-        result
+    case result of
+        _ :: _ :: _ ->
+            -- If we have already found 2 branches with relevant usages, then we don't need to continue
+            result
 
-    else
-        case branches of
-            [] ->
-                result
+        _ ->
+            case branches of
+                [] ->
+                    result
 
-            first :: rest ->
-                findRelevantUsages names rest (canBeMovedToCloserLocation False names first ++ result)
+                first :: rest ->
+                    findRelevantUsages names rest (canBeMovedToCloserLocation False names first ++ result)
 
 
 emptyIfTrue : Bool -> a -> List a
