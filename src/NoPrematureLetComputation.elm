@@ -996,11 +996,15 @@ canBeMovedToCloserLocationForBranchData isRoot names branchData =
             relevantUsages =
                 findRelevantUsages names (RangeDict.values branchData.scopes) []
         in
-        if List.length relevantUsages > 1 then
-            emptyIfTrue isRoot branchData.insertionLocation
+        case relevantUsages of
+            [] ->
+                []
 
-        else
-            relevantUsages
+            [ _ ] ->
+                relevantUsages
+
+            _ ->
+                emptyIfTrue isRoot branchData.insertionLocation
 
 
 findRelevantUsages : List String -> List Scope -> List LetInsertPosition -> List LetInsertPosition
