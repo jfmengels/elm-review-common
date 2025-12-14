@@ -771,6 +771,50 @@ a =
         []
 """
                         ]
+        , test "should properly indent moved let destructuring when indentation is large" <|
+            \() ->
+                """module A exposing (..)
+fn x =
+                    let
+                        (Node toMove _) =
+                            import_.moduleName
+
+                        data =
+                            case value of
+                                X ->
+                                    Debug.todo "data"
+
+                                Y ->
+                                    toMove
+                    in
+                    data
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 13
+                            , under = "toMove"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 31 }, end = { row = 4, column = 37 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+fn x =
+                    let
+                        data =
+                            case value of
+                                X ->
+                                    Debug.todo "data"
+
+                                Y ->
+                                    let
+                                        (Node toMove _) =
+                                            import_.moduleName
+                                    in
+                                    toMove
+                    in
+                    data
+"""
+                        ]
         ]
 
 

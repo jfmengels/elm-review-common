@@ -1078,7 +1078,7 @@ fix context declared letInsertPosition =
             InsertNewLet insertLocation ->
                 [ Fix.removeRange removeRange
                 , context.extractSourceCode (fullLines declared.declarationRange)
-                    |> wrapInLet declared.reportRange.start.column insertLocation.column
+                    |> wrapInLet declared.declarationRange.start.column insertLocation.column
                     |> Fix.insertAt insertLocation
                 ]
 

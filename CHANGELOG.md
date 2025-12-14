@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-[`NoPrematureLetComputation`] can now move let declarations that introduces multiple values.
+- [`NoPrematureLetComputation`] can now move let declarations that introduces multiple values.
 In the example below, only (1) could get moved, but with this update (2) can get moved as well.
 ```elm
 -- (1)
@@ -17,6 +17,7 @@ let
 in
 some code
 ```
+- Corrected an automatic fix for [`NoPrematureLetComputation`] that resulted in incorrect syntax.
 
 ## [1.3.4] - 2025-11-21
 
