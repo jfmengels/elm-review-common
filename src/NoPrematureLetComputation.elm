@@ -259,7 +259,7 @@ updateCurrentBranch updateFn currentBranching (Scope type_ segment) =
                     | scopes =
                         RangeDict.modify
                             range
-                            (updateCurrentBranch updateFn restOfSegments)
+                            (\scope_ -> updateCurrentBranch updateFn restOfSegments scope_)
                             segment.scopes
                 }
 
@@ -278,7 +278,7 @@ updateAllSegmentsOfCurrentBranch updateFn currentBranching (Scope type_ scope) =
                         | scopes =
                             RangeDict.modify
                                 range
-                                (updateAllSegmentsOfCurrentBranch updateFn restOfSegments)
+                                (\scope_ -> updateAllSegmentsOfCurrentBranch updateFn restOfSegments scope_)
                                 scope.scopes
                     }
                 )
