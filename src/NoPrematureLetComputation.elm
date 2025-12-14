@@ -802,18 +802,18 @@ patternIntroducesVariable node =
 markLetDeclarationsAsIntroducingVariables : Range -> Context -> Scope
 markLetDeclarationsAsIntroducingVariables range context =
     updateAllSegmentsOfCurrentBranch
-        (markDeclarationsAsUsed range)
+        (markDeclarationsAsIntroducingVariables range)
         context.branching.full
         context.scope
 
 
-markDeclarationsAsUsed : Range -> ScopeData -> ScopeData
-markDeclarationsAsUsed range branchData =
-    { branchData | letDeclarations = List.map (markDeclarationAsUsed range) branchData.letDeclarations }
+markDeclarationsAsIntroducingVariables : Range -> ScopeData -> ScopeData
+markDeclarationsAsIntroducingVariables range branchData =
+    { branchData | letDeclarations = List.map (markDeclarationAsIntroducingVariables range) branchData.letDeclarations }
 
 
-markDeclarationAsUsed : Range -> Declared -> Declared
-markDeclarationAsUsed range declared =
+markDeclarationAsIntroducingVariables : Range -> Declared -> Declared
+markDeclarationAsIntroducingVariables range declared =
     if isRangeContained { outer = declared.declarationRange, inner = range } then
         { declared | introducesVariablesInImplementation = True }
 
