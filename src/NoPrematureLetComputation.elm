@@ -1065,13 +1065,14 @@ fix context declared letInsertPosition =
         let
             removeRange : Range
             removeRange =
-                if List.length declared.letBlock.block.declarations == 1 then
-                    { start = declared.letBlock.range.start
-                    , end = (Node.range declared.letBlock.block.expression).start
-                    }
+                case declared.letBlock.block.declarations of
+                    [ _ ] ->
+                        { start = declared.letBlock.range.start
+                        , end = (Node.range declared.letBlock.block.expression).start
+                        }
 
-                else
-                    fullLines declared.declarationRange
+                    _ ->
+                        fullLines declared.declarationRange
         in
         case letInsertPosition of
             InsertNewLet insertLocation ->
