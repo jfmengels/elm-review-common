@@ -285,14 +285,18 @@ updateAllSegmentsOfCurrentBranch updateFn currentBranching (Scope type_ scope) =
 
 
 getCurrentBranch : List Range -> Scope -> Maybe Scope
-getCurrentBranch currentBranching branch =
-    case currentBranching of
-        [] ->
-            Just branch
+getCurrentBranch currentBranching initialBranch =
+    List.foldl
+        (\range maybeBranch ->
+            case maybeBranch of
+                Nothing ->
+                    Nothing
 
-        range :: restOfBranching ->
-            RangeDict.get range (getScopes branch)
-                |> Maybe.andThen (getCurrentBranch restOfBranching)
+                Just branch ->
+                    RangeDict.get range (getScopes branch)
+        )
+        (Just initialBranch)
+        currentBranching
 
 
 getScopes : Scope -> RangeDict Scope
