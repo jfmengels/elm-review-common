@@ -322,8 +322,8 @@ declarationVisitor node context =
 
 
 figureOutInsertionLocation : Node Expression -> LetInsertPosition
-figureOutInsertionLocation node =
-    case Node.value node of
+figureOutInsertionLocation (Node range expression) =
+    case expression of
         Expression.LetExpression { declarations } ->
             case declarations of
                 first :: _ ->
@@ -331,10 +331,10 @@ figureOutInsertionLocation node =
 
                 [] ->
                     -- Should not happen
-                    InsertNewLet (Node.range node).start
+                    InsertNewLet range.start
 
         _ ->
-            InsertNewLet (Node.range node).start
+            InsertNewLet range.start
 
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
@@ -857,10 +857,10 @@ insertNewBranches nodes rangeDict =
         [] ->
             rangeDict
 
-        node :: tail ->
+        ((Node range _) as node) :: tail ->
             insertNewBranches tail
                 (RangeDict.insert
-                    (Node.range node)
+                    range
                     (newBranch (figureOutInsertionLocation node))
                     rangeDict
                 )
