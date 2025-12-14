@@ -1035,21 +1035,22 @@ createError context declared letInsertPosition =
                     insertLocation.row
     in
     Rule.errorWithFix
-        (if List.length declared.names == 1 then
-            { message = "Let value was declared prematurely"
-            , details =
-                [ "This value is only used in some code paths, and it can therefore be computed unnecessarily."
-                , "Try moving it closer to where it is needed, I recommend to move it to line " ++ String.fromInt letInsertLine ++ "."
-                ]
-            }
+        (case declared.names of
+            [ _ ] ->
+                { message = "Let value was declared prematurely"
+                , details =
+                    [ "This value is only used in some code paths, and it can therefore be computed unnecessarily."
+                    , "Try moving it closer to where it is needed, I recommend to move it to line " ++ String.fromInt letInsertLine ++ "."
+                    ]
+                }
 
-         else
-            { message = "Let values were declared prematurely"
-            , details =
-                [ "These values are only used in some code paths, and can therefore be computed unnecessarily."
-                , "Try moving them closer to where it is needed, I recommend to move them to line " ++ String.fromInt letInsertLine ++ "."
-                ]
-            }
+            _ ->
+                { message = "Let values were declared prematurely"
+                , details =
+                    [ "These values are only used in some code paths, and can therefore be computed unnecessarily."
+                    , "Try moving them closer to where it is needed, I recommend to move them to line " ++ String.fromInt letInsertLine ++ "."
+                    ]
+                }
         )
         declared.reportRange
         (fix context declared letInsertPosition)
