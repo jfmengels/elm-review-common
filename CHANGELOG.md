@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- [`NoPrematureLetComputation`] can now move let declarations that introduces multiple values.
+- [`NoPrematureLetComputation`] can now move let declarations whose pattern introduces multiple values.
 In the example below, only (1) could get moved, but with this update (2) can get moved as well.
 ```elm
 -- (1)
@@ -17,6 +17,30 @@ let
 in
 some code
 ```
+- [`NoPrematureLetComputation`] can now move let declarations that have names in their scope.
+This was previously purposefully reported but not automatically fixed, as moving a declaration could introduce compiler errors about shadowing.
+```elm
+let
+  fn a =
+    a
+in
+case value of
+  Just a ->
+    fn a
+  Nothing ->
+    Nothing
+-->
+case value of
+  Just a ->
+    let
+      fn a = -- `a` is already defined two lines above
+        a
+    in
+    fn a
+  Nothing ->
+    Nothing
+```
+We now detect whether such a compiler error would occur and only prevent the fix in that case.
 - Corrected an automatic fix for [`NoPrematureLetComputation`] that resulted in incorrect syntax.
 
 ## [1.3.4] - 2025-11-21

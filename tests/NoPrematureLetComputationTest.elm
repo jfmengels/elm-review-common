@@ -455,7 +455,44 @@ a o =
 ignoreFixTests : Test
 ignoreFixTests =
     describe "Ignoring automatic fixes"
-        [ test "should not suggest a fix for let declarations that introduce variables in their implementation (lambda)" <|
+        [ test "should suggest a fix for let declarations that introduce non-conflicting variables in their implementation (lambda)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = \\w -> w + 1
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 10
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  case b of
+    A y ->
+      if b then
+        let
+            z : Int
+            z = \\w -> w + 1
+        in
+        z
+      else
+        1
+"""
+                        ]
+        , test "should not suggest a fix for let declarations that introduce conflicting variables in their implementation (lambda)" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -479,12 +516,12 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
                         ]
-        , test "should suggest a fix for lambda that does not introduce variables" <|
+        , test "should suggest a fix for lambda that does not introduce conflicting variables" <|
             \() ->
                 """module A exposing (..)
 a b c d =
   let
-    z = \\() _ -> 1
+    z = \\w _ -> 1
   in
   case b of
     A y ->
@@ -508,14 +545,53 @@ a b c d =
     A y ->
       if b then
         let
-            z = \\() _ -> 1
+            z = \\w _ -> 1
         in
         z
       else
         1
 """
                         ]
-        , test "should not suggest a fix for let declarations that introduce variables in their implementation (let block)" <|
+        , test "should suggest a fix for let declarations that introduce non-conflicting variables in their implementation (let block)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = let w = 1
+        in w
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 11
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  case b of
+    A y ->
+      if b then
+        let
+            z : Int
+            z = let w = 1
+                in w
+        in
+        z
+      else
+        1
+"""
+                        ]
+        , test "should not suggest a fix for let declarations that introduce conflicting variables in their implementation (let block)" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -540,7 +616,7 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
                         ]
-        , test "should not suggest a fix for let declarations that introduce variables in their implementation but still suggest fixes for others" <|
+        , test "should not suggest a fix for let declarations that introduce conflicting variables in their implementation but still suggest fixes for others" <|
             \() ->
                 """module A exposing (..)
 a b c d =
@@ -588,13 +664,116 @@ a b c d =
         x
 """
                         ]
-        , test "should not suggest a fix for let declarations that introduce variables in their implementation (case expression)" <|
+        , test "should suggest a fix for let declarations that introduce non-conflicting variables in their implementation (case expression)" <|
             \() ->
                 """module A exposing (..)
 a b c d =
   let
     z : Int
     z = case c of
+      B w -> w + 1
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 11
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  case b of
+    A y ->
+      if b then
+        let
+            z : Int
+            z = case c of
+              B w -> w + 1
+        in
+        z
+      else
+        1
+"""
+                        ]
+        , test "should not suggest a fix for let declarations that introduce conflicting variables in their implementation (case expression)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = case c of
+      B y -> y + 1
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 11
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                        ]
+        , test "should suggest a fix for let declarations that introduce non-conflicting variables available in the destination scope" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = case d of
+      B w -> w + 1
+  in
+  case b of
+    A y ->
+      if b then
+        z
+      else
+        1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 11
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  case b of
+    A y ->
+      if b then
+        let
+            z : Int
+            z = case d of
+              B w -> w + 1
+        in
+        z
+      else
+        1
+"""
+                        ]
+        , test "should not suggest a fix for let declarations that introduce conflicting variables available in the destination scope" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = case d of
       B y -> y + 1
   in
   case b of

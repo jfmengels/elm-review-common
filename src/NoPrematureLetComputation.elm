@@ -190,6 +190,7 @@ type alias ScopeData =
     , used : Set String
     , insertionLocation : LetInsertPosition
     , scopes : RangeDict Scope
+    , introducedVariables : Set String
     }
 
 
@@ -200,7 +201,7 @@ type LetInsertPosition
 
 type alias Declared =
     { names : List String
-    , introducesVariablesInImplementation : Bool
+    , introducedVariables : Set String
     , reportRange : Range
     , declarationRange : Range
     , letBlock : LetBlockWithRange
@@ -213,14 +214,15 @@ type alias LetBlockWithRange =
     }
 
 
-newBranch : LetInsertPosition -> Scope
-newBranch insertionLocation =
+newBranch : LetInsertPosition -> Set String -> Scope
+newBranch insertionLocation introducedVariables =
     Scope
         Branch
         { letDeclarations = []
         , used = Set.empty
         , insertionLocation = insertionLocation
         , scopes = RangeDict.empty
+        , introducedVariables = introducedVariables
         }
 
 
@@ -237,7 +239,7 @@ initialContext =
         (\lookupTable extractSourceCode () ->
             { lookupTable = lookupTable
             , extractSourceCode = extractSourceCode
-            , scope = newBranch (InsertNewLet emptyLocation)
+            , scope = newBranch (InsertNewLet emptyLocation) Set.empty
             , branching = emptyBranching
             , functionsThatWillOnlyBeComputedOnce = RangeDict.empty
             }
@@ -308,10 +310,15 @@ declarationVisitor : Node Declaration -> Context -> ( List nothing, Context )
 declarationVisitor node context =
     case Node.value node of
         Declaration.FunctionDeclaration { declaration } ->
+            let
+                introducedVariables : Set String
+                introducedVariables =
+                    introducedVariablesInPattern (Node.value declaration).arguments Set.empty
+            in
             ( []
             , { lookupTable = context.lookupTable
               , extractSourceCode = context.extractSourceCode
-              , scope = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression))
+              , scope = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression)) introducedVariables
               , branching = emptyBranching
               , functionsThatWillOnlyBeComputedOnce = RangeDict.empty
               }
@@ -438,7 +445,7 @@ expressionEnterVisitorHelp node context =
             registerLetExpression node letBlock context
 
         Expression.IfBlock _ then_ else_ ->
-            addBranches [ then_, else_ ] context
+            addBranches [ ( then_, Set.empty ), ( else_, Set.empty ) ] context
 
         Expression.CaseExpression { cases } ->
             registerCaseExpression node cases context
@@ -477,13 +484,17 @@ expressionEnterVisitorHelp node context =
 registerLambdaExpression : Node a -> Expression.Lambda -> Context -> Context
 registerLambdaExpression node { args, expression } context =
     let
+        introducedVariables : Set String
+        introducedVariables =
+            introducedVariablesInPattern args Set.empty
+
         branch : Scope
         branch =
-            if List.any patternIntroducesVariable args then
-                markLetDeclarationsAsIntroducingVariables (Node.range node) context
+            if Set.isEmpty introducedVariables then
+                context.scope
 
             else
-                context.scope
+                markLetDeclarationsAsIntroducingVariables (Node.range node) introducedVariables context
 
         newScope : Scope
         newScope =
@@ -498,6 +509,7 @@ registerLambdaExpression node { args, expression } context =
                 , used = Set.empty
                 , insertionLocation = figureOutInsertionLocation expression
                 , scopes = RangeDict.empty
+                , introducedVariables = Set.empty
                 }
 
         branchWithAddedScope : Scope
@@ -522,12 +534,12 @@ registerLambdaExpression node { args, expression } context =
 
 
 registerLetExpression : Node Expression -> Expression.LetBlock -> Context -> Context
-registerLetExpression letNode letBlock context =
+registerLetExpression ((Node letNodeRange _) as letNode) letBlock context =
     let
         letDeclarations : List Declared
         letDeclarations =
             List.filterMap
-                (collectDeclared { range = Node.range letNode, block = letBlock })
+                (collectDeclared { range = letNodeRange, block = letBlock })
                 letBlock.declarations
 
         scopes : RangeDict Scope
@@ -544,11 +556,12 @@ registerLetExpression letNode letBlock context =
                 , used = Set.empty
                 , insertionLocation = figureOutInsertionLocation letNode
                 , scopes = scopes
+                , introducedVariables = Set.empty
                 }
 
         contextWithDeclarationsMarked : Context
         contextWithDeclarationsMarked =
-            { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range letNode) context }
+            { context | scope = markLetDeclarationsAsIntroducingVariables letNodeRange Set.empty context }
 
         branch : Scope
         branch =
@@ -557,7 +570,7 @@ registerLetExpression letNode letBlock context =
                     { b
                         | scopes =
                             RangeDict.insert
-                                (Node.range letNode)
+                                letNodeRange
                                 newScope
                                 b.scopes
                     }
@@ -574,17 +587,21 @@ registerLetExpression letNode letBlock context =
 registerCaseExpression : Node Expression -> List ( Node Pattern, Node Expression ) -> Context -> Context
 registerCaseExpression node cases context =
     let
+        branchNodes : List ( Node Expression, Set String )
+        branchNodes =
+            List.map (\( pattern, exprNode ) -> ( exprNode, introducedVariablesInPattern [ pattern ] Set.empty )) cases
+
+        introducedVariables : Set String
+        introducedVariables =
+            List.foldl (\( _, introduced ) soFar -> Set.union introduced soFar) Set.empty branchNodes
+
         contextWithDeclarationsMarked : Context
         contextWithDeclarationsMarked =
-            if List.any (Tuple.first >> patternIntroducesVariable) cases then
-                { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) context }
-
-            else
+            if Set.isEmpty introducedVariables then
                 context
 
-        branchNodes : List (Node Expression)
-        branchNodes =
-            List.map (\( _, exprNode ) -> exprNode) cases
+            else
+                { context | scope = markLetDeclarationsAsIntroducingVariables (Node.range node) introducedVariables context }
     in
     addBranches branchNodes contextWithDeclarationsMarked
 
@@ -722,8 +739,8 @@ patternRangeWithoutParens node =
             Node.range node
 
 
-functionScope : Scope
-functionScope =
+functionScope : Set String -> Scope
+functionScope introducedVariables =
     Scope
         Function
         { letDeclarations = []
@@ -732,6 +749,7 @@ functionScope =
             -- Will not be used
             InsertNewLet emptyLocation
         , scopes = RangeDict.empty
+        , introducedVariables = introducedVariables
         }
 
 
@@ -771,55 +789,60 @@ variablesInPattern node =
             []
 
 
-patternIntroducesVariable : Node Pattern -> Bool
-patternIntroducesVariable node =
-    case Node.value node of
-        Pattern.ListPattern patterns ->
-            List.any patternIntroducesVariable patterns
+introducedVariablesInPattern : List (Node Pattern) -> Set String -> Set String
+introducedVariablesInPattern nodes names =
+    case nodes of
+        [] ->
+            names
 
-        Pattern.TuplePattern patterns ->
-            List.any patternIntroducesVariable patterns
+        (Node _ value) :: rest ->
+            case value of
+                Pattern.ListPattern patterns ->
+                    introducedVariablesInPattern (patterns ++ rest) names
 
-        Pattern.RecordPattern _ ->
-            True
+                Pattern.TuplePattern patterns ->
+                    introducedVariablesInPattern (patterns ++ rest) names
 
-        Pattern.UnConsPattern left right ->
-            patternIntroducesVariable left
-                || patternIntroducesVariable right
+                Pattern.RecordPattern fields ->
+                    introducedVariablesInPattern rest
+                        (List.foldl (\(Node _ name) acc -> Set.insert name acc) names fields)
 
-        Pattern.VarPattern _ ->
-            True
+                Pattern.UnConsPattern left right ->
+                    introducedVariablesInPattern (left :: right :: rest) names
 
-        Pattern.NamedPattern _ patterns ->
-            List.any patternIntroducesVariable patterns
+                Pattern.VarPattern name ->
+                    introducedVariablesInPattern rest (Set.insert name names)
 
-        Pattern.AsPattern _ _ ->
-            True
+                Pattern.NamedPattern _ patterns ->
+                    introducedVariablesInPattern (patterns ++ rest) names
 
-        Pattern.ParenthesizedPattern pattern ->
-            patternIntroducesVariable pattern
+                Pattern.AsPattern pattern (Node _ name) ->
+                    introducedVariablesInPattern (pattern :: rest) (Set.insert name names)
 
-        _ ->
-            False
+                Pattern.ParenthesizedPattern pattern ->
+                    introducedVariablesInPattern (pattern :: rest) names
+
+                _ ->
+                    introducedVariablesInPattern rest names
 
 
-markLetDeclarationsAsIntroducingVariables : Range -> Context -> Scope
-markLetDeclarationsAsIntroducingVariables range context =
+markLetDeclarationsAsIntroducingVariables : Range -> Set String -> Context -> Scope
+markLetDeclarationsAsIntroducingVariables range names context =
     updateAllSegmentsOfCurrentBranch
-        (markDeclarationsAsIntroducingVariables range)
+        (markDeclarationsAsIntroducingVariables range names)
         context.branching.full
         context.scope
 
 
-markDeclarationsAsIntroducingVariables : Range -> ScopeData -> ScopeData
-markDeclarationsAsIntroducingVariables range branchData =
-    { branchData | letDeclarations = List.map (markDeclarationAsIntroducingVariables range) branchData.letDeclarations }
+markDeclarationsAsIntroducingVariables : Range -> Set String -> ScopeData -> ScopeData
+markDeclarationsAsIntroducingVariables range names branchData =
+    { branchData | letDeclarations = List.map (markDeclarationAsIntroducingVariables range names) branchData.letDeclarations }
 
 
-markDeclarationAsIntroducingVariables : Range -> Declared -> Declared
-markDeclarationAsIntroducingVariables range declared =
+markDeclarationAsIntroducingVariables : Range -> Set String -> Declared -> Declared
+markDeclarationAsIntroducingVariables range names declared =
     if isRangeContained { outer = declared.declarationRange, inner = range } then
-        { declared | introducesVariablesInImplementation = True }
+        { declared | introducedVariables = Set.union declared.introducedVariables names }
 
     else
         declared
@@ -838,7 +861,7 @@ fullLines range =
     }
 
 
-addBranches : List (Node Expression) -> Context -> Context
+addBranches : List ( Node Expression, Set String ) -> Context -> Context
 addBranches nodes context =
     let
         branch : Scope
@@ -851,17 +874,17 @@ addBranches nodes context =
     { context | scope = branch }
 
 
-insertNewBranches : List (Node Expression) -> RangeDict Scope -> RangeDict Scope
+insertNewBranches : List ( Node Expression, Set String ) -> RangeDict Scope -> RangeDict Scope
 insertNewBranches nodes rangeDict =
     case nodes of
         [] ->
             rangeDict
 
-        ((Node range _) as node) :: tail ->
+        ( (Node range _) as node, introducedVariables ) :: tail ->
             insertNewBranches tail
                 (RangeDict.insert
                     range
-                    (newBranch (figureOutInsertionLocation node))
+                    (newBranch (figureOutInsertionLocation node) introducedVariables)
                     rangeDict
                 )
 
@@ -881,7 +904,7 @@ expressionExitVisitorHelp node context =
                 Just ((Scope LetScope scopeData) as scope) ->
                     List.filterMap
                         (\declaration ->
-                            canBeMovedToCloserLocation True declaration.names scope
+                            canBeMovedToCloserLocation True declaration.names Set.empty scope
                                 |> List.head
                                 |> Maybe.map (createError context declaration)
                         )
@@ -915,7 +938,7 @@ collectDeclared letBlock node =
                         }
                 in
                 { names = [ Node.value declaration.name ]
-                , introducesVariablesInImplementation = False
+                , introducedVariables = introducedVariablesForNestedLetExpression declaration.expression
                 , reportRange = Node.range declaration.name
                 , declarationRange = range
                 , letBlock = letBlock
@@ -936,7 +959,7 @@ collectDeclared letBlock node =
                             }
                     in
                     { names = Node.value first :: List.map Node.value rest
-                    , introducesVariablesInImplementation = False
+                    , introducedVariables = Set.empty
                     , reportRange =
                         if List.isEmpty rest then
                             Node.range first
@@ -952,6 +975,26 @@ collectDeclared letBlock node =
                     Nothing
 
 
+introducedVariablesForNestedLetExpression : Node Expression -> Set String
+introducedVariablesForNestedLetExpression node =
+    case Node.value node of
+        Expression.LetExpression { declarations } ->
+            List.foldl
+                (\decl acc ->
+                    case Node.value decl of
+                        Expression.LetFunction fn ->
+                            Set.insert (Node.value (Node.value fn.declaration).name) acc
+
+                        Expression.LetDestructuring pattern _ ->
+                            List.foldl (\(Node _ name) subAcc -> Set.insert name subAcc) acc (variablesInPattern pattern)
+                )
+                Set.empty
+                declarations
+
+        _ ->
+            Set.empty
+
+
 getLetFunctionRange : Node Expression.LetDeclaration -> Maybe ( Range, Scope )
 getLetFunctionRange node =
     case Node.value node of
@@ -960,18 +1003,21 @@ getLetFunctionRange node =
                 Nothing
 
             else
-                Just ( declaration |> Node.value |> .expression |> Node.range, functionScope )
+                Just
+                    ( declaration |> Node.value |> .expression |> Node.range
+                    , functionScope (introducedVariablesInPattern (Node.value declaration).arguments Set.empty)
+                    )
 
         Expression.LetDestructuring _ _ ->
             Nothing
 
 
-canBeMovedToCloserLocation : Bool -> List String -> Scope -> List LetInsertPosition
-canBeMovedToCloserLocation isRoot names (Scope type_ scope) =
+canBeMovedToCloserLocation : Bool -> List String -> Set String -> Scope -> List ( LetInsertPosition, Set String )
+canBeMovedToCloserLocation isRoot names introducedVariablesSoFar (Scope type_ scope) =
     let
-        closestLocation : List LetInsertPosition
+        closestLocation : List ( LetInsertPosition, Set String )
         closestLocation =
-            canBeMovedToCloserLocationForBranchData isRoot names scope
+            canBeMovedToCloserLocationForBranchData isRoot names (Set.union introducedVariablesSoFar scope.introducedVariables) scope
     in
     case type_ of
         Branch ->
@@ -989,20 +1035,20 @@ canBeMovedToCloserLocation isRoot names (Scope type_ scope) =
             closestLocation ++ closestLocation
 
 
-canBeMovedToCloserLocationForBranchData : Bool -> List String -> ScopeData -> List LetInsertPosition
-canBeMovedToCloserLocationForBranchData isRoot names branchData =
+canBeMovedToCloserLocationForBranchData : Bool -> List String -> Set String -> ScopeData -> List ( LetInsertPosition, Set String )
+canBeMovedToCloserLocationForBranchData isRoot names introducedVariablesSoFar branchData =
     if List.any (\name -> Set.member name branchData.used) names then
         if isRoot then
             []
 
         else
-            [ branchData.insertionLocation ]
+            [ ( branchData.insertionLocation, Set.union branchData.introducedVariables introducedVariablesSoFar ) ]
 
     else
         let
-            relevantUsages : List LetInsertPosition
+            relevantUsages : List ( LetInsertPosition, Set String )
             relevantUsages =
-                findRelevantUsages names (RangeDict.values branchData.scopes) []
+                findRelevantUsages names introducedVariablesSoFar (RangeDict.values branchData.scopes) []
         in
         case relevantUsages of
             [] ->
@@ -1016,11 +1062,11 @@ canBeMovedToCloserLocationForBranchData isRoot names branchData =
                     []
 
                 else
-                    [ branchData.insertionLocation ]
+                    [ ( branchData.insertionLocation, branchData.introducedVariables ) ]
 
 
-findRelevantUsages : List String -> List Scope -> List LetInsertPosition -> List LetInsertPosition
-findRelevantUsages names branches result =
+findRelevantUsages : List String -> Set String -> List Scope -> List ( LetInsertPosition, Set String ) -> List ( LetInsertPosition, Set String )
+findRelevantUsages names introducedVariablesSoFar branches result =
     case result of
         _ :: _ :: _ ->
             -- If we have already found 2 branches with relevant usages, then we don't need to continue
@@ -1032,11 +1078,11 @@ findRelevantUsages names branches result =
                     result
 
                 first :: rest ->
-                    findRelevantUsages names rest (canBeMovedToCloserLocation False names first ++ result)
+                    findRelevantUsages names introducedVariablesSoFar rest (canBeMovedToCloserLocation False names introducedVariablesSoFar first ++ result)
 
 
-createError : Context -> Declared -> LetInsertPosition -> Rule.Error {}
-createError context declared letInsertPosition =
+createError : Context -> Declared -> ( LetInsertPosition, Set String ) -> Rule.Error {}
+createError context declared ( letInsertPosition, introducedVariablesInTargetScope ) =
     let
         letInsertLine : Int
         letInsertLine =
@@ -1066,12 +1112,12 @@ createError context declared letInsertPosition =
                 }
         )
         declared.reportRange
-        (fix context declared letInsertPosition)
+        (fix context declared letInsertPosition introducedVariablesInTargetScope)
 
 
-fix : Context -> Declared -> LetInsertPosition -> List Fix
-fix context declared letInsertPosition =
-    if declared.introducesVariablesInImplementation then
+fix : Context -> Declared -> LetInsertPosition -> Set String -> List Fix
+fix context declared letInsertPosition introducedVariablesInTargetScope =
+    if not (Set.isEmpty (Set.intersect declared.introducedVariables introducedVariablesInTargetScope)) then
         []
 
     else
