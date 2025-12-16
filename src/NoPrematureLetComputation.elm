@@ -9,6 +9,7 @@ module NoPrematureLetComputation exposing (rule)
 import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
+import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node(..))
 import Elm.Syntax.Pattern as Pattern exposing (Pattern)
 import Elm.Syntax.Range as Range exposing (Location, Range)
@@ -644,7 +645,7 @@ numberOfArgumentsForFunction lookupTable fnName fnRange =
             Nothing
 
 
-knownFunctions : Dict String (Dict (List String) Int)
+knownFunctions : Dict String (Dict ModuleName Int)
 knownFunctions =
     Dict.fromList
         [ ( "map"
