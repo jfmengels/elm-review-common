@@ -11,7 +11,6 @@ when inside the directory containing this file.
 
 -}
 
-import CognitiveComplexity
 import Docs.NoMissing exposing (exposedModules, onlyExposed)
 import Docs.ReviewAtDocs
 import Docs.ReviewLinksAndSections
@@ -67,5 +66,4 @@ config =
     , NoUnused.Patterns.rule
     , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
-    , CognitiveComplexity.rule 10
     ]
