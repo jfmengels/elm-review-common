@@ -6,6 +6,7 @@ module NoPrematureLetComputation exposing (rule)
 
 -}
 
+import Array exposing (Array)
 import Dict exposing (Dict)
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
 import Elm.Syntax.Expression as Expression exposing (Expression)
@@ -454,28 +455,25 @@ expressionEnterVisitorHelp node context =
         Expression.LambdaExpression lambda ->
             registerLambdaExpression node lambda context
 
-        Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: argumentWithParens :: restOfArguments) ->
+        Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: args) ->
             registerApplicationCall
                 fnRange
                 fnName
-                argumentWithParens
-                (List.length restOfArguments)
+                (Array.fromList args)
                 context
 
-        Expression.OperatorApplication "|>" _ _ (Node _ (Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: argumentWithParens :: restOfArguments))) ->
+        Expression.OperatorApplication "|>" _ pipeArg (Node _ (Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: args))) ->
             registerApplicationCall
                 fnRange
                 fnName
-                argumentWithParens
-                (List.length restOfArguments + 1)
+                (Array.push pipeArg (Array.fromList args))
                 context
 
-        Expression.OperatorApplication "<|" _ (Node _ (Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: argumentWithParens :: restOfArguments))) _ ->
+        Expression.OperatorApplication "<|" _ (Node _ (Expression.Application ((Node fnRange (Expression.FunctionOrValue _ fnName)) :: args))) pipeArg ->
             registerApplicationCall
                 fnRange
                 fnName
-                argumentWithParens
-                (List.length restOfArguments + 1)
+                (Array.push pipeArg (Array.fromList args))
                 context
 
         _ ->
@@ -607,34 +605,36 @@ registerCaseExpression node cases context =
     addBranches branchNodes contextWithDeclarationsMarked
 
 
-registerApplicationCall : Range -> String -> Node Expression -> Int -> Context -> Context
-registerApplicationCall fnRange fnName argumentWithParens nbOfOtherArguments context =
-    let
-        argument : Node Expression
-        argument =
-            removeParens argumentWithParens
-    in
-    case Node.value argument of
-        Expression.LambdaExpression _ ->
-            case numberOfArgumentsForFunction context.lookupTable fnName fnRange of
-                Just expectedNumberOfArguments ->
-                    if nbOfOtherArguments == expectedNumberOfArguments - 1 then
-                        { context
-                            | functionsThatWillOnlyBeComputedOnce =
-                                RangeDict.insert (Node.range argument) () context.functionsThatWillOnlyBeComputedOnce
-                        }
+registerApplicationCall : Range -> String -> Array (Node Expression) -> Context -> Context
+registerApplicationCall fnRange fnName arguments context =
+    case numberOfArgumentsForFunction context.lookupTable fnName fnRange of
+        Just { numberOfArguments, indexOfFnsCalledOnce } ->
+            if Array.length arguments >= numberOfArguments then
+                let
+                    functionsThatWillOnlyBeComputedOnce : RangeDict ()
+                    functionsThatWillOnlyBeComputedOnce =
+                        List.foldl
+                            (\index acc ->
+                                case Array.get index arguments |> Maybe.map removeParens of
+                                    Just (Node range (Expression.LambdaExpression _)) ->
+                                        RangeDict.insert range () acc
 
-                    else
-                        context
+                                    _ ->
+                                        acc
+                            )
+                            context.functionsThatWillOnlyBeComputedOnce
+                            indexOfFnsCalledOnce
+                in
+                { context | functionsThatWillOnlyBeComputedOnce = functionsThatWillOnlyBeComputedOnce }
 
-                Nothing ->
-                    context
+            else
+                context
 
-        _ ->
+        Nothing ->
             context
 
 
-numberOfArgumentsForFunction : ModuleNameLookupTable -> String -> Range -> Maybe Int
+numberOfArgumentsForFunction : ModuleNameLookupTable -> String -> Range -> Maybe FunctionData
 numberOfArgumentsForFunction lookupTable fnName fnRange =
     case Dict.get fnName knownFunctions of
         Just knownModuleNames ->
@@ -645,77 +645,84 @@ numberOfArgumentsForFunction lookupTable fnName fnRange =
             Nothing
 
 
-knownFunctions : Dict String (Dict ModuleName Int)
+type alias FunctionData =
+    { numberOfArguments : Int
+    , indexOfFnsCalledOnce : List Int
+    }
+
+
+knownFunctions : Dict String (Dict ModuleName FunctionData)
 knownFunctions =
     Dict.fromList
         [ ( "map"
           , Dict.fromList
-                [ ( [ "Maybe" ], 2 )
-                , ( [ "Html" ], 2 )
-                , ( [ "Result" ], 2 )
-                , ( [ "Task" ], 2 )
+                [ ( [ "Maybe" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Html" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Result" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Task" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
                 ]
           )
         , ( "map2"
           , Dict.fromList
-                [ ( [ "Maybe" ], 3 )
-                , ( [ "Result" ], 3 )
-                , ( [ "Task" ], 3 )
+                [ ( [ "Maybe" ], { numberOfArguments = 3, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Result" ], { numberOfArguments = 3, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Task" ], { numberOfArguments = 3, indexOfFnsCalledOnce = [ 0 ] } )
                 ]
           )
         , ( "map3"
           , Dict.fromList
-                [ ( [ "Maybe" ], 4 )
-                , ( [ "Result" ], 4 )
-                , ( [ "Task" ], 4 )
+                [ ( [ "Maybe" ], { numberOfArguments = 4, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Result" ], { numberOfArguments = 4, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Task" ], { numberOfArguments = 4, indexOfFnsCalledOnce = [ 0 ] } )
                 ]
           )
         , ( "map4"
           , Dict.fromList
-                [ ( [ "Maybe" ], 5 )
-                , ( [ "Result" ], 5 )
-                , ( [ "Task" ], 5 )
+                [ ( [ "Maybe" ], { numberOfArguments = 5, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Result" ], { numberOfArguments = 5, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Task" ], { numberOfArguments = 5, indexOfFnsCalledOnce = [ 0 ] } )
                 ]
           )
         , ( "map5"
           , Dict.fromList
-                [ ( [ "Maybe" ], 6 )
-                , ( [ "Result" ], 6 )
-                , ( [ "Task" ], 6 )
+                [ ( [ "Maybe" ], { numberOfArguments = 6, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Result" ], { numberOfArguments = 6, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Task" ], { numberOfArguments = 6, indexOfFnsCalledOnce = [ 0 ] } )
                 ]
           )
         , ( "mapError"
           , Dict.fromList
-                [ ( [ "Result" ], 2 )
-                , ( [ "Task" ], 2 )
+                [ ( [ "Result" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Task" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
                 ]
           )
         , ( "andThen"
           , Dict.fromList
-                [ ( [ "Maybe" ], 2 )
-                , ( [ "Result" ], 2 )
-                , ( [ "Task" ], 2 )
+                [ ( [ "Maybe" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Result" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
+                , ( [ "Task" ], { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] } )
                 ]
           )
-
-        -- TODO Support mapBoth as well
         , ( "mapFirst"
-          , Dict.singleton [ "Tuple" ] 2
+          , Dict.singleton [ "Tuple" ] { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] }
           )
         , ( "mapSecond"
-          , Dict.singleton [ "Tuple" ] 2
+          , Dict.singleton [ "Tuple" ] { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] }
+          )
+        , ( "mapBoth"
+          , Dict.singleton [ "Tuple" ] { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0, 1 ] }
           )
         , ( "perform"
-          , Dict.singleton [ "Task" ] 2
+          , Dict.singleton [ "Task" ] { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] }
           )
         , ( "attempt"
-          , Dict.singleton [ "Task" ] 2
+          , Dict.singleton [ "Task" ] { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] }
           )
         , ( "onError"
-          , Dict.singleton [ "Task" ] 2
+          , Dict.singleton [ "Task" ] { numberOfArguments = 2, indexOfFnsCalledOnce = [ 0 ] }
           )
         , ( "update"
-          , Dict.singleton [ "Dict" ] 4
+          , Dict.singleton [ "Dict" ] { numberOfArguments = 4, indexOfFnsCalledOnce = [ 0 ] }
           )
         ]
 

@@ -1298,4 +1298,140 @@ a =
 """
                     |> Review.Test.run rule
                     |> Review.Test.expectNoErrors
+        , test "should report let declaration that could be moved to inside a lambda passed to Tuple.mapFirst" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  Tuple.mapFirst
+      (\\b ->
+          z
+      )
+      x
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 8
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  Tuple.mapFirst
+      (\\b ->
+          let
+              z = 1
+          in
+          z
+      )
+      x
+"""
+                        ]
+        , test "should report let declaration that could be moved to inside a lambda passed to Tuple.mapSecond" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  Tuple.mapSecond
+      (\\b ->
+          z
+      )
+      x
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 8
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  Tuple.mapSecond
+      (\\b ->
+          let
+              z = 1
+          in
+          z
+      )
+      x
+"""
+                        ]
+        , test "should report let declaration that could be moved to inside a lambda passed to Tuple.mapBoth (first lambda)" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  Tuple.mapBoth
+      (\\b ->
+          z
+      )
+      (\\c -> c)
+      x
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 8
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  Tuple.mapBoth
+      (\\b ->
+          let
+              z = 1
+          in
+          z
+      )
+      (\\c -> c)
+      x
+"""
+                        ]
+        , test "should report let declaration that could be moved to inside a lambda passed to Tuple.mapBoth (second lambda)" <|
+            \() ->
+                """module A exposing (..)
+a =
+  let
+    z = 1
+  in
+  Tuple.mapBoth
+      (\\b -> b)
+      (\\c ->
+          z
+      )
+      x
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 9
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 5 }, end = { row = 4, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a =
+  Tuple.mapBoth
+      (\\b -> b)
+      (\\c ->
+          let
+              z = 1
+          in
+          z
+      )
+      x
+"""
+                        ]
         ]

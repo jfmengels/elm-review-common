@@ -41,6 +41,7 @@ case value of
     Nothing
 ```
 We now detect whether such a compiler error would occur and only prevent the fix in that case.
+- [`NoPrematureLetComputation`] can now move a let declaration inside `Tuple.mapBoth` functions.
 - Corrected an automatic fix for [`NoPrematureLetComputation`] that resulted in incorrect syntax.
 
 ## [1.3.4] - 2025-11-21
