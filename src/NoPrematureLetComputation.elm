@@ -612,7 +612,7 @@ registerApplicationCall fnRange fnName argumentWithParens nbOfOtherArguments con
             context
 
 
-numberOfArgumentsForFunction : ModuleNameLookupTable -> String -> Range -> Maybe number
+numberOfArgumentsForFunction : ModuleNameLookupTable -> String -> Range -> Maybe Int
 numberOfArgumentsForFunction lookupTable fnName fnRange =
     case Dict.get fnName knownFunctions of
         Just knownModuleNames ->
@@ -623,7 +623,7 @@ numberOfArgumentsForFunction lookupTable fnName fnRange =
             Nothing
 
 
-knownFunctions : Dict String (Dict (List String) number)
+knownFunctions : Dict String (Dict (List String) Int)
 knownFunctions =
     Dict.fromList
         [ ( "map"
