@@ -237,7 +237,7 @@ initialContext =
         (\lookupTable extractSourceCode () ->
             { lookupTable = lookupTable
             , extractSourceCode = extractSourceCode
-            , scope = newBranch (InsertNewLet { row = 0, column = 0 })
+            , scope = newBranch (InsertNewLet emptyLocation)
             , branching = emptyBranching
             , functionsThatWillOnlyBeComputedOnce = RangeDict.empty
             }
@@ -726,9 +726,14 @@ functionScope =
         , used = Set.empty
         , insertionLocation =
             -- Will not be used
-            InsertNewLet { row = 0, column = 0 }
+            InsertNewLet emptyLocation
         , scopes = RangeDict.empty
         }
+
+
+emptyLocation : Location
+emptyLocation =
+    { row = 0, column = 0 }
 
 
 variablesInPattern : Node Pattern -> List (Node String)
