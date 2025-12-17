@@ -516,6 +516,27 @@ a b c d =
                             }
                             |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
                         ]
+        , test "should not suggest a fix for let declarations that introduce conflicting variables in their implementation (lambda destination)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  let
+    z : Int
+    z = \\y -> y + 1
+  in
+  Maybe.map
+    (\\y -> z y)
+    b
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 8
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 5 }, end = { row = 5, column = 6 } }
+                        ]
         , test "should suggest a fix for lambda that does not introduce conflicting variables" <|
             \() ->
                 """module A exposing (..)

@@ -508,7 +508,7 @@ registerLambdaExpression node { args, expression } context =
                 , used = Set.empty
                 , insertionLocation = figureOutInsertionLocation expression
                 , scopes = RangeDict.empty
-                , introducedVariables = Set.empty
+                , introducedVariables = introducedVariables
                 }
 
         branchWithAddedScope : Scope
