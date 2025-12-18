@@ -197,8 +197,8 @@ type alias ScopeData =
 
 
 type LetInsertPosition
-    = InsertNewLet Location
-    | InsertExistingLet Location
+    = InsertNewLet { insert : Location, nextExpr : Location }
+    | InsertExistingLet { insert : Location, nextExpr : Location }
 
 
 type alias Declared =
@@ -241,7 +241,7 @@ initialContext =
         (\lookupTable extractSourceCode () ->
             { lookupTable = lookupTable
             , extractSourceCode = extractSourceCode
-            , scope = newBranch (InsertNewLet emptyLocation) Set.empty
+            , scope = newBranch (InsertNewLet { insert = emptyLocation, nextExpr = emptyLocation }) Set.empty
             , branching = emptyBranching
             , functionsThatWillOnlyBeComputedOnce = RangeDict.empty
             }
@@ -316,11 +316,20 @@ declarationVisitor node context =
                 introducedVariables : Set String
                 introducedVariables =
                     introducedVariablesInPattern (Node.value declaration).arguments Set.empty
+
+                expression : Node Expression
+                expression =
+                    (Node.value declaration).expression
             in
             ( []
             , { lookupTable = context.lookupTable
               , extractSourceCode = context.extractSourceCode
-              , scope = newBranch (figureOutInsertionLocation (declaration |> Node.value |> .expression)) introducedVariables
+              , scope =
+                    newBranch
+                        (insertExistingLetIfPresent expression
+                            |> Maybe.withDefault (InsertNewLet { insert = (Node.range expression).start, nextExpr = (Node.range expression).start })
+                        )
+                        introducedVariables
               , branching = emptyBranching
               , functionsThatWillOnlyBeComputedOnce = RangeDict.empty
               }
@@ -330,20 +339,26 @@ declarationVisitor node context =
             ( [], context )
 
 
-figureOutInsertionLocation : Node Expression -> LetInsertPosition
-figureOutInsertionLocation (Node range expression) =
-    case expression of
-        Expression.LetExpression { declarations } ->
-            case declarations of
-                first :: _ ->
-                    InsertExistingLet (Node.range first).start
+findKeyword : String -> (Range -> String) -> Range -> Maybe Location
+findKeyword keyword extractSourceCode range =
+    extractSourceCode range
+        |> String.lines
+        |> indexedFindMap
+            (\lineIndex line ->
+                case String.indexes keyword line of
+                    [] ->
+                        Nothing
 
-                [] ->
-                    -- Should not happen
-                    InsertNewLet range.start
+                    column :: _ ->
+                        if String.contains "--" (String.left column line) then
+                            Nothing
 
-        _ ->
-            InsertNewLet range.start
+                        else if lineIndex == 0 then
+                            Just { row = range.start.row, column = range.start.column + column + String.length keyword }
+
+                        else
+                            Just { row = range.start.row + lineIndex, column = column + String.length keyword + 1 }
+            )
 
 
 expressionEnterVisitor : Node Expression -> Context -> ( List nothing, Context )
@@ -446,8 +461,33 @@ expressionEnterVisitorHelp node context =
         Expression.LetExpression letBlock ->
             registerLetExpression node letBlock context
 
-        Expression.IfBlock _ then_ else_ ->
-            addBranches [ ( then_, Set.empty ), ( else_, Set.empty ) ] context
+        Expression.IfBlock (Node condition _) ((Node then_ _) as thenNode) ((Node else_ _) as elseNode) ->
+            let
+                thenInsertLocation : LetInsertPosition
+                thenInsertLocation =
+                    insertExistingLetIfPresent thenNode
+                        |> onNothing
+                            (\() ->
+                                findKeyword "then" context.extractSourceCode { start = condition.end, end = then_.start }
+                                    |> Maybe.map (\location -> InsertNewLet { insert = location, nextExpr = then_.start })
+                            )
+                        |> withDefaultLazy (\() -> InsertNewLet { insert = then_.start, nextExpr = then_.start })
+
+                elseInsertLocation : LetInsertPosition
+                elseInsertLocation =
+                    insertExistingLetIfPresent elseNode
+                        |> onNothing
+                            (\() ->
+                                findKeyword "else" context.extractSourceCode { start = then_.end, end = else_.start }
+                                    |> Maybe.map (\location -> InsertNewLet { insert = location, nextExpr = else_.start })
+                            )
+                        |> withDefaultLazy (\() -> InsertNewLet { insert = else_.start, nextExpr = else_.start })
+            in
+            addBranches
+                [ ( then_, thenInsertLocation, Set.empty )
+                , ( else_, elseInsertLocation, Set.empty )
+                ]
+                context
 
         Expression.CaseExpression { cases } ->
             registerCaseExpression node cases context
@@ -480,6 +520,30 @@ expressionEnterVisitorHelp node context =
             context
 
 
+insertExistingLetIfPresent : Node Expression -> Maybe LetInsertPosition
+insertExistingLetIfPresent (Node range expr) =
+    case expr of
+        Expression.LetExpression { declarations } ->
+            case declarations of
+                (Node first _) :: _ ->
+                    Just
+                        (InsertExistingLet
+                            { insert =
+                                { row = range.start.row
+                                , column = range.start.column + 3
+                                }
+                            , nextExpr = first.start
+                            }
+                        )
+
+                [] ->
+                    -- Should not happen
+                    Nothing
+
+        _ ->
+            Nothing
+
+
 registerLambdaExpression : Node a -> Expression.Lambda -> Context -> Context
 registerLambdaExpression node { args, expression } context =
     let
@@ -495,6 +559,20 @@ registerLambdaExpression node { args, expression } context =
             else
                 markLetDeclarationsAsIntroducingVariables (Node.range node) introducedVariables context
 
+        expressionRangeStart : Location
+        expressionRangeStart =
+            (Node.range expression).start
+
+        insertLocation : LetInsertPosition
+        insertLocation =
+            insertExistingLetIfPresent expression
+                |> onNothing
+                    (\() ->
+                        findKeyword "->" context.extractSourceCode { start = (Node.range node).start, end = expressionRangeStart }
+                            |> Maybe.map (\location -> InsertNewLet { insert = location, nextExpr = expressionRangeStart })
+                    )
+                |> withDefaultLazy (\() -> InsertNewLet { insert = expressionRangeStart, nextExpr = expressionRangeStart })
+
         newScope : Scope
         newScope =
             Scope
@@ -506,7 +584,7 @@ registerLambdaExpression node { args, expression } context =
                 )
                 { letDeclarations = []
                 , used = Set.empty
-                , insertionLocation = figureOutInsertionLocation expression
+                , insertionLocation = insertLocation
                 , scopes = RangeDict.empty
                 , introducedVariables = introducedVariables
                 }
@@ -553,7 +631,9 @@ registerLetExpression ((Node letNodeRange _) as letNode) letBlock context =
                 LetScope
                 { letDeclarations = letDeclarations
                 , used = Set.empty
-                , insertionLocation = figureOutInsertionLocation letNode
+                , insertionLocation =
+                    insertExistingLetIfPresent letNode
+                        |> Maybe.withDefault (InsertNewLet { insert = (Node.range letNode).start, nextExpr = (Node.range letNode).start })
                 , scopes = scopes
                 , introducedVariables = Set.empty
                 }
@@ -586,13 +666,31 @@ registerLetExpression ((Node letNodeRange _) as letNode) letBlock context =
 registerCaseExpression : Node Expression -> List ( Node Pattern, Node Expression ) -> Context -> Context
 registerCaseExpression node cases context =
     let
-        branchNodes : List ( Node Expression, Set String )
+        branchNodes : List ( Range, LetInsertPosition, Set String )
         branchNodes =
-            List.map (\( pattern, exprNode ) -> ( exprNode, introducedVariablesInPattern [ pattern ] Set.empty )) cases
+            List.map
+                (\( pattern, (Node exprRange _) as exprNode ) ->
+                    let
+                        insertPosition : LetInsertPosition
+                        insertPosition =
+                            insertExistingLetIfPresent exprNode
+                                |> onNothing
+                                    (\() ->
+                                        findKeyword "->" context.extractSourceCode { start = (Node.range pattern).end, end = exprRange.start }
+                                            |> Maybe.map (\location -> InsertNewLet { insert = location, nextExpr = exprRange.start })
+                                    )
+                                |> withDefaultLazy (\() -> InsertNewLet { insert = exprRange.start, nextExpr = exprRange.start })
+                    in
+                    ( exprRange
+                    , insertPosition
+                    , introducedVariablesInPattern [ pattern ] Set.empty
+                    )
+                )
+                cases
 
         introducedVariables : Set String
         introducedVariables =
-            List.foldl (\( _, introduced ) soFar -> Set.union introduced soFar) Set.empty branchNodes
+            List.foldl (\( _, _, introduced ) soFar -> Set.union introduced soFar) Set.empty branchNodes
 
         contextWithDeclarationsMarked : Context
         contextWithDeclarationsMarked =
@@ -753,12 +851,16 @@ functionScope introducedVariables =
         Function
         { letDeclarations = []
         , used = Set.empty
-        , insertionLocation =
-            -- Will not be used
-            InsertNewLet emptyLocation
+        , -- Will not be used
+          insertionLocation = dummyInsertLocation
         , scopes = RangeDict.empty
         , introducedVariables = introducedVariables
         }
+
+
+dummyInsertLocation : LetInsertPosition
+dummyInsertLocation =
+    InsertNewLet { insert = emptyLocation, nextExpr = emptyLocation }
 
 
 emptyLocation : Location
@@ -862,14 +964,12 @@ isRangeContained { outer, inner } =
         && (Range.compareLocations outer.end inner.end /= LT)
 
 
-fullLines : Range -> Range
-fullLines range =
-    { start = { row = range.start.row, column = 1 }
-    , end = range.end
-    }
+untilEndOfLine : Location -> Location
+untilEndOfLine { row } =
+    { row = row, column = 1000000 }
 
 
-addBranches : List ( Node Expression, Set String ) -> Context -> Context
+addBranches : List ( Range, LetInsertPosition, Set String ) -> Context -> Context
 addBranches nodes context =
     let
         branch : Scope
@@ -882,17 +982,17 @@ addBranches nodes context =
     { context | scope = branch }
 
 
-insertNewBranches : List ( Node Expression, Set String ) -> RangeDict Scope -> RangeDict Scope
+insertNewBranches : List ( Range, LetInsertPosition, Set String ) -> RangeDict Scope -> RangeDict Scope
 insertNewBranches nodes rangeDict =
     case nodes of
         [] ->
             rangeDict
 
-        ( (Node range _) as node, introducedVariables ) :: tail ->
+        ( range, letInsertPosition, introducedVariables ) :: tail ->
             insertNewBranches tail
                 (RangeDict.insert
                     range
-                    (newBranch (figureOutInsertionLocation node) introducedVariables)
+                    (newBranch letInsertPosition introducedVariables)
                     rangeDict
                 )
 
@@ -1095,11 +1195,11 @@ createError context declared ( letInsertPosition, introducedVariablesInTargetSco
         letInsertLine : Int
         letInsertLine =
             case letInsertPosition of
-                InsertNewLet insertLocation ->
-                    insertLocation.row
+                InsertNewLet { insert, nextExpr } ->
+                    Basics.min (insert.row + 1) nextExpr.row
 
-                InsertExistingLet insertLocation ->
-                    insertLocation.row
+                InsertExistingLet { insert, nextExpr } ->
+                    Basics.min (insert.row + 1) nextExpr.row
     in
     Rule.errorWithFix
         (case declared.names of
@@ -1129,72 +1229,192 @@ fix context declared letInsertPosition introducedVariablesInTargetScope =
         []
 
     else
-        let
-            removeRange : Range
-            removeRange =
-                case declared.letBlock.block.declarations of
-                    [ _ ] ->
-                        { start = declared.letBlock.range.start
-                        , end = (Node.range declared.letBlock.block.expression).start
-                        }
-
-                    _ ->
-                        fullLines declared.declarationRange
-        in
         case letInsertPosition of
-            InsertNewLet insertLocation ->
-                [ Fix.removeRange removeRange
-                , context.extractSourceCode (fullLines declared.declarationRange)
-                    |> wrapInLet declared.declarationRange.start.column insertLocation.column
-                    |> Fix.insertAt insertLocation
-                ]
+            InsertNewLet { insert, nextExpr } ->
+                case declared.letBlock.block.declarations of
+                    [] ->
+                        []
 
-            InsertExistingLet insertLocation ->
-                [ Fix.removeRange removeRange
-                , context.extractSourceCode (fullLines declared.declarationRange)
-                    |> insertInLet declared.declarationRange.start.column insertLocation.column
-                    |> Fix.insertAt insertLocation
-                ]
+                    [ _ ] ->
+                        -- Moving the entire block between `let` and `in`
+                        let
+                            startColumn : Int
+                            startColumn =
+                                declared.letBlock.range.start.column
+
+                            range : Range
+                            range =
+                                rangeFromLetUntilInKeywords context.extractSourceCode declared.letBlock
+
+                            source : String
+                            source =
+                                (String.repeat (startColumn - 1) " " ++ context.extractSourceCode range)
+                                    |> indent (nextExpr.column - startColumn)
+                        in
+                        [ Fix.removeRange range
+                        , Fix.insertAt insert ("\n" ++ source)
+                        ]
+
+                    declarations ->
+                        let
+                            startColumn : Int
+                            startColumn =
+                                declared.letBlock.range.start.column
+
+                            endOfPrevious : Location
+                            endOfPrevious =
+                                findMapWithAcc
+                                    (\(Node itemRange _) previous ->
+                                        if itemRange == declared.declarationRange then
+                                            Ok previous
+
+                                        else
+                                            Err itemRange.end
+                                    )
+                                    { row = declared.letBlock.range.start.row
+                                    , column = declared.letBlock.range.start.column + 3
+                                    }
+                                    declarations
+
+                            range : Range
+                            range =
+                                { start = untilEndOfLine endOfPrevious
+                                , end = untilEndOfLine declared.declarationRange.end
+                                }
+
+                            spacing : String
+                            spacing =
+                                if insert.row == nextExpr.row then
+                                    " "
+
+                                else
+                                    "\n" ++ String.repeat (startColumn - 1) " "
+                        in
+                        [ Fix.removeRange range
+                        , ("\n" ++ String.repeat (startColumn - 1) " " ++ "let" ++ context.extractSourceCode range)
+                            ++ spacing
+                            ++ "in"
+                            |> indent (nextExpr.column - startColumn)
+                            |> Fix.insertAt insert
+                        ]
+
+            InsertExistingLet { insert, nextExpr } ->
+                let
+                    startColumn : Int
+                    startColumn =
+                        declared.declarationRange.start.column
+                in
+                if nextExpr.column - startColumn < 0 then
+                    -- If the source declaration is more indented than the target destination
+                    -- then we would have to dedent the declaration, which potentially means removing comments in that space.
+                    -- It's better to let elm-format reformat the code, and attempt again later.
+                    []
+
+                else if insert.row == nextExpr.row then
+                    {- If the first declaration is on the same line as the `let` keyword
+                       then skip a fix. It's quite difficult especially if we take leading comments into account
+
+                         let {--} a = 1 in ...
+
+                       would have to be transformed like
+
+                         let      toMove = 1
+                             {--} a = 1 in ...
+
+                       It's better to let elm-format reformat the code, and attempt again later.
+                    -}
+                    []
+
+                else
+                    case declared.letBlock.block.declarations of
+                        [] ->
+                            []
+
+                        [ _ ] ->
+                            let
+                                rangeToRemove : Range
+                                rangeToRemove =
+                                    rangeFromLetUntilInKeywords context.extractSourceCode declared.letBlock
+
+                                rangeToCopy : Range
+                                rangeToCopy =
+                                    { start = { row = rangeToRemove.start.row, column = rangeToRemove.start.column + 3 }
+                                    , end = { row = rangeToRemove.end.row, column = rangeToRemove.end.column - 2 }
+                                    }
+                            in
+                            [ Fix.removeRange rangeToRemove
+                            , context.extractSourceCode rangeToCopy
+                                |> indent (nextExpr.column - startColumn)
+                                |> Fix.insertAt insert
+                            ]
+
+                        declarations ->
+                            let
+                                endOfPrevious : Location
+                                endOfPrevious =
+                                    findMapWithAcc
+                                        (\(Node itemRange _) previous ->
+                                            if itemRange == declared.declarationRange then
+                                                Ok previous
+
+                                            else
+                                                Err itemRange.end
+                                        )
+                                        { row = declared.letBlock.range.start.row
+                                        , column = declared.letBlock.range.start.column + 3
+                                        }
+                                        declarations
+
+                                range : Range
+                                range =
+                                    { start = untilEndOfLine endOfPrevious
+                                    , end = untilEndOfLine declared.declarationRange.end
+                                    }
+                            in
+                            [ Fix.removeRange range
+                            , context.extractSourceCode range
+                                |> indent (nextExpr.column - startColumn)
+                                |> Fix.insertAt insert
+                            ]
 
 
-wrapInLet : Int -> Int -> String -> String
-wrapInLet initialPosition column source =
+rangeFromLetUntilInKeywords : (Range -> String) -> LetBlockWithRange -> Range
+rangeFromLetUntilInKeywords extractSourceCode { range, block } =
     let
-        padding : String
-        padding =
-            String.repeat (column - 1) " "
+        lastDeclarationEnd : Location
+        lastDeclarationEnd =
+            case last block.declarations of
+                Just (Node lastDeclarationRange _) ->
+                    lastDeclarationRange.end
 
-        innerPadding : String
-        innerPadding =
-            String.repeat (column - initialPosition) " "
+                Nothing ->
+                    range.start
 
-        replacement : String
-        replacement =
-            source
-                |> String.lines
-                |> List.map (\line -> innerPadding ++ "    " ++ line)
-                |> String.join "\n"
+        exprStart : Location
+        exprStart =
+            (Node.range block.expression).start
+
+        end : Location
+        end =
+            findKeyword "in" extractSourceCode { start = lastDeclarationEnd, end = exprStart }
+                |> Maybe.withDefault exprStart
     in
-    "let\n" ++ replacement ++ "\n" ++ padding ++ "in\n" ++ padding
+    { start = range.start
+    , end = end
+    }
 
 
-insertInLet : Int -> Int -> String -> String
-insertInLet initialPosition column source =
-    case source |> String.trim |> String.lines of
-        [] ->
-            ""
-
-        firstLine :: restOfLines ->
-            let
-                innerPadding : String
-                innerPadding =
-                    String.repeat (column - initialPosition) " "
-            in
-            ((firstLine :: List.map (\line -> innerPadding ++ line ++ "") restOfLines)
-                |> String.join "\n"
-            )
-                ++ "\n"
-                ++ String.repeat (column - 1) " "
+indent : Int -> String -> String
+indent padding source =
+    let
+        paddingStr : String
+        paddingStr =
+            String.repeat padding " "
+    in
+    source
+        |> String.lines
+        |> List.map (\line -> paddingStr ++ line ++ "")
+        |> String.join "\n"
 
 
 last : List a -> Maybe a
@@ -1208,3 +1428,61 @@ last items =
 
         _ :: rest ->
             last rest
+
+
+indexedFindMap : (Int -> a -> Maybe b) -> List a -> Maybe b
+indexedFindMap fn list =
+    indexedFindMapHelp fn list 0
+
+
+indexedFindMapHelp : (Int -> a -> Maybe b) -> List a -> Int -> Maybe b
+indexedFindMapHelp fn list index =
+    case list of
+        [] ->
+            Nothing
+
+        a :: rest ->
+            case fn index a of
+                (Just _) as just ->
+                    just
+
+                Nothing ->
+                    indexedFindMapHelp fn rest (index + 1)
+
+
+findMapWithAcc : (a -> b -> Result b b) -> b -> List a -> b
+findMapWithAcc fn acc list =
+    case list of
+        [] ->
+            acc
+
+        item :: rest ->
+            case fn item acc of
+                Ok b ->
+                    b
+
+                Err b ->
+                    findMapWithAcc fn b rest
+
+
+{-| Like `Maybe.andThen` but for the `Nothing` case.
+Useful for trying multiple things in order.
+-}
+onNothing : (() -> Maybe a) -> Maybe a -> Maybe a
+onNothing nextTry maybe =
+    case maybe of
+        (Just _) as just ->
+            just
+
+        Nothing ->
+            nextTry ()
+
+
+withDefaultLazy : (() -> a) -> Maybe a -> a
+withDefaultLazy default maybe =
+    case maybe of
+        Just a ->
+            a
+
+        Nothing ->
+            default ()

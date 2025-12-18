@@ -29,6 +29,7 @@ all =
         , ignoreFixTests
         , letDestructuringTests
         , movingIntoFunctionTests
+        , commentPreservationTests
         ]
 
 
@@ -60,10 +61,55 @@ a b c d =
 a b c d =
   if b then
     let
-        z : Int
-        z = 1
+      z : Int
+      z = 1
     in
     z
+  else
+    1
+"""
+                        ]
+        , test "should preserve comments as much as possible (single declaration, new let)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    z : Int
+    z = 1
+    -- 3
+  in
+  -- 4
+  if b then
+    -- 5
+    z
+    -- 6
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 12
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 7, column = 5 }, end = { row = 7, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  -- 4
+  if b then
+    let
+      -- 2
+      z : Int
+      z = 1
+      -- 3
+    in
+    -- 5
+    z
+    -- 6
   else
     1
 """
@@ -92,7 +138,7 @@ a b c d =
 a b c d =
   if b then
     let
-        z = {a = 1}
+      z = {a = 1}
     in
     {z | a = 2}
   else
@@ -232,7 +278,7 @@ a b c d =
         1
     B ->
         let
-            z = 1
+          z = 1
         in
         z
     C ->
@@ -285,7 +331,7 @@ a b c d =
   in
   if b then
     let
-        z = {a = 1}
+      z = {a = 1}
     in
     {z | a = 2}
   else
@@ -484,8 +530,8 @@ a b c d =
     A y ->
       if b then
         let
-            z : Int
-            z = \\w -> w + 1
+          z : Int
+          z = \\w -> w + 1
         in
         z
       else
@@ -566,7 +612,7 @@ a b c d =
     A y ->
       if b then
         let
-            z = \\w _ -> 1
+          z = \\w _ -> 1
         in
         z
       else
@@ -603,9 +649,9 @@ a b c d =
     A y ->
       if b then
         let
-            z : Int
-            z = let w = 1
-                in w
+          z : Int
+          z = let w = 1
+              in w
         in
         z
       else
@@ -680,7 +726,7 @@ a b c d =
         z
       else
         let
-            x = 1
+          x = 1
         in
         x
 """
@@ -715,9 +761,9 @@ a b c d =
     A y ->
       if b then
         let
-            z : Int
-            z = case c of
-              B w -> w + 1
+          z : Int
+          z = case c of
+            B w -> w + 1
         in
         z
       else
@@ -779,9 +825,9 @@ a b c d =
     A y ->
       if b then
         let
-            z : Int
-            z = case d of
-              B w -> w + 1
+          z : Int
+          z = case d of
+            B w -> w + 1
         in
         z
       else
@@ -842,8 +888,8 @@ a b c d =
     A y ->
       if b then
         let
-            z = case c of
-              B -> 1
+          z = case c of
+            B -> 1
         in
         z
       else
@@ -880,7 +926,7 @@ a b c d =
 a b c d =
   if b then
     let
-        {z} = {z = 1}
+      {z} = {z = 1}
     in
     z
   else
@@ -1066,7 +1112,7 @@ a =
 a =
   if c then
     let
-        z = 1
+      z = 1
     in
     (\\b ->
         if b then
@@ -1120,7 +1166,7 @@ a =
   Maybe.map
       (\\b ->
           let
-              z = 1
+            z = 1
           in
           z
       )
@@ -1154,7 +1200,7 @@ a =
   Maybe.map2
       (\\b c ->
           let
-              z = 1
+            z = 1
           in
           z
       )
@@ -1243,7 +1289,7 @@ a =
   |> Maybe.map
       (\\b ->
           let
-              z = 1
+            z = 1
           in
           z
       )
@@ -1294,7 +1340,7 @@ a =
   Maybe.map
       (\\b ->
           let
-              z = 1
+            z = 1
           in
           z
       ) <| x
@@ -1345,7 +1391,7 @@ a =
   Tuple.mapFirst
       (\\b ->
           let
-              z = 1
+            z = 1
           in
           z
       )
@@ -1378,7 +1424,7 @@ a =
   Tuple.mapSecond
       (\\b ->
           let
-              z = 1
+            z = 1
           in
           z
       )
@@ -1412,7 +1458,7 @@ a =
   Tuple.mapBoth
       (\\b ->
           let
-              z = 1
+            z = 1
           in
           z
       )
@@ -1448,11 +1494,539 @@ a =
       (\\b -> b)
       (\\c ->
           let
-              z = 1
+            z = 1
           in
           z
       )
       x
 """
+                        ]
+        ]
+
+
+commentPreservationTests : Test
+commentPreservationTests =
+    describe "Comment preservation"
+        [ test "Single declaration on multiple lines -> new let" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    z : Int --end1
+    z = 1 --end2
+    -- 3
+  in
+  -- 4
+  if b then
+    -- 5
+    z
+    -- 6
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 12
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 7, column = 5 }, end = { row = 7, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  -- 4
+  if b then
+    let
+      -- 2
+      z : Int --end1
+      z = 1 --end2
+      -- 3
+    in
+    -- 5
+    z
+    -- 6
+  else
+    1
+"""
+                        ]
+        , test "Single declaration on 2 lines -> new let" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let z : Int --end1
+      z = 1 --end2
+  -- 3
+  in
+  -- 4
+  if b then
+    -- 5
+    z
+    -- 6
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 10
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 5, column = 7 }, end = { row = 5, column = 8 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  -- 4
+  if b then
+    let z : Int --end1
+        z = 1 --end2
+    -- 3
+    in
+    -- 5
+    z
+    -- 6
+  else
+    1
+"""
+                        ]
+        , test "Single declaration on 1 line -> new let" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let {-2-} z = 1 {-3-} in
+  -- 4
+  if b then
+    -- 5
+    z
+    -- 6
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 7
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 4, column = 13 }, end = { row = 4, column = 14 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  -- 4
+  if b then
+    let {-2-} z = 1 {-3-} in
+    -- 5
+    z
+    -- 6
+  else
+    1
+"""
+                        ]
+        , test "First declaration -> new let" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    z = 1 --end1
+    -- 3
+    y = 1 --end2
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    z
+    -- 7
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 13
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 6, column = 5 }, end = { row = 6, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 3
+    y = 1 --end2
+    -- 4
+  in
+  -- 5
+  if b then
+    let
+      -- 2
+      z = 1 --end1
+    in
+    -- 6
+    z
+    -- 7
+  else
+    1
+"""
+                        ]
+        , test "Last declaration -> new let" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    y = 1 --end1
+    -- 3
+    z = 1 --end2
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    z
+    -- 7
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 13
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 8, column = 5 }, end = { row = 8, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    y = 1 --end1
+    -- 4
+  in
+  -- 5
+  if b then
+    let
+      -- 3
+      z = 1 --end2
+    in
+    -- 6
+    z
+    -- 7
+  else
+    1
+"""
+                        ]
+        , test "Single declaration on multiple lines -> into let on multiple lines" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    z = 1 --end1
+    -- 3
+  in
+  -- 4
+  if b then
+    -- 5
+    let
+      -- 6
+      y =
+        1
+      -- 7
+    in
+    -- 8
+    z
+    -- 9
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 13
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 6, column = 5 }, end = { row = 6, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  -- 4
+  if b then
+    -- 5
+    let
+      -- 2
+      z = 1 --end1
+      -- 3
+      -- 6
+      y =
+        1
+      -- 7
+    in
+    -- 8
+    z
+    -- 9
+  else
+    1
+"""
+                        ]
+        , test "No fix: Single declaration on multiple lines -> into let on 1 line" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    z = 1 --end1
+    -- 3
+  in
+  -- 4
+  if b then
+    -- 5
+    let {-6-} y = 1 {-7-} in
+    -- 8
+    z
+    -- 9
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 12
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 6, column = 5 }, end = { row = 6, column = 6 } }
+                        ]
+        , test "First declaration on multiple lines -> into let on multiple lines" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    z = 1 --end1
+    -- 3
+    x = 2 --end2
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    let
+      -- 7
+      x =
+        1
+      -- 8
+    in
+    -- 9
+    z
+    -- 10
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 15
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 6, column = 5 }, end = { row = 6, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 3
+    x = 2 --end2
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    let
+      -- 2
+      z = 1 --end1
+      -- 7
+      x =
+        1
+      -- 8
+    in
+    -- 9
+    z
+    -- 10
+  else
+    1
+"""
+                        ]
+        , test "Last declaration on multiple lines -> into let on multiple lines" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    x = 1 --end1
+    -- 3
+    z = 2 --end2
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    let
+      -- 7
+      x =
+        1
+      -- 8
+    in
+    -- 9
+    z
+    -- 10
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 15
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 8, column = 5 }, end = { row = 8, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    x = 1 --end1
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    let
+      -- 3
+      z = 2 --end2
+      -- 7
+      x =
+        1
+      -- 8
+    in
+    -- 9
+    z
+    -- 10
+  else
+    1
+"""
+                        ]
+        , test "Last declaration on multiple lines -> into let on multiple lines - but with different indentations (target is more indented)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    x = 1 --end1
+    -- 3
+    z = 2 --end2
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    let
+        -- 7
+        x =
+          1
+        -- 8
+    in
+    -- 9
+    z
+    -- 10
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 15
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 8, column = 5 }, end = { row = 8, column = 6 } }
+                            |> Review.Test.whenFixed """module A exposing (..)
+a b c d =
+  -- 1
+  let
+    -- 2
+    x = 1 --end1
+    -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    let
+        -- 3
+        z = 2 --end2
+        -- 7
+        x =
+          1
+        -- 8
+    in
+    -- 9
+    z
+    -- 10
+  else
+    1
+"""
+                        ]
+        , test "No fix: Last declaration on multiple lines -> into let on multiple lines - but with different indentations (source is more indented)" <|
+            \() ->
+                """module A exposing (..)
+a b c d =
+  -- 1
+  let
+             -- 2
+             x = 1 --end1
+             -- 3
+             z = 2 --end2
+             -- 4
+  in
+  -- 5
+  if b then
+    -- 6
+    let
+      -- 7
+      x =
+        1
+      -- 8
+    in
+    -- 9
+    z
+    -- 10
+  else
+    1
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectErrors
+                        [ Review.Test.error
+                            { message = message
+                            , details = details 15
+                            , under = "z"
+                            }
+                            |> Review.Test.atExactly { start = { row = 8, column = 14 }, end = { row = 8, column = 15 } }
                         ]
         ]

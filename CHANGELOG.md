@@ -41,6 +41,8 @@ case value of
     Nothing
 ```
 We now detect whether such a compiler error would occur and only prevent the fix in that case.
+- [`NoPrematureLetComputation`] now preserves comments. Previously, losing comments would be fairly common.
+- [`NoPrematureLetComputation`] now produces more precise fixes that should be easier to view in suggested fixes.
 - [`NoPrematureLetComputation`] can now move a let declaration inside `Tuple.mapBoth` functions.
 - Corrected an automatic fix for [`NoPrematureLetComputation`] that resulted in incorrect syntax.
 
