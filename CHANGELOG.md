@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- [`NoDeprecated`] now includes the deprecation message in the error details when one can be found.
 - [`NoPrematureLetComputation`] can now move let declarations whose pattern introduces multiple values.
 In the example below, only (1) could get moved, but with this update (2) can get moved as well.
 ```elm

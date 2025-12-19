@@ -28,14 +28,45 @@ allowing you to stop the bleed.
 ## Tagging recommendations
 
 I recommend making it extra explicit when deprecating elements in your application code, for instance by renaming
-them to include "deprecated" in their name, or in their module name for modules.
-
-That way, it will be very clear for you and your teammates when you're using something that is deprecated, even in
+them to include "deprecated" in their name, or in their module name for modules. That way, it will be very clear for you and your teammates when you're using something that is deprecated, even in
 Git diffs.
 
-For packages, renaming something is a breaking change so that is not a viable option (if it is, remove the function and
-release a new major version). Instead, what you can do is to start a line in your module/value/type's documentation
-with `@deprecated`. There is no official nor conventional approach around deprecation in the Elm community, but this may
+I recommend also including `@deprecated` in the deprecated element's documentation, as that will both consider the
+element as deprecated, and allow this rule to pick up the reasons and recommendations and present them in the error's details.
+This is the recommended way to deprecate something from an Elm package.
+
+If you include a single `@deprecated` at the beginning of a line (potentially between `*` for Markdown styling),
+then this rule will pick the text until the end of a line.
+
+    {-| Does X.
+
+    **@deprecated** Not performant. Use Y instead.
+
+    Bla bla.
+
+    -}
+    value =
+        1
+
+Here, "Not performant. Use Y instead." will be picked up.
+
+Alternatively, you can have start and end `@deprecated` tags, and anything between two will be presented to the user.
+
+    {-| Does X.
+
+    **@deprecated** Not performant. Use Y instead.
+
+    Bla bla.
+
+    **/@deprecated**
+
+    -}
+    value =
+        1
+
+Here, "Not performant. Use Y instead." and "Bla bla" will be picked up. (the `/` before the `@` is optional).
+
+There is no official nor conventional approach around deprecation in the Elm community, but this may
 be a good start. But definitely pitch in the discussion around making a standard!
 (I'll put a link here soon. If I haven't, please remind me!)
 
@@ -126,6 +157,7 @@ import Elm.Syntax.Type
 import Elm.Syntax.TypeAlias
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
 import Json.Encode as Encode
+import Regex exposing (Regex)
 import Review.ModuleNameLookupTable as ModuleNameLookupTable exposing (ModuleNameLookupTable)
 import Review.Project.Dependency
 import Review.Rule as Rule exposing (Rule)
@@ -169,7 +201,7 @@ rule (Configuration { exceptionsForElements, deprecatedDependencies }) =
 
 type alias ProjectContext =
     { deprecatedModules : Dict ModuleName DeprecationReason
-    , deprecatedElements : List ( ModuleName, String )
+    , deprecatedElements : Dict ( ModuleName, String ) (Maybe String)
     , usages : Dict ( ModuleName, String ) Int
     }
 
@@ -177,7 +209,7 @@ type alias ProjectContext =
 initialProjectContext : ProjectContext
 initialProjectContext =
     { deprecatedModules = Dict.empty
-    , deprecatedElements = []
+    , deprecatedElements = Dict.empty
     , usages = Dict.empty
     }
 
@@ -186,16 +218,21 @@ type alias ModuleContext =
     { lookupTable : ModuleNameLookupTable
     , currentModuleName : ModuleName
     , deprecatedModules : Dict ModuleName DeprecationReason
-    , deprecatedElements : Set ( ModuleName, String )
-    , isModuleDeprecated : Bool
-    , localDeprecatedElements : List ( ModuleName, String )
+    , deprecatedElements : Dict ( ModuleName, String ) (Maybe String)
+    , isModuleDeprecated : Status
+    , localDeprecatedElements : Dict ( ModuleName, String ) (Maybe String)
     , usages : List DeprecatedElementUsage
     }
 
 
 type DeprecationReason
-    = DeprecatedModule
-    | DeprecatedDependency
+    = DeprecatedModule (Maybe String)
+    | DeprecatedDependency ()
+
+
+deprecatedDependency : DeprecationReason
+deprecatedDependency =
+    DeprecatedDependency ()
 
 
 fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
@@ -205,9 +242,9 @@ fromProjectToModule =
             { lookupTable = lookupTable
             , currentModuleName = moduleName
             , deprecatedModules = projectContext.deprecatedModules
-            , deprecatedElements = Set.fromList projectContext.deprecatedElements
+            , deprecatedElements = projectContext.deprecatedElements
             , isModuleDeprecated = moduleNamePredicate moduleName
-            , localDeprecatedElements = []
+            , localDeprecatedElements = Dict.empty
             , usages = []
             }
         )
@@ -220,11 +257,12 @@ fromModuleToProject =
     Rule.initContextCreator
         (\currentModuleName moduleContext ->
             { deprecatedModules =
-                if moduleContext.isModuleDeprecated then
-                    Dict.singleton currentModuleName DeprecatedModule
+                case moduleContext.isModuleDeprecated of
+                    Deprecated message ->
+                        Dict.singleton currentModuleName (DeprecatedModule message)
 
-                else
-                    Dict.empty
+                    NotDeprecated () ->
+                        Dict.empty
             , deprecatedElements = moduleContext.localDeprecatedElements
             , usages =
                 List.foldl
@@ -250,7 +288,7 @@ fromModuleToProject =
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
 foldProjectContexts newContext previousContext =
     { deprecatedModules = Dict.union newContext.deprecatedModules previousContext.deprecatedModules
-    , deprecatedElements = newContext.deprecatedElements ++ previousContext.deprecatedElements
+    , deprecatedElements = Dict.union newContext.deprecatedElements previousContext.deprecatedElements
     , usages =
         Dict.foldl
             (\key countForNew acc ->
@@ -290,6 +328,31 @@ type Configuration
 
 type Exceptions
     = Exceptions (Set ( ModuleName, String ))
+
+
+type Status
+    = Deprecated (Maybe String)
+    | NotDeprecated ()
+
+
+deprecatedPlain : Status
+deprecatedPlain =
+    Deprecated Nothing
+
+
+notDeprecated : Status
+notDeprecated =
+    NotDeprecated ()
+
+
+orElse : (() -> Status) -> Status -> Status
+orElse fn status =
+    case status of
+        Deprecated _ ->
+            status
+
+        NotDeprecated () ->
+            fn ()
 
 
 parseExceptions : List String -> Result (List String) Exceptions
@@ -353,39 +416,97 @@ defaults =
         }
 
 
-containsDeprecated : String -> Bool
+containsDeprecated : String -> Status
 containsDeprecated name =
-    name
-        |> String.toLower
-        |> String.contains "deprecated"
+    if String.contains "deprecated" (String.toLower name) then
+        deprecatedPlain
+
+    else
+        notDeprecated
 
 
-moduleNamePredicate : List String -> Bool
+moduleNamePredicate : List String -> Status
 moduleNamePredicate moduleName =
     containsDeprecated (String.join "." moduleName)
 
 
-elementPredicate : Exceptions -> ModuleName -> String -> Bool
+elementPredicate : Exceptions -> ModuleName -> String -> Status
 elementPredicate (Exceptions exceptions) moduleName name =
-    String.contains "deprecated" (String.toLower name)
-        && not (Set.member ( moduleName, name ) exceptions)
+    if
+        String.contains "deprecated" (String.toLower name)
+            && not (Set.member ( moduleName, name ) exceptions)
+    then
+        deprecatedPlain
+
+    else
+        notDeprecated
 
 
-documentationPredicate : String -> Bool
+documentationPredicate : String -> Status
 documentationPredicate doc =
-    doc
-        |> String.slice 3 -3
-        |> String.lines
-        |> List.any
-            (\rawLine ->
-                let
-                    line : String
-                    line =
-                        String.trimLeft rawLine
-                in
-                String.startsWith "@deprecated" line
-                    || String.startsWith "**@deprecated" line
-            )
+    case Regex.findAtMost 1 deprecationStartRegex (String.slice 3 -3 doc) of
+        match :: _ ->
+            let
+                offset : Int
+                offset =
+                    match.index + String.length match.match + 3
+            in
+            case Regex.findAtMost 1 deprecationEndRegex (String.slice offset -3 doc) of
+                endMatch :: _ ->
+                    doc
+                        |> String.slice offset (offset + endMatch.index)
+                        |> Just
+                        |> Deprecated
+
+                _ ->
+                    case match.submatches of
+                        _ :: subMatch :: _ ->
+                            Deprecated subMatch
+
+                        _ ->
+                            deprecatedPlain
+
+        [] ->
+            if
+                doc
+                    |> String.slice 3 -3
+                    |> String.lines
+                    |> List.any
+                        (\rawLine ->
+                            let
+                                line : String
+                                line =
+                                    String.trimLeft rawLine
+                            in
+                            String.startsWith "@deprecated" line
+                                || String.startsWith "**@deprecated" line
+                        )
+            then
+                deprecatedPlain
+
+            else
+                notDeprecated
+
+
+deprecationStartRegex : Regex
+deprecationStartRegex =
+    "^(\\s*\\**@deprecated\\**)(.*)$"
+        |> Regex.fromStringWith { caseInsensitive = True, multiline = True }
+        |> Maybe.withDefault Regex.never
+
+
+deprecationEndRegex : Regex
+deprecationEndRegex =
+    "@deprecated"
+        |> Regex.fromStringWith { caseInsensitive = True, multiline = False }
+        |> Maybe.withDefault Regex.never
+
+
+trimEndRegex : Regex
+trimEndRegex =
+    "(\\s|[/*])*$"
+        |> Regex.fromString
+        |> Maybe.withDefault Regex.never
 
 
 {-| Mark one or more dependencies as deprecated.
@@ -424,6 +545,7 @@ type alias DeprecatedElementUsage =
     , name : String
     , origin : Origin
     , range : Range
+    , deprecationMessage : Maybe String
     }
 
 
@@ -443,7 +565,7 @@ dependenciesVisitor deprecatedDependencies dict projectContext =
                         { acc
                             | deprecatedModules =
                                 List.foldl
-                                    (\{ name } subAcc -> Dict.insert (String.split "." name) DeprecatedDependency subAcc)
+                                    (\{ name } subAcc -> Dict.insert (String.split "." name) deprecatedDependency subAcc)
                                     acc.deprecatedModules
                                     modules
                         }
@@ -473,76 +595,98 @@ dependenciesVisitor deprecatedDependencies dict projectContext =
 
 
 registerDeprecatedThings : Elm.Docs.Module -> ProjectContext -> ProjectContext
-registerDeprecatedThings module_ acc =
+registerDeprecatedThings module_ context =
     let
         moduleName : ModuleName
         moduleName =
             String.split "." module_.name
     in
-    if documentationPredicate module_.comment then
-        { deprecatedModules = Dict.insert moduleName DeprecatedModule acc.deprecatedModules
-        , deprecatedElements = acc.deprecatedElements
-        , usages = acc.usages
-        }
+    case documentationPredicate module_.comment of
+        Deprecated message ->
+            { deprecatedModules = Dict.insert moduleName (DeprecatedModule message) context.deprecatedModules
+            , deprecatedElements = context.deprecatedElements
+            , usages = context.usages
+            }
 
-    else
-        let
-            commentIndicatesDeprecation : { a | comment : String } -> Bool
-            commentIndicatesDeprecation { comment } =
-                documentationPredicate comment
+        NotDeprecated () ->
+            let
+                addDeprecatedValues : Dict ( ModuleName, String ) (Maybe String) -> Dict ( ModuleName, String ) (Maybe String)
+                addDeprecatedValues acc =
+                    List.foldl
+                        (\element subAcc ->
+                            case documentationPredicate element.comment of
+                                Deprecated message ->
+                                    Dict.insert ( moduleName, element.name ) message subAcc
 
-            deprecatedAliases : List Elm.Docs.Alias
-            deprecatedAliases =
-                module_.aliases
-                    |> List.filter commentIndicatesDeprecation
+                                NotDeprecated () ->
+                                    subAcc
+                        )
+                        acc
+                        module_.values
 
-            deprecatedUnions : List Elm.Docs.Union
-            deprecatedUnions =
-                module_.unions
-                    |> List.filter commentIndicatesDeprecation
+                addDeprecatedAliases : Dict ( ModuleName, String ) (Maybe String) -> Dict ( ModuleName, String ) (Maybe String)
+                addDeprecatedAliases acc =
+                    List.foldl
+                        (\element subAcc ->
+                            case documentationPredicate element.comment of
+                                Deprecated message ->
+                                    Dict.insert ( moduleName, element.name ) message subAcc
 
-            newValues : List ( ModuleName, String )
-            newValues =
-                List.concat
-                    [ module_.values
-                        |> List.filter commentIndicatesDeprecation
-                        |> List.map (\value -> ( moduleName, value.name ))
-                    , deprecatedUnions
-                        |> List.map (\{ name } -> ( moduleName, name ))
-                    , deprecatedUnions
-                        |> List.concatMap .tags
-                        |> List.map (\( name, _ ) -> ( moduleName, name ))
-                    , deprecatedAliases
-                        |> List.map (\{ name } -> ( moduleName, name ))
-                    ]
-        in
-        { deprecatedModules = acc.deprecatedModules
-        , deprecatedElements = newValues ++ acc.deprecatedElements
-        , usages = acc.usages
-        }
+                                NotDeprecated () ->
+                                    subAcc
+                        )
+                        acc
+                        module_.aliases
+
+                addDeprecatedUnions : Dict ( ModuleName, String ) (Maybe String) -> Dict ( ModuleName, String ) (Maybe String)
+                addDeprecatedUnions acc =
+                    List.foldl
+                        (\element subAcc ->
+                            case documentationPredicate element.comment of
+                                Deprecated message ->
+                                    List.foldl
+                                        (\( name, _ ) subSubAcc ->
+                                            Dict.insert ( moduleName, name ) message subSubAcc
+                                        )
+                                        (Dict.insert ( moduleName, element.name ) message subAcc)
+                                        element.tags
+
+                                NotDeprecated () ->
+                                    subAcc
+                        )
+                        acc
+                        module_.unions
+
+                deprecatedElements : Dict ( ModuleName, String ) (Maybe String)
+                deprecatedElements =
+                    context.deprecatedElements
+                        |> addDeprecatedValues
+                        |> addDeprecatedAliases
+                        |> addDeprecatedUnions
+            in
+            { deprecatedModules = context.deprecatedModules
+            , deprecatedElements = deprecatedElements
+            , usages = context.usages
+            }
 
 
 moduleDocumentationVisitor : Maybe (Node String) -> ModuleContext -> ModuleContext
 moduleDocumentationVisitor maybeModuleDocumentation moduleContext =
-    if moduleContext.isModuleDeprecated then
-        moduleContext
+    case maybeModuleDocumentation of
+        Just (Node _ moduleDocumentation) ->
+            { moduleContext
+                | isModuleDeprecated =
+                    documentationPredicate moduleDocumentation
+                        |> orElse (\() -> moduleContext.isModuleDeprecated)
+            }
 
-    else
-        case maybeModuleDocumentation of
-            Just (Node _ moduleDocumentation) ->
-                { moduleContext | isModuleDeprecated = documentationPredicate moduleDocumentation }
-
-            Nothing ->
-                moduleContext
+        Nothing ->
+            moduleContext
 
 
 declarationListVisitor : Exceptions -> List (Node Declaration) -> ModuleContext -> ModuleContext
 declarationListVisitor configuration nodes context =
-    if context.isModuleDeprecated then
-        context
-
-    else
-        List.foldl (registerDeclaration configuration) context nodes
+    List.foldl (registerDeclaration configuration) context nodes
 
 
 registerDeclaration : Exceptions -> Node Declaration -> ModuleContext -> ModuleContext
@@ -568,13 +712,11 @@ registerFunctionDeclaration exceptions declaration context =
         name =
             declaration.declaration |> Node.value |> .name |> Node.value
     in
-    if
-        elementPredicate exceptions context.currentModuleName name
-            || checkDocumentation declaration.documentation
-    then
-        registerElement name context
-
-    else
+    registerElement
+        (checkDocumentation declaration.documentation
+            |> orElse (\() -> elementPredicate exceptions context.currentModuleName name)
+        )
+        name
         context
 
 
@@ -585,13 +727,11 @@ registerAliasDeclaration exceptions type_ context =
         name =
             Node.value type_.name
     in
-    if
-        elementPredicate exceptions context.currentModuleName name
-            || checkDocumentation type_.documentation
-    then
-        registerElement name context
-
-    else
+    registerElement
+        (checkDocumentation type_.documentation
+            |> orElse (\() -> elementPredicate exceptions context.currentModuleName name)
+        )
+        name
         context
 
 
@@ -601,49 +741,55 @@ registerCustomTypeDeclaration exceptions type_ context =
         name : String
         name =
             Node.value type_.name
-
-        register : ModuleContext -> ModuleContext
-        register ctx =
-            List.foldl
-                (\(Node _ constructor) -> registerElement (Node.value constructor.name))
-                (registerElement name ctx)
-                type_.constructors
     in
-    if
-        elementPredicate exceptions context.currentModuleName name
-            || checkDocumentation type_.documentation
-    then
-        register context
+    case
+        checkDocumentation type_.documentation
+            |> orElse (\() -> elementPredicate exceptions context.currentModuleName name)
+    of
+        (Deprecated _) as status ->
+            List.foldl
+                (\(Node _ constructor) -> registerElement status (Node.value constructor.name))
+                (registerElement status name context)
+                type_.constructors
 
-    else
-        List.foldl
-            (\(Node _ constructor) ctx ->
-                if elementPredicate exceptions ctx.currentModuleName (Node.value constructor.name) then
-                    registerElement (Node.value constructor.name) ctx
+        NotDeprecated () ->
+            List.foldl
+                (\(Node _ constructor) ctx ->
+                    registerElement
+                        (elementPredicate exceptions ctx.currentModuleName (Node.value constructor.name))
+                        (Node.value constructor.name)
+                        ctx
+                )
+                context
+                type_.constructors
 
-                else
-                    ctx
-            )
-            context
-            type_.constructors
 
-
-checkDocumentation : Maybe (Node String) -> Bool
+checkDocumentation : Maybe (Node String) -> Status
 checkDocumentation documentationNode =
     case documentationNode of
         Just (Node _ str) ->
             documentationPredicate str
 
         Nothing ->
-            False
+            notDeprecated
 
 
-registerElement : String -> ModuleContext -> ModuleContext
-registerElement name context =
-    { context
-        | deprecatedElements = Set.insert ( context.currentModuleName, name ) context.deprecatedElements
-        , localDeprecatedElements = ( context.currentModuleName, name ) :: context.localDeprecatedElements
-    }
+registerElement : Status -> String -> ModuleContext -> ModuleContext
+registerElement status name context =
+    case status of
+        NotDeprecated () ->
+            context
+
+        Deprecated message ->
+            let
+                key : ( ModuleName, String )
+                key =
+                    ( context.currentModuleName, name )
+            in
+            { context
+                | deprecatedElements = Dict.insert key message context.deprecatedElements
+                , localDeprecatedElements = Dict.insert key message context.localDeprecatedElements
+            }
 
 
 declarationVisitor : Node Declaration -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
@@ -853,17 +999,18 @@ rangeForNamedPattern (Node { start } _) { moduleName, name } =
 
 reportField : ModuleNameLookupTable -> ModuleName -> Node String -> Maybe DeprecatedElementUsage
 reportField lookupTable currentModuleName field =
-    if containsDeprecated (Node.value field) then
-        let
-            moduleName : ModuleName
-            moduleName =
-                ModuleNameLookupTable.fullModuleNameFor lookupTable field
-                    |> Maybe.withDefault currentModuleName
-        in
-        Just (usageOfDeprecatedElement moduleName (Node.value field) Field (Node.range field))
+    case containsDeprecated (Node.value field) of
+        Deprecated message ->
+            let
+                moduleName : ModuleName
+                moduleName =
+                    ModuleNameLookupTable.fullModuleNameFor lookupTable field
+                        |> Maybe.withDefault currentModuleName
+            in
+            Just (usageOfDeprecatedElement moduleName (Node.value field) Field (Node.range field) message)
 
-    else
-        Nothing
+        NotDeprecated () ->
+            Nothing
 
 
 expressionVisitor : Node Expression -> ModuleContext -> ( List (Rule.Error {}), ModuleContext )
@@ -928,19 +1075,20 @@ reportElementAsList : ModuleContext -> Range -> (() -> Range) -> String -> List 
 reportElementAsList context rangeForLookupTable rangeForReport name acc =
     case ModuleNameLookupTable.fullModuleNameAt context.lookupTable rangeForLookupTable of
         Just moduleName ->
-            case Dict.get moduleName context.deprecatedModules of
-                Just DeprecatedModule ->
-                    usageOfDeprecatedElement moduleName name Module (rangeForReport ()) :: acc
-
-                Just DeprecatedDependency ->
-                    usageOfDeprecatedElement moduleName name Dependency (rangeForReport ()) :: acc
+            case Dict.get ( moduleName, name ) context.deprecatedElements of
+                Just message ->
+                    usageOfDeprecatedElement moduleName name Element (rangeForReport ()) message :: acc
 
                 Nothing ->
-                    if Set.member ( moduleName, name ) context.deprecatedElements then
-                        usageOfDeprecatedElement moduleName name Element (rangeForReport ()) :: acc
+                    case Dict.get moduleName context.deprecatedModules of
+                        Just (DeprecatedModule message) ->
+                            usageOfDeprecatedElement moduleName name Module (rangeForReport ()) message :: acc
 
-                    else
-                        acc
+                        Just (DeprecatedDependency ()) ->
+                            usageOfDeprecatedElement moduleName name Dependency (rangeForReport ()) Nothing :: acc
+
+                        Nothing ->
+                            acc
 
         Nothing ->
             acc
@@ -951,18 +1099,15 @@ reportElementAsMaybe context range name =
     case ModuleNameLookupTable.fullModuleNameAt context.lookupTable range of
         Just moduleName ->
             case Dict.get moduleName context.deprecatedModules of
-                Just DeprecatedModule ->
-                    Just (usageOfDeprecatedElement moduleName name Module range)
+                Just (DeprecatedModule message) ->
+                    Just (usageOfDeprecatedElement moduleName name Module range message)
 
-                Just DeprecatedDependency ->
-                    Just (usageOfDeprecatedElement moduleName name Dependency range)
+                Just (DeprecatedDependency ()) ->
+                    Just (usageOfDeprecatedElement moduleName name Dependency range Nothing)
 
                 Nothing ->
-                    if Set.member ( moduleName, name ) context.deprecatedElements then
-                        Just (usageOfDeprecatedElement moduleName name Element range)
-
-                    else
-                        Nothing
+                    Dict.get ( moduleName, name ) context.deprecatedElements
+                        |> Maybe.map (\message -> usageOfDeprecatedElement moduleName name Element range message)
 
         Nothing ->
             Nothing
@@ -970,11 +1115,12 @@ reportElementAsMaybe context range name =
 
 reportParameter : ModuleName -> Range -> String -> Maybe DeprecatedElementUsage
 reportParameter currentModuleName range name =
-    if containsDeprecated name then
-        Just (usageOfDeprecatedElement currentModuleName name Parameter range)
+    case containsDeprecated name of
+        Deprecated message ->
+            Just (usageOfDeprecatedElement currentModuleName name Parameter range message)
 
-    else
-        Nothing
+        NotDeprecated () ->
+            Nothing
 
 
 type Origin
@@ -985,35 +1131,49 @@ type Origin
     | Parameter
 
 
-usageOfDeprecatedElement : ModuleName -> String -> Origin -> Range -> DeprecatedElementUsage
+usageOfDeprecatedElement : ModuleName -> String -> Origin -> Range -> Maybe String -> DeprecatedElementUsage
 usageOfDeprecatedElement =
     DeprecatedElementUsage
 
 
 error : DeprecatedElementUsage -> Rule.Error {}
-error { origin, range } =
+error { origin, range, deprecationMessage } =
     let
+        deprecation : String
+        deprecation =
+            case deprecationMessage of
+                Just message ->
+                    "Deprecation: " ++ (message |> String.trim |> Regex.replace trimEndRegex (always "") |> String.trim)
+
+                Nothing ->
+                    "Please check its documentation to know the alternative solutions."
+
         details : List String
         details =
             case origin of
                 Element ->
                     [ "This element was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation to know the alternative solutions."
+                    , deprecation
                     ]
 
                 Module ->
                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation to know the alternative solutions."
+                    , deprecation
                     ]
 
                 Dependency ->
                     [ "The dependency where this element is defined was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation or your review configuration to know the alternative solutions."
+                    , case deprecationMessage of
+                        Just message ->
+                            "Deprecation: " ++ String.trimLeft message
+
+                        Nothing ->
+                            "Please check its documentation or your review configuration to know the alternative solutions."
                     ]
 
                 Field ->
                     [ "This element was marked as deprecated and should not be used anymore."
-                    , "Please check its documentation to know the alternative solutions."
+                    , deprecation
                     ]
 
                 Parameter ->

@@ -89,7 +89,85 @@ something = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Deprecation: This is deprecated, use Y instead."
+                                    ]
+                                , under = "something"
+                                }
+                                |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
+                            ]
+                        , Review.Test.dataExtract """
+                            {
+                               "A": {
+                                 "total": 1,
+                                 "isModuleDeprecated": false,
+                                 "usages": {
+                                   "something": 1
+                                 }
+                               }
+                            }"""
+                        ]
+        , test "should report an error when referencing a local function whose documentation contains '@deprecated' even without a message afterwards" <|
+            \() ->
+                """module A exposing (..)
+a = something
+
+{-| Does X.
+
+@deprecated
+-}
+something = 1
+"""
+                    |> Review.Test.run (rule NoDeprecated.defaults)
+                    |> Review.Test.expect
+                        [ Review.Test.moduleErrors "A"
+                            [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
                                     , "Please check its documentation to know the alternative solutions."
+                                    ]
+                                , under = "something"
+                                }
+                                |> Review.Test.atExactly { start = { row = 2, column = 5 }, end = { row = 2, column = 14 } }
+                            ]
+                        , Review.Test.dataExtract """
+                            {
+                               "A": {
+                                 "total": 1,
+                                 "isModuleDeprecated": false,
+                                 "usages": {
+                                   "something": 1
+                                 }
+                               }
+                            }"""
+                        ]
+        , test "should report an error when referencing a local function whose documentation seems to have an end '@deprecation' section" <|
+            \() ->
+                """module A exposing (..)
+a = something
+
+{-| Does X.
+
+**@deprecated**
+
+We don't want this anymore.
+
+Use Y instead.
+
+**/@deprecated**
+-}
+something = 1
+"""
+                    |> Review.Test.run (rule NoDeprecated.defaults)
+                    |> Review.Test.expect
+                        [ Review.Test.moduleErrors "A"
+                            [ Review.Test.error
+                                { message = "Found new usage of deprecated element"
+                                , details =
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , """Deprecation: We don't want this anymore.
+
+Use Y instead."""
                                     ]
                                 , under = "something"
                                 }
@@ -122,7 +200,7 @@ something = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "something"
                                 }
@@ -157,7 +235,7 @@ something = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "something"
                                 }
@@ -190,7 +268,7 @@ something = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "something"
                                 }
@@ -312,7 +390,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: Use some other module instead"
                                     ]
                                 , under = "Some.Module.something"
                                 }
@@ -527,7 +605,7 @@ type Something = Foo Int
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "Something"
                                 }
@@ -561,7 +639,7 @@ type Something = A Int
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "A"
                                 }
@@ -596,7 +674,7 @@ type alias Something = Int
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "Something"
                                 }
@@ -630,7 +708,7 @@ type alias Something = { b : Int }
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "Something"
                                 }
@@ -1119,8 +1197,8 @@ a = OtherModule.something
                             [ Review.Test.error
                                 { message = "Found new usage of deprecated element"
                                 , details =
-                                    [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    [ "This element was marked as deprecated and should not be used anymore."
+                                    , "Deprecation: This is deprecated, use Y.something instead."
                                     ]
                                 , under = "OtherModule.something"
                                 }
@@ -1150,7 +1228,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.CustomType"
                                 }
@@ -1179,7 +1257,7 @@ a = OtherModule.Constructor
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.Constructor"
                                 }
@@ -1209,7 +1287,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.Alias"
                                 }
@@ -1238,7 +1316,7 @@ a = OtherModule.value
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.value"
                                 }
@@ -1268,7 +1346,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.CustomType"
                                 }
@@ -1297,7 +1375,7 @@ a = OtherModule.Constructor
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.Constructor"
                                 }
@@ -1327,7 +1405,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.Alias"
                                 }
@@ -1356,7 +1434,7 @@ a = OtherModule.RecordAlias
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "OtherModule.RecordAlias"
                                 }
@@ -1391,7 +1469,7 @@ a = ModuleFromDependency_1.something
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_1.something"
                                 }
@@ -1421,7 +1499,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_1.CustomType"
                                 }
@@ -1450,7 +1528,7 @@ a = ModuleFromDependency_1.Constructor
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_1.Constructor"
                                 }
@@ -1480,7 +1558,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "The module where this element is defined was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_1.Alias"
                                 }
@@ -1509,7 +1587,7 @@ a = ModuleFromDependency_2.value
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_2.value"
                                 }
@@ -1539,7 +1617,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_2.CustomType"
                                 }
@@ -1568,7 +1646,7 @@ a = ModuleFromDependency_2.Constructor
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_2.Constructor"
                                 }
@@ -1598,7 +1676,7 @@ a = 1
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_2.Alias"
                                 }
@@ -1627,7 +1705,7 @@ a = ModuleFromDependency_2.RecordAlias
                                 { message = "Found new usage of deprecated element"
                                 , details =
                                     [ "This element was marked as deprecated and should not be used anymore."
-                                    , "Please check its documentation to know the alternative solutions."
+                                    , "Deprecation: This is deprecated, use Y instead."
                                     ]
                                 , under = "ModuleFromDependency_2.RecordAlias"
                                 }
@@ -1715,7 +1793,12 @@ deprecatedModule =
 @deprecated This is deprecated, use Y instead.
 -}
 import Basics
-a = 1
+
+{-| Does X.something.
+
+@deprecated This is deprecated, use Y.something instead.
+-}
+something = 1
 """
 
 
