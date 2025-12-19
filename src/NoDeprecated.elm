@@ -206,12 +206,7 @@ type DeprecationReason
 fromProjectToModule : StableConfiguration -> Rule.ContextCreator ProjectContext ModuleContext
 fromProjectToModule (StableConfiguration configuration) =
     Rule.initContextCreator
-        (\metadata lookupTable projectContext ->
-            let
-                moduleName : ModuleName
-                moduleName =
-                    Rule.moduleNameFromMetadata metadata
-            in
+        (\moduleName lookupTable projectContext ->
             { lookupTable = lookupTable
             , currentModuleName = moduleName
             , deprecatedModules = projectContext.deprecatedModules
@@ -221,17 +216,17 @@ fromProjectToModule (StableConfiguration configuration) =
             , usages = []
             }
         )
-        |> Rule.withMetadata
+        |> Rule.withModuleName
         |> Rule.withModuleNameLookupTable
 
 
 fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
 fromModuleToProject =
     Rule.initContextCreator
-        (\metadata moduleContext ->
+        (\currentModuleName moduleContext ->
             { deprecatedModules =
                 if moduleContext.isModuleDeprecated then
-                    Dict.singleton (Rule.moduleNameFromMetadata metadata) DeprecatedModule
+                    Dict.singleton currentModuleName DeprecatedModule
 
                 else
                     Dict.empty
@@ -254,7 +249,7 @@ fromModuleToProject =
                     moduleContext.usages
             }
         )
-        |> Rule.withMetadata
+        |> Rule.withModuleName
 
 
 foldProjectContexts : ProjectContext -> ProjectContext -> ProjectContext
