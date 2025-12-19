@@ -391,7 +391,7 @@ isValidName name =
 
 By default are considered as deprecated:
 
-  - Values / types / modules that contain "deprecated" (case insensitive) in their name.
+  - Values / parameters / types / modules that contain "deprecated" (case insensitive) in their name.
   - Values / types / modules whose documentation comment has a line starting with "@deprecated" or (for better visibility) "\*\*@deprecated"
   - Values / types from modules that are considered as deprecated
 
