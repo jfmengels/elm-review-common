@@ -40,7 +40,7 @@ normalFunction = 1
 """ ]
                     |> Review.Test.runOnModules (rule NoDeprecated.defaults)
                     |> Review.Test.expectDataExtract "{}"
-        , test "should report an error when referencing a local function whose name contains '@deprecated'" <|
+        , test "should report an error when referencing a local function whose name contains 'deprecated'" <|
             \() ->
                 """module A exposing (..)
 somethingDeprecated = 1
