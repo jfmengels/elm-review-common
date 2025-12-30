@@ -83,7 +83,7 @@ Help would be appreciated to fill the blanks!
 [1.3.0]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.0
 
 [`NoConfusingPrefixOperator`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoConfusingPrefixOperator)
-[`NoDeprecated`]: (https://package.lang.org/packages/jfmengels/elm-review-common/latest/NoDeprecated)
+[`NoDeprecated`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoDeprecated)
 [`NoImportingEverything`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoImportingEverything)
 [`NoMissingTypeExpose`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoMissingTypeExpose)
 [`NoPrematureLetComputation`]: (https://package.elm-lang.org/packages/jfmengels/elm-review-common/latest/NoPrematureLetComputation)
