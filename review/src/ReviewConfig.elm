@@ -18,6 +18,7 @@ import Docs.UpToDateReadmeLinks
 import NoConfusingPrefixOperator
 import NoDebug.Log
 import NoDebug.TodoOrToString
+import NoDeprecated
 import NoExposingEverything
 import NoForbiddenWords
 import NoImportingEverything
@@ -33,6 +34,7 @@ import NoUnused.Exports
 import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
+import Review.FilePattern as FilePattern
 import Review.Rule as Rule exposing (Rule)
 import Simplify
 
@@ -46,6 +48,11 @@ config =
     , Docs.ReviewLinksAndSections.rule
     , Docs.ReviewAtDocs.rule
     , Docs.UpToDateReadmeLinks.rule
+    , NoDeprecated.rule NoDeprecated.defaults
+        |> Rule.ignoreErrorsFor
+            [ FilePattern.excludeDirectory "tests/"
+            , FilePattern.exclude "src/NoDeprecated.elm"
+            ]
     , NoDebug.Log.rule
     , NoDebug.TodoOrToString.rule
         |> Rule.ignoreErrorsForDirectories [ "tests/" ]
@@ -67,3 +74,4 @@ config =
     , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
     ]
+

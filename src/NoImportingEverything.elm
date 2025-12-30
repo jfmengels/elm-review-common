@@ -71,7 +71,7 @@ elm-review --template jfmengels/elm-review-common/example --rules NoImportingEve
 rule : List String -> Rule
 rule exceptions =
     Rule.newProjectRuleSchema "NoImportingEverything" initialContext
-        |> Rule.withDirectDependenciesProjectVisitor (\dependencies context -> ( [], dependenciesVisitor dependencies context ))
+        |> Rule.withDirectDependenciesProjectVisitor (\dependencies _ -> ( [], dependenciesVisitor dependencies ))
         |> Rule.withModuleVisitor (moduleVisitor exceptions)
         |> Rule.withModuleContextUsingContextCreator
             { fromProjectToModule = fromProjectToModule
@@ -79,7 +79,6 @@ rule exceptions =
             , foldProjectContexts = foldProjectContexts
             }
         |> Rule.withContextFromImportedModules
-        |> Rule.providesFixesForProjectRule
         |> Rule.fromProjectRuleSchema
 
 
@@ -145,8 +144,8 @@ foldProjectContexts =
     Dict.union
 
 
-dependenciesVisitor : Dict String Dependency -> ProjectContext -> ProjectContext
-dependenciesVisitor dependencies _ =
+dependenciesVisitor : Dict String Dependency -> ProjectContext
+dependenciesVisitor dependencies =
     Dict.foldl
         (\_ dep acc -> List.foldl findConstructorsInModule acc (Dependency.modules dep))
         Dict.empty

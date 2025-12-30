@@ -157,7 +157,6 @@ rule =
         |> Rule.withDeclarationEnterVisitor declarationVisitor
         |> Rule.withExpressionEnterVisitor expressionEnterVisitor
         |> Rule.withExpressionExitVisitor expressionExitVisitor
-        |> Rule.providesFixesForModuleRule
         |> Rule.fromModuleRuleSchema
 
 

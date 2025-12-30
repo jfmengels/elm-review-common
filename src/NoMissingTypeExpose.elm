@@ -96,7 +96,6 @@ rule =
             , fromModuleToProject = fromModuleToProjectContext
             , foldProjectContexts = foldProjectContexts
             }
-        |> Rule.providesFixesForProjectRule
         |> Rule.fromProjectRuleSchema
 
 
@@ -144,8 +143,10 @@ dependencyDictVisitor dependencies context =
     ( []
     , { context
         | exposedModules =
-            Dict.values dependencies
-                |> List.foldl exposedModulesForDependency context.exposedModules
+            Dict.foldl
+                (\_ dependency exposedModules -> exposedModulesForDependency dependency exposedModules)
+                context.exposedModules
+                dependencies
       }
     )
 
