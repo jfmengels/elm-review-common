@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.5] - 2025-12-30
+
 - [`NoDeprecated`] now includes the deprecation message in the error details when one can be found.
 - [`NoPrematureLetComputation`] can now move let declarations whose pattern introduces multiple values.
 In the example below, only (1) could get moved, but with this update (2) can get moved as well.
@@ -72,7 +74,8 @@ Adds new rule [`NoConfusingPrefixOperator`] ([#13](https://github.com/jfmengels/
 
 Help would be appreciated to fill the blanks!
 
-[Unreleased]: https://github.com/jfmengels/elm-review-common/compare/1.3.4...HEAD
+[Unreleased]: https://github.com/jfmengels/elm-review-common/compare/1.3.5...HEAD
+[1.3.5]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.5
 [1.3.4]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.4
 [1.3.3]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.3
 [1.3.2]: https://github.com/jfmengels/elm-review-common/releases/tag/1.3.2
