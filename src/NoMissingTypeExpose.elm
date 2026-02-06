@@ -92,8 +92,8 @@ rule =
         |> Rule.withModuleVisitor moduleVisitor
         |> Rule.withContextFromImportedModules
         |> Rule.withModuleContextUsingContextCreator
-            { fromProjectToModule = fromProjectToModuleContext
-            , fromModuleToProject = fromModuleToProjectContext
+            { fromProjectToModule = fromProjectToModule
+            , fromModuleToProject = fromModuleToProject
             , foldProjectContexts = foldProjectContexts
             }
         |> Rule.fromProjectRuleSchema
@@ -598,8 +598,8 @@ formatTypeName ( moduleName, name ) =
     String.join "." (moduleName ++ [ name ])
 
 
-fromProjectToModuleContext : Rule.ContextCreator ProjectContext ModuleContext
-fromProjectToModuleContext =
+fromProjectToModule : Rule.ContextCreator ProjectContext ModuleContext
+fromProjectToModule =
     Rule.initContextCreator
         (\lookupTable moduleName { exposedModules, moduleTypes } ->
             let
@@ -620,8 +620,8 @@ fromProjectToModuleContext =
         |> Rule.withModuleName
 
 
-fromModuleToProjectContext : Rule.ContextCreator ModuleContext ProjectContext
-fromModuleToProjectContext =
+fromModuleToProject : Rule.ContextCreator ModuleContext ProjectContext
+fromModuleToProject =
     Rule.initContextCreator
         (\moduleName context ->
             case context.moduleType of
